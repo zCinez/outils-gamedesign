@@ -170,6 +170,16 @@ h3,
   backdrop-filter: blur(18px);
 }
 
+.global-nav-inner,
+.top-tabs-shell,
+.home-topbar {
+  border: 1px solid var(--neo-border) !important;
+  border-radius: var(--neo-radius) !important;
+  background: rgba(8, 11, 15, 0.86) !important;
+  box-shadow: var(--neo-shadow) !important;
+  color: var(--neo-text) !important;
+}
+
 .brand-mark,
 .logo,
 .brand__logo,
@@ -186,6 +196,25 @@ h3,
 .brand__logo,
 .global-nav-brand-logo {
   object-fit: cover;
+}
+
+.brand-lockup,
+.home-page .brand-lockup,
+.sidebar .card,
+.sidebar-link,
+.home-step,
+.home-highlight {
+  border: 1px solid var(--neo-border) !important;
+  border-radius: var(--neo-radius) !important;
+  background: var(--neo-surface) !important;
+  box-shadow: none !important;
+  color: var(--neo-text) !important;
+}
+
+.sidebar-link,
+.home-highlight,
+.home-step {
+  color: var(--neo-teal) !important;
 }
 
 .nav,
@@ -293,22 +322,39 @@ select option {
 
 .badge,
 .eyebrow,
+.section-kicker,
 .template-badge,
 .count-pill,
 .tag-ready,
 .status.ready,
 .chip,
-.project-history-template {
+.project-history-template,
+.status-pill {
   border-color: rgba(85, 224, 202, 0.32) !important;
   color: var(--neo-teal) !important;
   background: rgba(85, 224, 202, 0.09) !important;
 }
 
 .tag-planned,
-.status.wip {
+.status.wip,
+.status-pill--warning {
   border-color: rgba(241, 188, 82, 0.34) !important;
   color: var(--neo-gold) !important;
   background: rgba(241, 188, 82, 0.09) !important;
+}
+
+.status-pill--active,
+.status-pill--good {
+  border-color: transparent !important;
+  color: #061114 !important;
+  background: linear-gradient(135deg, var(--neo-teal), var(--neo-blue)) !important;
+  box-shadow: 0 14px 28px rgba(85, 224, 202, 0.18) !important;
+}
+
+.status-pill--danger {
+  border-color: rgba(251, 113, 133, 0.34) !important;
+  color: #fff !important;
+  background: rgba(251, 113, 133, 0.14) !important;
 }
 
 .tool-card:hover,
@@ -332,6 +378,14 @@ select option {
   background:
     radial-gradient(circle, var(--neo-surface-2) 0 52%, transparent 53%),
     conic-gradient(var(--neo-teal) 0 76%, rgba(255, 255, 255, 0.11) 76% 100%) !important;
+}
+
+.panel-card::before,
+.player-created-card::before,
+.sidebar::after {
+  background:
+    linear-gradient(120deg, rgba(255, 255, 255, 0.05), transparent 34%),
+    radial-gradient(circle at 8% 0%, rgba(85, 224, 202, 0.12), transparent 24rem) !important;
 }
 
 .meter__bar,
