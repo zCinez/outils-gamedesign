@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Suggestions Game Design - Neodium</title>
+  <meta name="description" content="Gestion manuelle des suggestions joueurs pour Neodium." />
+
+  <style>
+    :root {
+      --bg: #070a12;
+      --bg-soft: #0d1220;
+      --card: rgba(255, 255, 255, 0.06);
+      --card-hover: rgba(255, 255, 255, 0.1);
+      --border: rgba(255, 255, 255, 0.12);
+      --text: #f5f7fb;
+      --muted: #9aa4b2;
+      --muted-2: #707b8d;
+      --accent: #5eead4;
+      --blue: #60a5fa;
+      --purple: #a78bfa;
+      --green: #34d399;
+      --yellow: #facc15;
+      --orange: #fb923c;
+      --red: #fb7185;
+      --shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+      --radius: 22px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(94, 234, 212, 0.18), transparent 32%),
+        radial-gradient(circle at 85% 15%, rgba(96, 165, 250, 0.14), transparent 34%),
+        linear-gradient(135deg, #050712 0%, #0a0f1f 52%, #050712 100%);
+      line-height: 1.6;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    .page {
+      width: min(1320px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 28px 0 54px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 28px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .logo {
+      width: 46px;
+      height: 46px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: linear-gradient(135deg, rgba(94, 234, 212, 0.22), rgba(96, 165, 250, 0.12));
+      box-shadow: var(--shadow);
+      font-weight: 900;
+      color: var(--accent);
+    }
+
+    .brand-text strong {
+      display: block;
+      font-size: 1.05rem;
+      letter-spacing: 0.2px;
+    }
+
+    .brand-text span {
+      display: block;
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .btn {
+      min-height: 42px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      padding: 0 14px;
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.055);
+      font-weight: 800;
+      transition: 0.18s ease;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.08);
+    }
+
+    .btn-primary {
+      color: #041012;
+      background: linear-gradient(135deg, var(--accent), var(--blue));
+      border-color: transparent;
+    }
+
+    .btn-danger {
+      color: #fff;
+      border-color: rgba(251, 113, 133, 0.26);
+      background: rgba(251, 113, 133, 0.12);
+    }
+
+    .btn-small {
+      min-height: 34px;
+      padding: 0 10px;
+      border-radius: 11px;
+      font-size: 0.84rem;
+    }
+
+    .card {
+      border: 1px solid var(--border);
+      background: var(--card);
+      backdrop-filter: blur(18px);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+
+    .hero-main {
+      padding: 34px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-main::after {
+      content: "";
+      position: absolute;
+      width: 260px;
+      height: 260px;
+      right: -90px;
+      top: -90px;
+      border-radius: 999px;
+      background: rgba(94, 234, 212, 0.11);
+      filter: blur(8px);
+      pointer-events: none;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(94, 234, 212, 0.1);
+      border: 1px solid rgba(94, 234, 212, 0.24);
+      color: var(--accent);
+      font-size: 0.88rem;
+      font-weight: 800;
+      margin-bottom: 18px;
+    }
+
+    h1 {
+      max-width: 760px;
+      font-size: clamp(2rem, 5vw, 4rem);
+      line-height: 0.98;
+      letter-spacing: -2px;
+      margin-bottom: 18px;
+    }
+
+    .hero-main p {
+      max-width: 720px;
+      color: var(--muted);
+      font-size: 1rem;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      padding: 18px;
+    }
+
+    .stat {
+      min-height: 96px;
+      padding: 16px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.052);
+      border: 1px solid var(--border);
+    }
+
+    .stat strong {
+      display: block;
+      font-size: 1.7rem;
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+
+    .stat span {
+      color: var(--muted);
+      font-size: 0.86rem;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 390px 1fr;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .panel,
+    .board {
+      padding: 22px;
+    }
+
+    .panel h2,
+    .board-head h2 {
+      font-size: 1.16rem;
+      margin-bottom: 6px;
+    }
+
+    .panel-desc,
+    .board-head p {
+      color: var(--muted);
+      font-size: 0.92rem;
+      margin-bottom: 18px;
+    }
+
+    .form-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 0.86rem;
+      font-weight: 800;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.065);
+      color: var(--text);
+      padding: 12px 13px;
+      outline: none;
+    }
+
+    select option {
+      color: #111827;
+    }
+
+    textarea {
+      min-height: 95px;
+      resize: vertical;
+    }
+
+    input::placeholder,
+    textarea::placeholder {
+      color: #707b8d;
+    }
+
+    .double {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .board-head {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .filters {
+      display: grid;
+      grid-template-columns: 1.3fr 0.9fr 0.9fr 0.9fr;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .suggestions {
+      display: grid;
+      gap: 12px;
+    }
+
+    .suggestion {
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.052);
+      border-radius: 18px;
+      padding: 16px;
+      transition: 0.18s ease;
+    }
+
+    .suggestion:hover {
+      background: var(--card-hover);
+      border-color: rgba(94, 234, 212, 0.22);
+    }
+
+    .suggestion-head {
+      display: flex;
+      align-items: start;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 8px;
+    }
+
+    .suggestion h3 {
+      font-size: 1rem;
+      line-height: 1.3;
+    }
+
+    .suggestion p {
+      color: var(--muted);
+      font-size: 0.92rem;
+      margin: 8px 0 12px;
+      white-space: pre-wrap;
+    }
+
+    .chips {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 9px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.04);
+      font-size: 0.78rem;
+      font-weight: 800;
+    }
+
+    .priority-critique {
+      color: var(--red);
+      border-color: rgba(251, 113, 133, 0.3);
+      background: rgba(251, 113, 133, 0.09);
+    }
+
+    .priority-haute {
+      color: var(--orange);
+      border-color: rgba(251, 146, 60, 0.3);
+      background: rgba(251, 146, 60, 0.09);
+    }
+
+    .priority-moyenne {
+      color: var(--yellow);
+      border-color: rgba(250, 204, 21, 0.3);
+      background: rgba(250, 204, 21, 0.08);
+    }
+
+    .priority-basse,
+    .priority-ideefuture {
+      color: var(--blue);
+      border-color: rgba(96, 165, 250, 0.3);
+      background: rgba(96, 165, 250, 0.08);
+    }
+
+    .status-atrier { color: var(--muted); }
+    .status-endiscussion { color: var(--purple); }
+    .status-acceptee { color: var(--green); }
+    .status-refusee { color: var(--red); }
+    .status-adevelopper { color: var(--blue); }
+    .status-entest { color: var(--yellow); }
+    .status-implementee { color: var(--accent); }
+
+    .meta {
+      display: grid;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 0.88rem;
+      margin-bottom: 12px;
+    }
+
+    .meta a {
+      color: var(--accent);
+      word-break: break-all;
+    }
+
+    .staff-note {
+      border-top: 1px solid var(--border);
+      padding-top: 12px;
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 0.9rem;
+      white-space: pre-wrap;
+    }
+
+    .task-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .empty {
+      padding: 30px;
+      border: 1px dashed var(--border);
+      border-radius: 18px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .import-file {
+      display: none;
+    }
+
+    .footer-note {
+      margin-top: 20px;
+      color: var(--muted-2);
+      font-size: 0.84rem;
+      text-align: center;
+    }
+
+    @media (max-width: 1080px) {
+      .hero,
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .filters {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 660px) {
+      .page {
+        width: min(100% - 20px, 1320px);
+        padding-top: 18px;
+      }
+
+      .topbar,
+      .board-head,
+      .top-actions {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .hero-main,
+      .panel,
+      .board {
+        padding: 20px;
+      }
+
+      .stats,
+      .double,
+      .filters {
+        grid-template-columns: 1fr;
+      }
+
+      .suggestion-head {
+        flex-direction: column;
+      }
+
+      .task-actions {
+        justify-content: flex-start;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="page">
+    <header class="topbar">
+      <a class="brand" href="../index.html" aria-label="Retour à l'accueil">
+        <div class="logo">N</div>
+        <div class="brand-text">
+          <strong>Suggestions joueurs</strong>
+          <span>Neodium — Outils internes</span>
+        </div>
+      </a>
+
+      <div class="top-actions">
+        <button class="btn" type="button" id="exportBtn">Exporter JSON</button>
+        <button class="btn" type="button" id="importBtn">Importer JSON</button>
+        <input class="import-file" type="file" id="importFile" accept="application/json" />
+        <a class="btn btn-primary" href="../index.html">Accueil</a>
+      </div>
+    </header>
+
+    <section class="hero">
+      <div class="card hero-main">
+        <span class="badge">💡 Suggestions communauté</span>
+        <h1>Classe les suggestions des joueurs proprement.</h1>
+        <p>
+          Cette page te permet d’ajouter manuellement les suggestions venant de Discord,
+          puis de les classer par catégorie, priorité et statut pour suivre ce qui vaut
+          vraiment le coup d’être étudié.
+        </p>
+      </div>
+
+      <aside class="card stats">
+        <div class="stat">
+          <strong id="statTotal">0</strong>
+          <span>suggestions totales</span>
+        </div>
+        <div class="stat">
+          <strong id="statTrier">0</strong>
+          <span>à trier</span>
+        </div>
+        <div class="stat">
+          <strong id="statAccepted">0</strong>
+          <span>acceptées / à développer</span>
+        </div>
+        <div class="stat">
+          <strong id="statDone">0</strong>
+          <span>implémentées</span>
+        </div>
+      </aside>
+    </section>
+
+    <section class="layout">
+      <aside class="card panel">
+        <h2 id="formTitle">Ajouter une suggestion</h2>
+        <p class="panel-desc">Rentre ici les suggestions des joueurs à la main.</p>
+
+        <form class="form-grid" id="suggestionForm">
+          <input type="hidden" id="suggestionId" />
+
+          <label>
+            Titre
+            <input id="title" type="text" placeholder="Ex : Ajouter un /hdv pour les joueurs" required />
+          </label>
+
+          <label>
+            Description
+            <textarea id="description" placeholder="Copie ou résume la suggestion du joueur."></textarea>
+          </label>
+
+          <div class="double">
+            <label>
+              Auteur Discord
+              <input id="author" type="text" placeholder="Ex : zCinez, Pseudo#0000..." />
+            </label>
+
+            <label>
+              Date de suggestion
+              <input id="suggestionDate" type="date" />
+            </label>
+          </div>
+
+          <label>
+            Lien du message Discord
+            <input id="discordLink" type="url" placeholder="https://discord.com/channels/..." />
+          </label>
+
+          <div class="double">
+            <label>
+              Catégorie
+              <select id="category">
+                <option value="Gameplay">Gameplay</option>
+                <option value="Économie">Économie</option>
+                <option value="Métiers">Métiers</option>
+                <option value="Quêtes">Quêtes</option>
+                <option value="Boutique">Boutique</option>
+                <option value="Interface / Scoreboard">Interface / Scoreboard</option>
+                <option value="Events">Events</option>
+                <option value="Qualité de vie">Qualité de vie</option>
+                <option value="Bug / Exploit">Bug / Exploit</option>
+                <option value="Autre">Autre</option>
+              </select>
+            </label>
+
+            <label>
+              Priorité
+              <select id="priority">
+                <option value="Critique">Critique</option>
+                <option value="Haute">Haute</option>
+                <option value="Moyenne" selected>Moyenne</option>
+                <option value="Basse">Basse</option>
+                <option value="Idée future">Idée future</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="double">
+            <label>
+              Statut
+              <select id="status">
+                <option value="À trier" selected>À trier</option>
+                <option value="En discussion">En discussion</option>
+                <option value="Acceptée">Acceptée</option>
+                <option value="Refusée">Refusée</option>
+                <option value="À développer">À développer</option>
+                <option value="En test">En test</option>
+                <option value="Implémentée">Implémentée</option>
+              </select>
+            </label>
+
+            <label>
+              Version visée
+              <input id="version" type="text" placeholder="Ex : V3, Beta, Saison 1..." />
+            </label>
+          </div>
+
+          <label>
+            Note staff / décision
+            <textarea id="staffNote" placeholder="Ex : Bonne idée mais pas prioritaire, à revoir après la bêta."></textarea>
+          </label>
+
+          <button class="btn btn-primary" type="submit" id="submitBtn">Ajouter la suggestion</button>
+          <button class="btn" type="button" id="cancelEditBtn" style="display:none;">Annuler la modification</button>
+          <button class="btn btn-danger" type="button" id="clearImplementedBtn">Supprimer les implémentées</button>
+        </form>
+      </aside>
+
+      <section class="card board">
+        <div class="board-head">
+          <div>
+            <h2>Liste des suggestions</h2>
+            <p>Filtre, classe et garde une trace de ce qui a été proposé.</p>
+          </div>
+        </div>
+
+        <div class="filters">
+          <input id="search" type="search" placeholder="Rechercher une suggestion..." />
+          <select id="filterStatus">
+            <option value="all">Tous les statuts</option>
+            <option value="À trier">À trier</option>
+            <option value="En discussion">En discussion</option>
+            <option value="Acceptée">Acceptée</option>
+            <option value="Refusée">Refusée</option>
+            <option value="À développer">À développer</option>
+            <option value="En test">En test</option>
+            <option value="Implémentée">Implémentée</option>
+          </select>
+          <select id="filterCategory">
+            <option value="all">Toutes les catégories</option>
+            <option value="Gameplay">Gameplay</option>
+            <option value="Économie">Économie</option>
+            <option value="Métiers">Métiers</option>
+            <option value="Quêtes">Quêtes</option>
+            <option value="Boutique">Boutique</option>
+            <option value="Interface / Scoreboard">Interface / Scoreboard</option>
+            <option value="Events">Events</option>
+            <option value="Qualité de vie">Qualité de vie</option>
+            <option value="Bug / Exploit">Bug / Exploit</option>
+            <option value="Autre">Autre</option>
+          </select>
+          <select id="sortBy">
+            <option value="createdDesc">Plus récent</option>
+            <option value="createdAsc">Plus ancien</option>
+            <option value="priority">Priorité</option>
+            <option value="date">Date de suggestion</option>
+          </select>
+        </div>
+
+        <div class="suggestions" id="suggestions"></div>
+      </section>
+    </section>
+
+    <p class="footer-note">
+      Important : les données sont sauvegardées localement dans ton navigateur. Utilise l’export JSON pour ne rien perdre.
+    </p>
+  </main>
+
+  <script>
+    const STORAGE_KEY = "neodium_suggestions_gamedesign_v1";
+
+    const defaultSuggestions = [
+      {
+        id: crypto.randomUUID(),
+        title: "Ajouter plus d'informations dans le scoreboard",
+        description: "Le joueur propose d'afficher plus clairement certaines informations utiles directement dans le scoreboard.",
+        author: "JoueurDiscord1",
+        suggestionDate: "",
+        discordLink: "",
+        category: "Interface / Scoreboard",
+        priority: "Moyenne",
+        status: "À trier",
+        version: "V3",
+        staffNote: "À analyser avec les contraintes d'espace du scoreboard.",
+        createdAt: Date.now() - 3000
+      },
+      {
+        id: crypto.randomUUID(),
+        title: "Améliorer les récompenses de quêtes secondaires",
+        description: "Suggestion pour rendre les quêtes secondaires plus intéressantes et plus rentables.",
+        author: "JoueurDiscord2",
+        suggestionDate: "",
+        discordLink: "",
+        category: "Quêtes",
+        priority: "Haute",
+        status: "En discussion",
+        version: "Beta",
+        staffNote: "Bonne piste, à comparer avec l'équilibrage général.",
+        createdAt: Date.now() - 2000
+      },
+      {
+        id: crypto.randomUUID(),
+        title: "Nouvel item pour réduire le ralentissement dans les fèves",
+        description: "Créer un item spécial pour éviter la gêne de déplacement dans certaines cultures.",
+        author: "JoueurDiscord3",
+        suggestionDate: "",
+        discordLink: "",
+        category: "Métiers",
+        priority: "Haute",
+        status: "Acceptée",
+        version: "V3",
+        staffNote: "Idée cohérente avec les objets légendaires métiers.",
+        createdAt: Date.now() - 1000
+      }
+    ];
+
+    let suggestions = loadSuggestions();
+
+    const suggestionForm = document.getElementById("suggestionForm");
+    const suggestionId = document.getElementById("suggestionId");
+    const title = document.getElementById("title");
+    const description = document.getElementById("description");
+    const author = document.getElementById("author");
+    const suggestionDate = document.getElementById("suggestionDate");
+    const discordLink = document.getElementById("discordLink");
+    const category = document.getElementById("category");
+    const priority = document.getElementById("priority");
+    const status = document.getElementById("status");
+    const version = document.getElementById("version");
+    const staffNote = document.getElementById("staffNote");
+
+    const formTitle = document.getElementById("formTitle");
+    const submitBtn = document.getElementById("submitBtn");
+    const cancelEditBtn = document.getElementById("cancelEditBtn");
+    const clearImplementedBtn = document.getElementById("clearImplementedBtn");
+
+    const search = document.getElementById("search");
+    const filterStatus = document.getElementById("filterStatus");
+    const filterCategory = document.getElementById("filterCategory");
+    const sortBy = document.getElementById("sortBy");
+    const suggestionsContainer = document.getElementById("suggestions");
+
+    const statTotal = document.getElementById("statTotal");
+    const statTrier = document.getElementById("statTrier");
+    const statAccepted = document.getElementById("statAccepted");
+    const statDone = document.getElementById("statDone");
+
+    const exportBtn = document.getElementById("exportBtn");
+    const importBtn = document.getElementById("importBtn");
+    const importFile = document.getElementById("importFile");
+
+    function loadSuggestions() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (!saved) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultSuggestions));
+        return defaultSuggestions;
+      }
+
+      try {
+        const parsed = JSON.parse(saved);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function saveSuggestions() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(suggestions));
+    }
+
+    function escapeHtml(value) {
+      return String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function slug(value) {
+      return String(value || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "")
+        .trim();
+    }
+
+    function priorityWeight(value) {
+      const weights = {
+        "Critique": 5,
+        "Haute": 4,
+        "Moyenne": 3,
+        "Basse": 2,
+        "Idée future": 1
+      };
+      return weights[value] || 0;
+    }
+
+    function formatDate(dateValue) {
+      if (!dateValue) return "Date non renseignée";
+      const date = new Date(dateValue + "T00:00:00");
+      return date.toLocaleDateString("fr-FR", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric"
+      });
+    }
+
+    function getFilteredSuggestions() {
+      const query = search.value.toLowerCase().trim();
+      const selectedStatus = filterStatus.value;
+      const selectedCategory = filterCategory.value;
+
+      let result = suggestions.filter((item) => {
+        const text = [
+          item.title,
+          item.description,
+          item.author,
+          item.category,
+          item.priority,
+          item.status,
+          item.version,
+          item.staffNote
+        ].join(" ").toLowerCase();
+
+        const matchesSearch = text.includes(query);
+        const matchesStatus = selectedStatus === "all" || item.status === selectedStatus;
+        const matchesCategory = selectedCategory === "all" || item.category === selectedCategory;
+
+        return matchesSearch && matchesStatus && matchesCategory;
+      });
+
+      result.sort((a, b) => {
+        if (sortBy.value === "createdAsc") return a.createdAt - b.createdAt;
+        if (sortBy.value === "priority") return priorityWeight(b.priority) - priorityWeight(a.priority);
+        if (sortBy.value === "date") {
+          if (!a.suggestionDate && !b.suggestionDate) return 0;
+          if (!a.suggestionDate) return 1;
+          if (!b.suggestionDate) return -1;
+          return a.suggestionDate.localeCompare(b.suggestionDate);
+        }
+        return b.createdAt - a.createdAt;
+      });
+
+      return result;
+    }
+
+    function renderStats() {
+      statTotal.textContent = suggestions.length;
+      statTrier.textContent = suggestions.filter((item) => item.status === "À trier").length;
+      statAccepted.textContent = suggestions.filter((item) => item.status === "Acceptée" || item.status === "À développer").length;
+      statDone.textContent = suggestions.filter((item) => item.status === "Implémentée").length;
+    }
+
+    function renderSuggestions() {
+      const list = getFilteredSuggestions();
+      renderStats();
+
+      if (list.length === 0) {
+        suggestionsContainer.innerHTML = `
+          <div class="empty">
+            Aucune suggestion trouvée. Ajoute une suggestion ou modifie tes filtres.
+          </div>
+        `;
+        return;
+      }
+
+      suggestionsContainer.innerHTML = list.map((item) => {
+        const priorityClass = `priority-${slug(item.priority)}`;
+        const statusClass = `status-${slug(item.status)}`;
+
+        return `
+          <article class="suggestion">
+            <div class="suggestion-head">
+              <div>
+                <h3>${escapeHtml(item.title)}</h3>
+              </div>
+
+              <div class="task-actions">
+                <button class="btn btn-small" type="button" onclick="editSuggestion('${item.id}')">Modifier</button>
+                <button class="btn btn-small btn-danger" type="button" onclick="deleteSuggestion('${item.id}')">Supprimer</button>
+              </div>
+            </div>
+
+            ${item.description ? `<p>${escapeHtml(item.description)}</p>` : ""}
+
+            <div class="chips">
+              <span class="chip">${escapeHtml(item.category)}</span>
+              <span class="chip ${priorityClass}">${escapeHtml(item.priority)}</span>
+              <span class="chip ${statusClass}">${escapeHtml(item.status)}</span>
+              ${item.version ? `<span class="chip">🏷️ ${escapeHtml(item.version)}</span>` : ""}
+            </div>
+
+            <div class="meta">
+              ${item.author ? `<div><strong>Auteur :</strong> ${escapeHtml(item.author)}</div>` : ""}
+              <div><strong>Date :</strong> ${formatDate(item.suggestionDate)}</div>
+              ${item.discordLink ? `<div><strong>Discord :</strong> <a href="${escapeHtml(item.discordLink)}" target="_blank" rel="noopener noreferrer">${escapeHtml(item.discordLink)}</a></div>` : ""}
+            </div>
+
+            ${item.staffNote ? `
+              <div class="staff-note">
+                <strong>Note staff :</strong><br />
+                ${escapeHtml(item.staffNote)}
+              </div>
+            ` : ""}
+          </article>
+        `;
+      }).join("");
+    }
+
+    function resetForm() {
+      suggestionForm.reset();
+      suggestionId.value = "";
+      priority.value = "Moyenne";
+      status.value = "À trier";
+      formTitle.textContent = "Ajouter une suggestion";
+      submitBtn.textContent = "Ajouter la suggestion";
+      cancelEditBtn.style.display = "none";
+    }
+
+    suggestionForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+
+      const payload = {
+        title: title.value.trim(),
+        description: description.value.trim(),
+        author: author.value.trim(),
+        suggestionDate: suggestionDate.value,
+        discordLink: discordLink.value.trim(),
+        category: category.value,
+        priority: priority.value,
+        status: status.value,
+        version: version.value.trim(),
+        staffNote: staffNote.value.trim()
+      };
+
+      if (!payload.title) return;
+
+      if (suggestionId.value) {
+        suggestions = suggestions.map((item) =>
+          item.id === suggestionId.value ? { ...item, ...payload } : item
+        );
+      } else {
+        suggestions.unshift({
+          id: crypto.randomUUID(),
+          ...payload,
+          createdAt: Date.now()
+        });
+      }
+
+      saveSuggestions();
+      resetForm();
+      renderSuggestions();
+    });
+
+    cancelEditBtn.addEventListener("click", resetForm);
+
+    clearImplementedBtn.addEventListener("click", () => {
+      const count = suggestions.filter((item) => item.status === "Implémentée").length;
+      if (count === 0) {
+        alert("Aucune suggestion implémentée à supprimer.");
+        return;
+      }
+
+      if (!confirm(`Supprimer ${count} suggestion(s) implémentée(s) ?`)) return;
+
+      suggestions = suggestions.filter((item) => item.status !== "Implémentée");
+      saveSuggestions();
+      renderSuggestions();
+    });
+
+    window.editSuggestion = function(id) {
+      const item = suggestions.find((entry) => entry.id === id);
+      if (!item) return;
+
+      suggestionId.value = item.id;
+      title.value = item.title || "";
+      description.value = item.description || "";
+      author.value = item.author || "";
+      suggestionDate.value = item.suggestionDate || "";
+      discordLink.value = item.discordLink || "";
+      category.value = item.category || "Autre";
+      priority.value = item.priority || "Moyenne";
+      status.value = item.status || "À trier";
+      version.value = item.version || "";
+      staffNote.value = item.staffNote || "";
+
+      formTitle.textContent = "Modifier la suggestion";
+      submitBtn.textContent = "Enregistrer";
+      cancelEditBtn.style.display = "inline-flex";
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    };
+
+    window.deleteSuggestion = function(id) {
+      const item = suggestions.find((entry) => entry.id === id);
+      if (!item) return;
+      if (!confirm(`Supprimer la suggestion : ${item.title} ?`)) return;
+
+      suggestions = suggestions.filter((entry) => entry.id !== id);
+      saveSuggestions();
+      renderSuggestions();
+    };
+
+    [search, filterStatus, filterCategory, sortBy].forEach((element) => {
+      element.addEventListener("input", renderSuggestions);
+      element.addEventListener("change", renderSuggestions);
+    });
+
+    exportBtn.addEventListener("click", () => {
+      const data = JSON.stringify(suggestions, null, 2);
+      const blob = new Blob([data], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "suggestions-neodium.json";
+      link.click();
+      URL.revokeObjectURL(url);
+    });
+
+    importBtn.addEventListener("click", () => importFile.click());
+
+    importFile.addEventListener("change", async () => {
+      const file = importFile.files[0];
+      if (!file) return;
+
+      try {
+        const text = await file.text();
+        const imported = JSON.parse(text);
+
+        if (!Array.isArray(imported)) {
+          alert("Le fichier JSON n'est pas valide.");
+          return;
+        }
+
+        if (!confirm("Importer ce fichier va remplacer les suggestions actuelles. Continuer ?")) return;
+
+        suggestions = imported.map((item) => ({
+          id: item.id || crypto.randomUUID(),
+          title: item.title || "Suggestion sans titre",
+          description: item.description || "",
+          author: item.author || "",
+          suggestionDate: item.suggestionDate || "",
+          discordLink: item.discordLink || "",
+          category: item.category || "Autre",
+          priority: item.priority || "Moyenne",
+          status: item.status || "À trier",
+          version: item.version || "",
+          staffNote: item.staffNote || "",
+          createdAt: item.createdAt || Date.now()
+        }));
+
+        saveSuggestions();
+        resetForm();
+        renderSuggestions();
+      } catch {
+        alert("Impossible de lire ce fichier JSON.");
+      } finally {
+        importFile.value = "";
+      }
+    });
+
+    renderSuggestions();
+  </script>
+</body>
+</html>
