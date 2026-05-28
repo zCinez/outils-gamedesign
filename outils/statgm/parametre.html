@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#15110d">
+  <title>Parametre - StatGM Design</title>
+  <link rel="stylesheet" href="page-shell.css">
+  <script src="theme.js" defer></script>
+  <script src="data-store.js" defer></script>
+  <script src="references-config.js" defer></script>
+  <script src="parametre.js" defer></script>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar" aria-label="Navigation principale">
+      <a class="brand" href="index.html" aria-label="Retour a l'accueil StatGM">
+        <img class="brand__logo" src="logo-neodium.png" width="500" height="500" alt="Logo Neodium">
+        <span class="brand__title">
+          <strong>StatGM Design</strong>
+          <span>Game-design</span>
+        </span>
+      </a>
+
+      <nav class="nav" aria-label="Pages">
+        <a href="index.html">Accueil</a>
+        <a href="joueur.html">Joueur</a>
+        <a href="metier.html">Metier</a>
+        <a href="shop.html">Shop</a>
+        <a href="beta.html">B&ecirc;ta</a>
+        <a href="global.html">Global</a>
+        <a href="parametre.html" aria-current="page">Parametre</a>
+      </nav>
+
+      <button class="theme-toggle" type="button" aria-label="Passer en mode clair" aria-pressed="false" data-theme-toggle>
+        <span class="theme-toggle__icon theme-toggle__icon--sun" aria-hidden="true"></span>
+        <span class="theme-toggle__icon theme-toggle__icon--moon" aria-hidden="true"></span>
+        <span class="theme-toggle__knob" aria-hidden="true"></span>
+      </button>
+    </header>
+
+    <main class="player-page" aria-labelledby="settings-title">
+      <section class="settings-layout" aria-label="Optimisation des references">
+        <article class="panel-card settings-analysis-card">
+          <div class="card-head">
+            <div>
+              <span class="section-kicker">Optimisation</span>
+              <h1 id="settings-title">Base de reference des ressources</h1>
+              <p>Cette page ajuste la base de reference utilisee pour comparer les releves, afin de savoir si une ressource est bien equilibree ou non.</p>
+            </div>
+            <span class="status-pill" data-analysis-count>0 ressource</span>
+          </div>
+
+          <nav class="snapshot-tabs settings-tabs" aria-label="Tri par metier">
+            <button class="is-active" type="button" data-settings-tab="all">Tous</button>
+            <button type="button" data-settings-tab="minerals">Mineur</button>
+            <button type="button" data-settings-tab="woods">Bucheron</button>
+            <button type="button" data-settings-tab="crops">Fermier</button>
+            <button type="button" data-settings-tab="mobs">Chasseur</button>
+          </nav>
+
+          <section class="settings-projection-card" aria-label="Projection niveau 100">
+            <div>
+              <span class="section-kicker">Projection beta</span>
+              <h2>Filtre minimum pour l'estimation niveau 100</h2>
+              <p>Les releves trop courts peuvent fausser la projection. Definis ici le temps minimum de farm par metier avant qu'un releve soit retenu dans la page B&ecirc;ta.</p>
+            </div>
+
+            <div class="settings-projection-controls">
+              <label class="field">
+                <span>Temps minimum (minutes)</span>
+                <input type="number" min="0" step="1" value="60" data-projection-minutes>
+              </label>
+              <div class="settings-projection-actions">
+                <button class="primary-btn" type="button" data-projection-save>Enregistrer</button>
+                <button class="ghost-btn" type="button" data-projection-reset>Remettre 60 min</button>
+              </div>
+            </div>
+          </section>
+
+          <div class="settings-analysis-grid" data-analysis-grid>
+            <p class="empty-state">Ajoute des releves pour lancer l'analyse automatique.</p>
+          </div>
+        </article>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

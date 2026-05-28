@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#15110d">
+  <title>Fiche joueur - StatGM Design</title>
+  <link rel="stylesheet" href="page-shell.css">
+  <script src="theme.js" defer></script>
+  <script src="data-store.js" defer></script>
+  <script src="joueur-detail.js" defer></script>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar" aria-label="Navigation principale">
+      <a class="brand" href="index.html" aria-label="Retour a l'accueil StatGM">
+        <img class="brand__logo" src="logo-neodium.png" width="500" height="500" alt="Logo Neodium">
+        <span class="brand__title">
+          <strong>StatGM Design</strong>
+          <span>Game-design</span>
+        </span>
+      </a>
+
+      <nav class="nav" aria-label="Pages">
+        <a href="index.html">Accueil</a>
+        <a href="joueur.html" aria-current="page">Joueur</a>
+        <a href="metier.html">Metier</a>
+        <a href="shop.html">Shop</a>
+        <a href="beta.html">B&ecirc;ta</a>
+        <a href="global.html">Global</a>
+        <a href="parametre.html">Parametre</a>
+      </nav>
+
+      <button class="theme-toggle" type="button" aria-label="Passer en mode clair" aria-pressed="false" data-theme-toggle>
+        <span class="theme-toggle__icon theme-toggle__icon--sun" aria-hidden="true"></span>
+        <span class="theme-toggle__icon theme-toggle__icon--moon" aria-hidden="true"></span>
+        <span class="theme-toggle__knob" aria-hidden="true"></span>
+      </button>
+    </header>
+
+    <main class="player-page" aria-labelledby="player-detail-title">
+      <section class="page-hero">
+        <span class="eyebrow">Fiche Joueur</span>
+        <h1 id="player-detail-title" data-detail-title>Joueur</h1>
+        <p data-detail-subtitle>Fiche detaillee du joueur selectionne depuis la liste.</p>
+      </section>
+
+      <section class="detail-layout" aria-label="Detail du joueur">
+        <article class="panel-card player-detail-card">
+          <div class="avatar-orb avatar-orb--large" data-detail-initial>N</div>
+          <span class="section-kicker">Joueur</span>
+          <h2 data-detail-name>Nouveau joueur</h2>
+          <div class="detail-tags">
+            <span class="status-pill" data-detail-beta>Hors beta</span>
+          </div>
+          <p class="detail-description" data-detail-description>Aucune description pour le moment.</p>
+          <p data-detail-message>Cette page pourra recevoir les stats, metiers, shops et historiques du joueur plus tard.</p>
+          <div class="detail-actions">
+            <a class="primary-btn" href="joueur-releve.html" data-add-releve>Ajouter un releve</a>
+            <a class="ghost-btn detail-back" href="joueur.html">Retour aux joueurs</a>
+          </div>
+        </article>
+
+        <article class="panel-card player-edit-card" data-edit-panel>
+          <div class="card-head">
+            <div>
+              <span class="section-kicker">Edition</span>
+              <h2>Modifier le joueur</h2>
+            </div>
+          </div>
+
+          <form class="player-form" data-edit-form>
+            <label class="field">
+              <span>Pseudo</span>
+              <input type="text" name="name" maxlength="24" required>
+            </label>
+
+            <label class="field">
+              <span>Description facultative</span>
+              <textarea name="description" rows="4" maxlength="220" placeholder="Ajouter une note courte sur ce joueur..."></textarea>
+            </label>
+
+            <label class="check-field">
+              <input type="checkbox" name="beta">
+              <span>Participe &agrave; la b&ecirc;ta</span>
+            </label>
+
+            <p class="edit-feedback" data-edit-feedback role="status" aria-live="polite"></p>
+
+            <div class="form-actions">
+              <button class="ghost-btn" type="reset">Annuler</button>
+              <button class="primary-btn" type="submit">Enregistrer</button>
+            </div>
+
+            <div class="danger-zone">
+              <button class="danger-btn" type="button" data-delete-player>Supprimer le joueur</button>
+            </div>
+          </form>
+        </article>
+
+        <div class="player-detail-tabs" data-player-tabs role="tablist" aria-label="Sections de la fiche joueur">
+          <button class="is-active" type="button" role="tab" aria-selected="true" aria-controls="player-releves-section" data-player-tab="releves">Relev&eacute;s</button>
+          <button type="button" role="tab" aria-selected="false" aria-controls="player-stats-section" data-player-tab="stats">Stats</button>
+          <button type="button" role="tab" aria-selected="false" aria-controls="player-beta-section" data-player-tab="beta" hidden>B&ecirc;ta</button>
+        </div>
+
+        <article class="panel-card player-evolution-card" id="player-stats-section" data-evolution-panel data-player-tab-panel="stats" role="tabpanel" hidden>
+          <div class="card-head">
+            <div>
+              <span class="section-kicker">Evolution</span>
+              <h2>Evolution normale</h2>
+            </div>
+            <span class="status-pill" data-evolution-count>0</span>
+          </div>
+
+          <div class="player-evolution-grid" data-player-evolution>
+            <p class="empty-state">Ajoute plusieurs releves pour suivre l'evolution du joueur.</p>
+          </div>
+        </article>
+
+        <article class="panel-card player-evolution-card" id="player-beta-section" data-beta-evolution-panel data-player-tab-panel="beta" role="tabpanel" hidden>
+          <div class="card-head">
+            <div>
+              <span class="section-kicker">Beta</span>
+              <h2>Evolution beta</h2>
+            </div>
+            <span class="status-pill status-pill--active" data-beta-evolution-count>0</span>
+          </div>
+
+          <div class="player-evolution-grid" data-player-beta-evolution>
+            <p class="empty-state">Aucun releve beta enregistre pour ce joueur.</p>
+          </div>
+        </article>
+
+        <article class="panel-card player-releves-card" id="player-releves-section" data-releves-panel data-player-tab-panel="releves" role="tabpanel">
+          <div class="card-head">
+            <div>
+              <span class="section-kicker">Historique local</span>
+              <h2>Releves du joueur</h2>
+            </div>
+            <span class="status-pill" data-releves-count>0</span>
+          </div>
+
+          <div class="player-releve-list" data-player-releves>
+            <p class="empty-state">Aucun releve enregistre pour ce joueur.</p>
+          </div>
+        </article>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

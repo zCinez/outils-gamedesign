@@ -1,0 +1,555 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#15110d">
+  <title>Ajouter un releve - StatGM Design</title>
+  <link rel="stylesheet" href="page-shell.css">
+  <script src="theme.js" defer></script>
+  <script src="data-store.js" defer></script>
+  <script src="references-config.js" defer></script>
+  <script src="joueur-releve.js" defer></script>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar" aria-label="Navigation principale">
+      <a class="brand" href="index.html" aria-label="Retour a l'accueil StatGM">
+        <img class="brand__logo" src="logo-neodium.png" width="500" height="500" alt="Logo Neodium">
+        <span class="brand__title">
+          <strong>StatGM Design</strong>
+          <span>Game-design</span>
+        </span>
+      </a>
+
+      <nav class="nav" aria-label="Pages">
+        <a href="index.html">Accueil</a>
+        <a href="joueur.html" aria-current="page">Joueur</a>
+        <a href="metier.html">Metier</a>
+        <a href="shop.html">Shop</a>
+        <a href="beta.html">B&ecirc;ta</a>
+        <a href="global.html">Global</a>
+        <a href="parametre.html">Parametre</a>
+      </nav>
+
+      <button class="theme-toggle" type="button" aria-label="Passer en mode clair" aria-pressed="false" data-theme-toggle>
+        <span class="theme-toggle__icon theme-toggle__icon--sun" aria-hidden="true"></span>
+        <span class="theme-toggle__icon theme-toggle__icon--moon" aria-hidden="true"></span>
+        <span class="theme-toggle__knob" aria-hidden="true"></span>
+      </button>
+    </header>
+
+    <main class="releve-modal-page" aria-labelledby="releve-title">
+      <div class="releve-workspace">
+        <aside class="releve-categories" aria-label="Categories du formulaire">
+          <span class="section-kicker">Categories</span>
+          <a href="#releve-beta" data-releve-category data-category-beta hidden>B&ecirc;ta</a>
+          <a class="is-active" href="#releve-info" data-releve-category>Infos du relev&eacute;</a>
+          <a href="#releve-economie" data-releve-category>&Eacute;conomie</a>
+          <a href="#releve-quetes" data-releve-category>Qu&ecirc;tes &amp; succ&egrave;s</a>
+          <a href="#releve-ratios" data-releve-category>Ratios</a>
+          <a href="#releve-mineur" data-releve-category>Mineur</a>
+          <a href="#releve-bucheron" data-releve-category>B&ucirc;cheron</a>
+          <a href="#releve-fermier" data-releve-category>Fermier</a>
+          <a href="#releve-chasseur" data-releve-category>Chasseur</a>
+        </aside>
+
+        <section class="releve-modal" aria-label="Ajouter un releve">
+        <a class="modal-close" href="joueur.html" data-releve-back aria-label="Fermer le formulaire">x</a>
+
+        <div class="releve-modal__head">
+          <div>
+            <h1 id="releve-title" data-releve-title>Ajouter un releve</h1>
+            <p data-releve-subtitle>Chaque releve est une capture datee independante.</p>
+          </div>
+          <span class="status-pill" data-releve-player>Joueur</span>
+        </div>
+
+        <form class="releve-form releve-form-shell" aria-label="Formulaire de releve">
+          <section class="releve-beta-line" id="releve-beta" data-beta-releve-card hidden>
+            <label class="check-field releve-check">
+              <input type="checkbox" name="betaReleve">
+              <span>Releve beta</span>
+            </label>
+            <label class="field beta-day-field" data-beta-day-field hidden>
+              <span>Jour beta</span>
+              <select name="betaDay">
+                <option>Jour 1</option>
+                <option>Jour 2</option>
+                <option>Jour 3</option>
+                <option>Jour 4</option>
+                <option>Jour 5</option>
+                <option>Jour 6</option>
+                <option>Jour 7</option>
+              </select>
+            </label>
+          </section>
+
+          <section class="releve-info-card" id="releve-info" aria-label="Informations du releve">
+            <div class="releve-import-bar">
+              <div>
+                <span class="section-kicker">Import</span>
+                <p>Charge un export JSON pour pr&eacute;remplir automatiquement les infos principales.</p>
+              </div>
+              <button class="ghost-btn releve-import-btn" type="button" data-import-json>Importer un JSON</button>
+              <input type="file" accept=".json,application/json" hidden data-import-json-input>
+            </div>
+
+            <div class="releve-info-grid">
+              <label class="field field-wide">
+                <span>Nom du releve</span>
+                <input type="text" name="releveName" placeholder="Ex. Debut de game / Test equilibrage v3">
+              </label>
+
+              <label class="field field-wide">
+                <span>Phase de jeu</span>
+                <input type="text" name="phase" placeholder="Ex. Test beta / Avant patch / Soiree 1">
+              </label>
+
+              <label class="field">
+                <span>Date du releve</span>
+                <input type="date" name="date">
+              </label>
+
+              <label class="field">
+                <span>Heure du releve</span>
+                <input type="time" name="time">
+              </label>
+
+              <label class="field">
+                <span>Grade</span>
+                <input type="text" name="grade" placeholder="Non defini">
+              </label>
+
+              <label class="field">
+                <span>Boost actif</span>
+                <input type="number" name="boost" min="0" step="0.01" value="1">
+              </label>
+
+              <label class="field">
+                <span>Argent</span>
+                <input type="number" name="argent" min="0" value="0">
+              </label>
+
+              <label class="field">
+                <span>Coins</span>
+                <input type="number" name="coins" min="0" value="0">
+              </label>
+
+              <label class="field field-wide">
+                <span>Date d'arrivee</span>
+                <input type="datetime-local" name="arrival">
+              </label>
+            </div>
+
+            <fieldset class="releve-time-fieldset">
+              <legend>Temps de jeu</legend>
+              <label>
+                <span>Jours</span>
+                <input type="number" name="days" min="0" value="0">
+              </label>
+              <label>
+                <span>Heures</span>
+                <input type="number" name="hours" min="0" value="0">
+              </label>
+              <label>
+                <span>Minutes</span>
+                <input type="number" name="minutes" min="0" max="59" value="0">
+              </label>
+              <label>
+                <span>Secondes</span>
+                <input type="number" name="seconds" min="0" max="59" value="0">
+              </label>
+            </fieldset>
+
+            <label class="field">
+              <span>Notes</span>
+              <textarea name="notes" rows="5" placeholder="Contexte du releve, build utilise, patch actif, remarques d'equilibrage..."></textarea>
+            </label>
+          </section>
+
+          <section class="releve-info-card economy-card" id="releve-economie" aria-label="Economie">
+            <h2>Economie</h2>
+            <div class="releve-info-grid economy-grid">
+              <label class="field">
+                <span>Argent total gagne</span>
+                <input type="number" name="moneyEarned" min="0" value="0">
+              </label>
+
+              <label class="field">
+                <span>Argent total depense</span>
+                <input type="number" name="moneySpent" min="0" value="0">
+              </label>
+
+              <label class="field">
+                <span>Argent vendu via /sell</span>
+                <input type="number" name="sellMoney" min="0" value="0">
+              </label>
+
+              <label class="field">
+                <span>Argent vendu via hopper du neant</span>
+                <input type="number" name="hopperMoney" min="0" value="0">
+              </label>
+
+              <label class="field">
+                <span>Argent vendu via sell stick</span>
+                <input type="number" name="sellStickMoney" min="0" value="0">
+              </label>
+
+              <label class="field">
+                <span>Ventes moyennes / h</span>
+                <input type="number" name="averageSales" min="0" value="0">
+              </label>
+            </div>
+          </section>
+
+          <section class="releve-info-card quests-card" id="releve-quetes" aria-label="Quetes et succes">
+            <h2>Qu&ecirc;tes &amp; succ&egrave;s</h2>
+
+            <div class="quest-groups">
+              <article class="quest-type-card">
+                <h3>Qu&ecirc;tes principales</h3>
+
+                <label class="field">
+                  <span>Qu&ecirc;tes principales termin&eacute;es</span>
+                  <input type="number" name="mainQuestsDone" min="0" value="0" data-quest-calculator data-quest-completed>
+                </label>
+
+                  <label class="field">
+                    <span>Total</span>
+                    <input type="number" name="mainQuestsTotal" min="0" value="9" readonly data-quest-calculator data-quest-total>
+                  </label>
+
+                <fieldset class="releve-time-fieldset quest-time-fieldset">
+                  <legend>Temps pass&eacute;</legend>
+                  <label>
+                    <span>Jours</span>
+                    <input type="number" name="mainQuestDays" min="0" value="0" data-quest-calculator data-quest-time="days">
+                  </label>
+                  <label>
+                    <span>Heures</span>
+                    <input type="number" name="mainQuestHours" min="0" value="0" data-quest-calculator data-quest-time="hours">
+                  </label>
+                  <label>
+                    <span>Minutes</span>
+                    <input type="number" name="mainQuestMinutes" min="0" max="59" value="0" data-quest-calculator data-quest-time="minutes">
+                  </label>
+                  <label>
+                    <span>Secondes</span>
+                    <input type="number" name="mainQuestSeconds" min="0" max="59" value="0" data-quest-calculator data-quest-time="seconds">
+                  </label>
+                </fieldset>
+              </article>
+
+              <article class="quest-type-card">
+                <h3>Qu&ecirc;tes secondaires</h3>
+
+                <label class="field">
+                  <span>Qu&ecirc;tes secondaires termin&eacute;es</span>
+                  <input type="number" name="secondaryQuestsDone" min="0" value="0" data-quest-calculator data-quest-completed>
+                </label>
+
+                  <label class="field">
+                    <span>Total</span>
+                    <input type="number" name="secondaryQuestsTotal" min="0" value="4" readonly data-quest-calculator data-quest-total>
+                  </label>
+
+                <fieldset class="releve-time-fieldset quest-time-fieldset">
+                  <legend>Temps pass&eacute;</legend>
+                  <label>
+                    <span>Jours</span>
+                    <input type="number" name="secondaryQuestDays" min="0" value="0" data-quest-calculator data-quest-time="days">
+                  </label>
+                  <label>
+                    <span>Heures</span>
+                    <input type="number" name="secondaryQuestHours" min="0" value="0" data-quest-calculator data-quest-time="hours">
+                  </label>
+                  <label>
+                    <span>Minutes</span>
+                    <input type="number" name="secondaryQuestMinutes" min="0" max="59" value="0" data-quest-calculator data-quest-time="minutes">
+                  </label>
+                  <label>
+                    <span>Secondes</span>
+                    <input type="number" name="secondaryQuestSeconds" min="0" max="59" value="0" data-quest-calculator data-quest-time="seconds">
+                  </label>
+                </fieldset>
+              </article>
+
+              <article class="quest-type-card">
+                <h3>Qu&ecirc;tes quotidiennes</h3>
+
+                <label class="field">
+                  <span>Qu&ecirc;tes quotidiennes termin&eacute;es</span>
+                  <input type="number" name="dailyQuestsDone" min="0" value="0" data-quest-calculator data-quest-completed>
+                </label>
+
+                  <label class="field">
+                    <span>Total</span>
+                    <input type="text" name="dailyQuestsTotal" value="-" readonly inputmode="numeric" data-quest-calculator data-quest-total>
+                  </label>
+
+                <fieldset class="releve-time-fieldset quest-time-fieldset">
+                  <legend>Temps pass&eacute;</legend>
+                  <label>
+                    <span>Jours</span>
+                    <input type="number" name="dailyQuestDays" min="0" value="0" data-quest-calculator data-quest-time="days">
+                  </label>
+                  <label>
+                    <span>Heures</span>
+                    <input type="number" name="dailyQuestHours" min="0" value="0" data-quest-calculator data-quest-time="hours">
+                  </label>
+                  <label>
+                    <span>Minutes</span>
+                    <input type="number" name="dailyQuestMinutes" min="0" max="59" value="0" data-quest-calculator data-quest-time="minutes">
+                  </label>
+                  <label>
+                    <span>Secondes</span>
+                    <input type="number" name="dailyQuestSeconds" min="0" max="59" value="0" data-quest-calculator data-quest-time="seconds">
+                  </label>
+                </fieldset>
+              </article>
+            </div>
+
+            <div class="quest-summary-grid">
+              <label class="field">
+                <span>Temps total calcul&eacute;</span>
+                <input type="text" name="questTotalTime" value="0j 0h 0m 0s" readonly data-quest-total-time>
+              </label>
+
+              <label class="field">
+                <span>Taux de compl&eacute;tion (%)</span>
+                <input type="number" name="questCompletionRate" min="0" max="100" step="0.01" value="0" readonly data-quest-completion>
+              </label>
+            </div>
+          </section>
+
+          <section class="releve-info-card ratios-card" id="releve-ratios" aria-label="Ratios comparatif equilibrage">
+            <h2>Ratios comparatif &eacute;quilibrage</h2>
+
+            <div class="ratios-layout">
+              <article class="ratio-panel">
+                <h3>Ratios (%)</h3>
+
+                <div class="ratio-grid">
+                    <label class="field">
+                      <span>Mineur %</span>
+                      <input type="number" name="minerRatio" min="0" step="0.01" value="0">
+                    </label>
+
+                    <label class="field">
+                      <span>Chasseur %</span>
+                      <input type="number" name="hunterRatio" min="0" step="0.01" value="0">
+                    </label>
+
+                    <label class="field">
+                      <span>Fermier %</span>
+                      <input type="number" name="farmerRatio" min="0" step="0.01" value="0">
+                    </label>
+
+                    <label class="field">
+                      <span>Bucheron %</span>
+                      <input type="number" name="lumberjackRatio" min="0" step="0.01" value="0">
+                    </label>
+                </div>
+                </article>
+
+                <article class="ratio-panel">
+                  <h3>Difference moyenne</h3>
+
+                  <label class="field">
+                    <span>Difference moyenne (%)</span>
+                    <input type="number" name="averageDifference" min="0" step="0.01" value="0">
+                  </label>
+                </article>
+              </div>
+          </section>
+
+          <section class="releve-info-card miner-card" id="releve-mineur" aria-label="Metier mineur">
+            <div class="miner-head">
+              <h2>Mineur</h2>
+              <p>Niveau du metier, informations grotte et detail de chaque minerai.</p>
+            </div>
+
+            <div class="miner-summary-layout">
+              <article class="miner-panel">
+                <h3>Niveau</h3>
+                <label class="field">
+                  <span>Niveau du metier</span>
+                  <input type="number" name="minerLevel" min="0" value="0">
+                </label>
+              </article>
+
+                <article class="miner-panel miner-cave-panel">
+                  <h3>Grotte</h3>
+                  <div class="miner-cave-grid">
+                    <fieldset class="releve-time-fieldset miner-cave-time-fieldset">
+                      <legend>Temps en grotte</legend>
+                      <label>
+                        <span>Jours</span>
+                        <input type="number" name="minerCaveDays" min="0" value="0" data-miner-cave-time>
+                      </label>
+                      <label>
+                        <span>Heures</span>
+                        <input type="number" name="minerCaveHours" min="0" value="0" data-miner-cave-time>
+                      </label>
+                      <label>
+                        <span>Minutes</span>
+                        <input type="number" name="minerCaveMinutes" min="0" max="59" value="0" data-miner-cave-time>
+                      </label>
+                      <label>
+                        <span>Secondes</span>
+                        <input type="number" name="minerCaveSeconds" min="0" max="59" value="0" data-miner-cave-time>
+                      </label>
+                    </fieldset>
+
+                    <label class="field miner-cave-field">
+                      <span>Minerais recoltes</span>
+                      <input type="number" name="minerCaveOres" min="0" value="0" data-miner-cave-ores>
+                    </label>
+
+                    <label class="field miner-cave-field miner-cave-field--ratio">
+                      <span>Ratio minerai / heure</span>
+                      <input type="number" name="minerCaveRatio" min="0" step="0.01" value="0" data-miner-cave-ratio>
+                    </label>
+                  </div>
+                </article>
+
+                <article class="miner-panel miner-cave-panel miner-info-panel">
+                  <h3>Info Minage</h3>
+                  <div class="miner-cave-grid">
+                    <fieldset class="releve-time-fieldset miner-cave-time-fieldset">
+                      <legend>Temps en minage</legend>
+                      <label>
+                        <span>Jours</span>
+                        <input type="number" name="minerInfoDays" min="0" value="0">
+                      </label>
+                      <label>
+                        <span>Heures</span>
+                        <input type="number" name="minerInfoHours" min="0" value="0">
+                      </label>
+                      <label>
+                        <span>Minutes</span>
+                        <input type="number" name="minerInfoMinutes" min="0" max="59" value="0">
+                      </label>
+                      <label>
+                        <span>Secondes</span>
+                        <input type="number" name="minerInfoSeconds" min="0" max="59" value="0">
+                      </label>
+                    </fieldset>
+
+                    <label class="field miner-cave-field">
+                      <span>Minerais recoltes</span>
+                      <input type="number" name="minerInfoOres" min="0" value="0">
+                    </label>
+
+                    <label class="field miner-cave-field miner-cave-field--ratio">
+                      <span>Ratio minerai / heure</span>
+                      <input type="number" name="minerInfoRatio" min="0" step="0.01" value="0">
+                    </label>
+                  </div>
+                </article>
+              </div>
+
+            <div class="minerals-section">
+              <div class="miner-head">
+                <h3>Minerais</h3>
+                <p>Les valeurs derivees se mettent a jour automatiquement a partir des champs saisis.</p>
+              </div>
+
+              <div class="minerals-grid" data-minerals-grid></div>
+            </div>
+          </section>
+
+          <section class="releve-info-card lumberjack-card" id="releve-bucheron" aria-label="Metier bucheron">
+            <div class="miner-head">
+              <h2>B&ucirc;cheron</h2>
+              <p>Niveau du metier et detail de chaque essence de bois.</p>
+            </div>
+
+            <div class="lumberjack-summary-layout">
+              <article class="miner-panel">
+                <h3>Niveau</h3>
+                <label class="field">
+                  <span>Niveau du metier</span>
+                  <input type="number" name="lumberjackLevel" min="0" value="0">
+                </label>
+              </article>
+            </div>
+
+            <div class="wood-section">
+              <div class="miner-head">
+                <h3>Essences suivies</h3>
+                <p>Les valeurs derivees se mettent a jour automatiquement a partir des champs saisis.</p>
+              </div>
+
+              <div class="wood-grid" data-wood-grid></div>
+            </div>
+          </section>
+
+          <section class="releve-info-card farmer-card" id="releve-fermier" aria-label="Metier fermier">
+            <div class="miner-head">
+              <h2>Fermier</h2>
+              <p>Niveau du metier et detail de chaque culture.</p>
+            </div>
+
+            <div class="farmer-summary-layout">
+              <article class="miner-panel">
+                <h3>Niveau</h3>
+                <label class="field">
+                  <span>Niveau du metier</span>
+                  <input type="number" name="farmerLevel" min="0" value="0">
+                </label>
+              </article>
+            </div>
+
+            <div class="crop-section">
+              <div class="miner-head">
+                <h3>Cultures suivies</h3>
+                <p>Les valeurs derivees se mettent a jour automatiquement a partir des champs saisis.</p>
+              </div>
+
+              <div class="crop-grid" data-crop-grid></div>
+            </div>
+          </section>
+
+          <section class="releve-info-card hunter-card" id="releve-chasseur" aria-label="Metier chasseur">
+            <div class="miner-head">
+              <h2>Chasseur</h2>
+              <p>Niveau du metier et detail de chaque mob suivi.</p>
+            </div>
+
+            <div class="hunter-summary-layout">
+              <article class="miner-panel">
+                <h3>Niveau</h3>
+                <label class="field">
+                  <span>Niveau du metier</span>
+                  <input type="number" name="hunterLevel" min="0" value="0">
+                </label>
+              </article>
+            </div>
+
+            <div class="mob-section">
+              <div class="miner-head">
+                <h3>Mobs suivis</h3>
+                <p>Les valeurs derivees se mettent a jour automatiquement a partir des champs saisis.</p>
+              </div>
+
+              <div class="mob-grid" data-mob-grid></div>
+            </div>
+          </section>
+
+          <p class="edit-feedback" data-releve-feedback role="status" aria-live="polite"></p>
+
+          <div class="form-actions">
+            <button class="ghost-btn panel-nav-btn" type="button" data-panel-prev>Page pr&eacute;c&eacute;dente</button>
+            <button class="ghost-btn panel-nav-btn" type="button" data-panel-next>Page suivante</button>
+            <button class="ghost-btn" type="reset">Reset</button>
+            <button class="primary-btn" type="submit">Enregistrer le releve</button>
+          </div>
+        </form>
+        </section>
+      </div>
+    </main>
+  </div>
+</body>
+</html>
