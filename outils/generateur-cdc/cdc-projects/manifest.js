@@ -1,0 +1,1 @@
+window.CDC_PROJECTS_FILES_MANIFEST = [];

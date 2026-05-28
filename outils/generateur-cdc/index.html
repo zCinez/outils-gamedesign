@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Neodium - Accueil CDC</title>
+  <link rel="stylesheet" href="./cdc-generator.css" />
+</head>
+<body class="home-page page-nav">
+  <div class="home-shell">
+    <div class="top-tabs-shell">
+      <nav class="top-tabs" aria-label="Navigation principale">
+        <a class="top-tab is-active" href="./index.html">Accueil</a>
+        <a id="homeTopTabProject" class="top-tab" href="./projects.html">Projet</a>
+        <a id="homeTopTabEditor" class="top-tab" href="./cdc-generator.html">Éditeur</a>
+        <a id="homeTopTabSettings" class="top-tab" href="./settings.html">Paramètres</a>
+      </nav>
+    </div>
+
+    <div class="home-topbar">
+      <div class="template-badge">Plateforme CDC</div>
+    </div>
+
+    <section class="card home-hero">
+      <div class="home-hero-copy">
+        <div class="brand-lockup">
+          <img class="brand-logo" src="./Banniere-Neodium.png" alt="Bannière Neodium" />
+        </div>
+        <h1>Conçois, organise et retrouve tes CDC plus vite.</h1>
+        <p class="home-intro">
+          Centralise tes templates, structure tes besoins et retrouve rapidement chaque CDC dans un espace plus clair.
+        </p>
+
+        <div class="home-highlights">
+          <div class="home-highlight">Navigation plus claire</div>
+          <div class="home-highlight">Templates lisibles et homogènes</div>
+          <div class="home-highlight">Export PDF direct</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card home-projects-card" id="guiPresetsSection">
+      <div class="sidebar-section-header">
+        <div>
+          <h2 style="margin:0;">Presets GUI</h2>
+          <p class="muted home-section-copy">Trie et retrouve rapidement les interfaces réutilisables du projet.</p>
+        </div>
+        <span id="homeGuiPresetsCount" class="sidebar-count-badge">0</span>
+      </div>
+
+      <div class="home-projects-toolbar">
+        <input type="text" id="homeGuiPresetSearch" placeholder="Rechercher un preset..." oninput="renderHomeGuiPresets()" />
+        <select id="homeGuiPresetSort" onchange="renderHomeGuiPresets()">
+          <option value="name">Nom</option>
+          <option value="size">Taille</option>
+          <option value="items">Nombre d'items</option>
+        </select>
+      </div>
+
+      <div id="homeGuiPresetsList" class="home-projects-list" style="margin-top:18px;"></div>
+    </section>
+  </div>
+
+  <script src="./gui-presets/manifest.js" defer></script>
+  <script src="./gui-presets/presets.js" defer></script>
+  <script src="./cdc-projects/manifest.js" defer></script>
+  <script src="./cdc-navigation.js" defer></script>
+  <script src="./cdc-project-storage.js" defer></script>
+  <script src="./cdc-home.js" defer></script>
+</body>
+</html>

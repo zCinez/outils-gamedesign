@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Neodium - Projets CDC</title>
+  <link rel="stylesheet" href="./cdc-generator.css" />
+</head>
+<body class="home-page projects-page page-nav">
+  <div class="home-shell">
+    <div class="top-tabs-shell">
+      <nav class="top-tabs" aria-label="Navigation principale">
+        <a class="top-tab" href="./index.html">Accueil</a>
+        <a id="homeTopTabProject" class="top-tab is-active" href="./projects.html">Projet</a>
+        <a id="homeTopTabEditor" class="top-tab" href="./cdc-generator.html">Éditeur</a>
+        <a id="homeTopTabSettings" class="top-tab" href="./settings.html">Paramètres</a>
+      </nav>
+    </div>
+
+    <div class="home-topbar">
+      <div class="template-badge">Gestion des projets</div>
+    </div>
+
+    <section class="card home-action-card home-create-card" style="margin-bottom:24px;">
+      <h2>Nouveau projet</h2>
+      <p class="muted">Crée directement un nouvel espace projet depuis cette page.</p>
+      <label for="newProjectName">Nom du projet</label>
+      <input type="text" id="newProjectName" placeholder="Ex : Refonte métiers saison 3" />
+      <button type="button" class="btn-primary" onclick="createWorkspaceProject()">Créer le projet</button>
+    </section>
+
+    <section class="card home-projects-card" id="projectsSection">
+      <div class="sidebar-section-header">
+        <div>
+          <h2 style="margin:0;">Mes projets</h2>
+          <p class="muted home-section-copy">Ouvre un projet, renomme-le ou supprime-le proprement.</p>
+        </div>
+        <span id="homeProjectsCount" class="sidebar-count-badge">0</span>
+      </div>
+
+      <div class="home-projects-toolbar">
+        <input type="text" id="homeProjectSearch" placeholder="Rechercher un projet..." oninput="renderHomeProjects()" />
+      </div>
+
+      <div id="homeProjectsList" class="home-projects-list" style="margin-top:18px;"></div>
+    </section>
+  </div>
+
+  <script src="./gui-presets/manifest.js" defer></script>
+  <script src="./gui-presets/presets.js" defer></script>
+  <script src="./cdc-projects/manifest.js" defer></script>
+  <script src="./cdc-navigation.js" defer></script>
+  <script src="./cdc-project-storage.js" defer></script>
+  <script src="./cdc-home.js" defer></script>
+</body>
+</html>

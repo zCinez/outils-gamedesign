@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Neodium - Bibliothèque CDC</title>
+  <link rel="stylesheet" href="./cdc-generator.css" />
+</head>
+<body class="library-page page-nav">
+  <div class="app">
+    <aside class="sidebar library-sidebar">
+      <div class="sidebar-nav sidebar-nav-stacked">
+        <a class="sidebar-link" href="./index.html">Accueil</a>
+        <a id="libraryCreateCdcLink" class="sidebar-link" href="./cdc-generator.html">Créer un CDC</a>
+        <button type="button" class="sidebar-link sidebar-link-button" onclick="renameCurrentWorkspaceProject()">Renommer le projet</button>
+      </div>
+      <h1 id="libraryProjectTitle">Projet CDC</h1>
+      <p id="libraryProjectIntro">Consulte les CDC du projet, ouvre un document et exporte-le directement en PDF.</p>
+
+      <div class="card sidebar-card library-list-card">
+        <div class="sidebar-section-header">
+          <div class="sidebar-preview-header">CDC du projet</div>
+          <span id="libraryCount" class="sidebar-count-badge">0</span>
+        </div>
+        <div class="library-toolbar">
+          <input type="text" id="librarySearch" placeholder="Rechercher un CDC..." oninput="renderCdcLibrary()" />
+          <select id="librarySort" onchange="renderCdcLibrary()">
+            <option value="recent">Plus récent</option>
+            <option value="oldest">Plus ancien</option>
+            <option value="name">Nom</option>
+            <option value="template">Template</option>
+          </select>
+        </div>
+        <div id="cdcLibraryList" class="library-list" style="margin-top:14px;"></div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="top-tabs-shell">
+        <nav class="top-tabs" aria-label="Navigation principale">
+          <a class="top-tab" href="./index.html">Accueil</a>
+          <a id="libraryTopTabProject" class="top-tab" href="./projects.html">Projet</a>
+          <a id="libraryTopTabEditor" class="top-tab" href="./cdc-generator.html">Éditeur</a>
+          <a id="libraryTopTabSettings" class="top-tab" href="./settings.html">Paramètres</a>
+        </nav>
+      </div>
+
+      <div class="card library-header-card">
+        <div class="template-badge">Espace projet</div>
+        <h2 id="libraryHeaderProjectName">Bibliothèque du projet</h2>
+        <p class="library-intro">
+          Cette page regroupe uniquement les CDC enregistrés dans ce projet. Sélectionne un document à gauche ou crée un nouveau CDC pour continuer.
+        </p>
+        <div class="library-stats">
+          <div class="library-stat">
+            <div class="library-stat-label">CDC enregistrés</div>
+            <div id="libraryStatTotal" class="library-stat-value">0</div>
+          </div>
+          <div class="library-stat">
+            <div class="library-stat-label">Templates distincts</div>
+            <div id="libraryStatTemplates" class="library-stat-value">0</div>
+          </div>
+          <div class="library-stat">
+            <div class="library-stat-label">Dernière mise à jour</div>
+            <div id="libraryStatLastUpdate" class="library-stat-value" style="font-size:18px;">-</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card library-detail-card">
+        <div id="cdcDetailEmpty" class="library-empty">
+          Sélectionne un CDC dans la liste de gauche pour afficher son contenu et l’exporter en PDF.
+        </div>
+
+        <div id="cdcDetailView" style="display:none;">
+          <div class="library-detail-top">
+            <div>
+              <div id="cdcDetailTemplate" class="template-badge">Template</div>
+              <h2 id="cdcDetailTitle" style="margin-bottom:8px;">Nom du CDC</h2>
+            </div>
+            <div class="library-detail-actions">
+              <button type="button" class="btn-primary" onclick="downloadSelectedCdcPdf()">Télécharger PDF</button>
+            </div>
+          </div>
+
+          <div class="library-detail-meta" style="margin-top:12px;">
+            <span id="cdcDetailCreated">Créé le -</span>
+            <span id="cdcDetailUpdated">Modifié le -</span>
+          </div>
+
+          <p class="muted sidebar-muted" style="margin-top:12px;">Astuce : descends jusqu’en bas du document pour passer rapidement au CDC suivant.</p>
+
+          <div id="cdcDetailScroll" class="library-content">
+            <div id="cdcDetailPreview" class="doc-preview"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="./cdc-projects/manifest.js" defer></script>
+  <script src="./cdc-navigation.js" defer></script>
+  <script src="./cdc-project-storage.js" defer></script>
+  <script src="./cdc-library.js" defer></script>
+</body>
+</html>

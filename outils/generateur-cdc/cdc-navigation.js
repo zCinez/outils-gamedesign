@@ -1,0 +1,277 @@
+(function () {
+  const TRANSITION_DURATION_MS = 180;
+  const THEME_STORAGE_KEY = "neodium-cdc-theme";
+  const NAV_TAB_ROLES = ["home", "project", "editor", "settings"];
+  let navResizeObserver = null;
+
+  function getCurrentPageMeta() {
+    const currentPath = window.location.pathname.split("/").pop().toLowerCase();
+
+    if (!currentPath || currentPath === "index.html") {
+      return {
+        activeTab: "home",
+        subtitle: "Accueil",
+      };
+    }
+
+    if (currentPath === "projects.html") {
+      return {
+        activeTab: "project",
+        subtitle: "Gestion des projets",
+      };
+    }
+
+    if (currentPath === "cdc-library.html") {
+      return {
+        activeTab: "project",
+        subtitle: "Projet en cours",
+      };
+    }
+
+    if (currentPath === "cdc-generator.html") {
+      return {
+        activeTab: "editor",
+        subtitle: "Editeur",
+      };
+    }
+
+    if (currentPath === "settings.html") {
+      return {
+        activeTab: "settings",
+        subtitle: "Parametres",
+      };
+    }
+
+    if (currentPath === "settings-template.html") {
+      return {
+        activeTab: "settings",
+        subtitle: "Architecture template",
+      };
+    }
+
+    return {
+      activeTab: "",
+      subtitle: "Navigation",
+    };
+  }
+
+  function syncTopTabActiveState(navElement, activeTab) {
+    if (!navElement) return;
+
+    const tabs = [...navElement.querySelectorAll(".top-tab")];
+    tabs.forEach((tab, index) => {
+      const isActive = NAV_TAB_ROLES[index] === activeTab;
+      tab.classList.toggle("is-active", isActive);
+      if (isActive) {
+        tab.setAttribute("aria-current", "page");
+      } else {
+        tab.removeAttribute("aria-current");
+      }
+    });
+  }
+
+  function syncGlobalThemeSwitch(theme) {
+    const themeSwitch = document.getElementById("globalThemeSwitch");
+    if (!themeSwitch) return;
+
+    const normalizedTheme = theme === "dark" ? "dark" : "light";
+    const isDark = normalizedTheme === "dark";
+    const nextLabel = isDark ? "Passer en mode clair" : "Passer en mode sombre";
+
+    themeSwitch.setAttribute("aria-checked", String(isDark));
+    themeSwitch.setAttribute("aria-label", nextLabel);
+    themeSwitch.setAttribute("title", nextLabel);
+    themeSwitch.dataset.theme = normalizedTheme;
+  }
+
+  function setGlobalNavOffset() {
+    const navShell = document.querySelector(".global-nav-shell");
+    if (!navShell) return;
+
+    const measuredHeight = Math.ceil(navShell.getBoundingClientRect().height + 12);
+    document.documentElement.style.setProperty("--global-nav-offset", `${measuredHeight}px`);
+  }
+
+  function observeGlobalNavigation(navShell) {
+    if (!navShell) return;
+
+    setGlobalNavOffset();
+    window.requestAnimationFrame(setGlobalNavOffset);
+    window.addEventListener("resize", setGlobalNavOffset);
+
+    if ("ResizeObserver" in window) {
+      navResizeObserver?.disconnect();
+      navResizeObserver = new ResizeObserver(() => setGlobalNavOffset());
+      navResizeObserver.observe(navShell);
+    }
+  }
+
+  function fallbackToggleTheme() {
+    const nextTheme = document.body.dataset.theme === "dark" ? "light" : "dark";
+    document.body.dataset.theme = nextTheme;
+    document.documentElement.style.colorScheme = nextTheme;
+    localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
+    syncGlobalThemeSwitch(nextTheme);
+  }
+
+  function toggleGlobalTheme() {
+    const toggleFunctionNames = ["toggleHomeTheme", "toggleLibraryTheme", "toggleTheme"];
+
+    for (const functionName of toggleFunctionNames) {
+      if (typeof window[functionName] === "function") {
+        window[functionName]();
+        syncGlobalThemeSwitch(document.body.dataset.theme || localStorage.getItem(THEME_STORAGE_KEY) || "light");
+        return;
+      }
+    }
+
+    fallbackToggleTheme();
+  }
+
+  function setupPersistentNavigation() {
+    const navShell = document.querySelector(".top-tabs-shell");
+    const navElement = navShell?.querySelector(".top-tabs");
+
+    if (!navShell || !navElement) return;
+
+    if (!navElement.querySelector("[data-portal-link]")) {
+      const portalLink = document.createElement("a");
+      portalLink.className = "top-tab cdc-portal-tab";
+      portalLink.href = "../../index.html";
+      portalLink.dataset.portalLink = "true";
+      portalLink.textContent = "Portail outils";
+      navElement.append(portalLink);
+    }
+
+    const pageMeta = getCurrentPageMeta();
+    document.body.classList.add("has-global-nav");
+    syncTopTabActiveState(navElement, pageMeta.activeTab);
+
+    if (navShell.classList.contains("global-nav-shell")) {
+      const subtitle = navShell.querySelector(".global-nav-brand-subtitle");
+      if (subtitle) {
+        subtitle.textContent = pageMeta.subtitle;
+      }
+      return;
+    }
+
+    navShell.classList.add("global-nav-shell");
+
+    const inner = document.createElement("div");
+    inner.className = "global-nav-inner";
+
+    const actions = document.createElement("div");
+    actions.className = "global-nav-actions";
+
+    const brand = document.createElement("div");
+    brand.className = "global-nav-brand";
+    brand.innerHTML = `
+      <span class="global-nav-brand-mark" aria-hidden="true">
+        <img class="global-nav-brand-logo" src="./logo-neodium.png" alt="" />
+      </span>
+      <div class="global-nav-brand-copy">
+        <span class="global-nav-brand-title">Neodium CDC</span>
+        <span class="global-nav-brand-subtitle">${pageMeta.subtitle}</span>
+      </div>
+    `;
+
+    const themeSwitch = document.createElement("button");
+    themeSwitch.type = "button";
+    themeSwitch.id = "globalThemeSwitch";
+    themeSwitch.className = "theme-switch";
+    themeSwitch.setAttribute("role", "switch");
+    themeSwitch.setAttribute("aria-checked", "false");
+    themeSwitch.innerHTML = `
+      <span class="theme-switch-track">
+        <span class="theme-switch-icon theme-switch-icon-sun" aria-hidden="true">&#9728;</span>
+        <span class="theme-switch-icon theme-switch-icon-moon" aria-hidden="true">&#9790;</span>
+        <span class="theme-switch-thumb" aria-hidden="true"></span>
+      </span>
+    `;
+    themeSwitch.addEventListener("click", toggleGlobalTheme);
+
+    navShell.replaceChildren(inner);
+    actions.append(navElement, themeSwitch);
+    inner.append(brand, actions);
+    document.body.prepend(navShell);
+    syncGlobalThemeSwitch(document.body.dataset.theme || localStorage.getItem(THEME_STORAGE_KEY) || "light");
+    observeGlobalNavigation(navShell);
+  }
+
+  function markPageReady() {
+    document.body.classList.add("page-nav");
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        document.body.classList.add("page-nav-ready");
+        document.body.classList.remove("page-nav-leaving");
+      });
+    });
+  }
+
+  function isInternalNavigation(link) {
+    if (!link) return false;
+    if (link.classList.contains("is-disabled")) return false;
+    if (link.getAttribute("aria-disabled") === "true") return false;
+    if (link.target && link.target !== "_self") return false;
+    if (link.hasAttribute("download")) return false;
+
+    const href = link.getAttribute("href") || "";
+    if (!href || href.startsWith("#")) return false;
+
+    const targetUrl = new URL(link.href, window.location.href);
+    return targetUrl.origin === window.location.origin;
+  }
+
+  function navigateToPage(url) {
+    if (!url) return;
+
+    const targetUrl = new URL(url, window.location.href);
+    const currentUrl = new URL(window.location.href);
+    const isSameDocument =
+      targetUrl.origin === currentUrl.origin
+      && targetUrl.pathname === currentUrl.pathname
+      && targetUrl.search === currentUrl.search;
+
+    if (isSameDocument && targetUrl.hash) {
+      const targetElement = document.querySelector(targetUrl.hash);
+      if (targetElement) {
+        history.replaceState(null, "", targetUrl.hash);
+        targetElement.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+      return;
+    }
+
+    if (targetUrl.href === currentUrl.href) return;
+
+    document.body.classList.remove("page-nav-ready");
+    document.body.classList.add("page-nav-leaving");
+
+    window.setTimeout(() => {
+      window.location.href = targetUrl.href;
+    }, TRANSITION_DURATION_MS);
+  }
+
+  document.addEventListener("click", event => {
+    if (event.defaultPrevented) return;
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+
+    const link = event.target.closest("a[href]");
+    if (link?.classList.contains("is-disabled") || link?.getAttribute("aria-disabled") === "true") {
+      event.preventDefault();
+      return;
+    }
+    if (!isInternalNavigation(link)) return;
+
+    event.preventDefault();
+    navigateToPage(link.href);
+  });
+
+  window.addEventListener("pageshow", () => {
+    markPageReady();
+  });
+
+  window.navigateToPage = navigateToPage;
+  window.syncGlobalThemeSwitch = syncGlobalThemeSwitch;
+  setupPersistentNavigation();
+  markPageReady();
+})();

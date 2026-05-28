@@ -1,0 +1,1074 @@
+﻿<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Neodium - Générateur de CDC</title>
+
+  <link rel="stylesheet" href="./cdc-generator.css" />
+</head>
+<body class="editor-page page-nav">
+  <div class="app">
+    <main class="main">
+      <div class="top-tabs-shell">
+        <nav class="top-tabs" aria-label="Navigation principale">
+          <a class="top-tab" href="./index.html">Accueil</a>
+          <a id="editorTopTabProject" class="top-tab" href="./projects.html">Projet</a>
+          <a id="editorTopTabEditor" class="top-tab is-active" href="./cdc-generator.html">Éditeur</a>
+          <a id="editorTopTabSettings" class="top-tab" href="./settings.html">Paramètres</a>
+        </nav>
+      </div>
+
+      <div class="card">
+        <div class="editor-header">
+          <div>
+            <h2 style="margin-top:0;">Formulaire</h2>
+            <p class="muted editor-intro">
+              Renseigne uniquement ce qui est utile au développement. Le rendu se met en forme automatiquement pour produire un CDC propre et exploitable.
+            </p>
+          </div>
+
+          <div class="editor-context-grid">
+            <div class="editor-project-summary">
+              <div class="editor-summary-label">Projet courant</div>
+              <select id="workspaceProjectSelect" class="editor-project-select" onchange="handleWorkspaceProjectSelection()">
+                <option value="">Aucun projet sélectionné</option>
+              </select>
+            </div>
+
+            <div class="editor-project-summary editor-template-summary">
+              <div class="editor-summary-label">Template courant</div>
+              <select id="template" class="editor-project-select" onchange="switchTemplate()">
+                <option value="commande">Commande</option>
+                <option value="gui">GUI</option>
+                <option value="itemC">Item Custom</option>
+                <option value="event">Event</option>
+                <option value="metier">Métier</option>
+                <option value="mobs">Mobs</option>
+                <option value="libre">Libre</option>
+                <option value="caisse">Caisse</option>
+                <option value="soundDesign">Sound Design</option>
+              </select>
+              <div class="template-badge editor-template-badge" id="activeTemplateBadge">Template actif : Commande</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="project-draft-panel project-draft-panel-strong editor-draft-panel">
+          <div class="project-draft-meta">
+            <span id="currentProjectTemplatePill" class="project-history-template">Commande</span>
+            <span id="currentProjectStatus" class="project-status-pill">Nouveau brouillon</span>
+          </div>
+
+          <label for="projectNameInput">Nom du CDC</label>
+          <input type="text" id="projectNameInput" placeholder="Ex : Event Pâques 2026" />
+
+          <div class="sidebar-actions sidebar-actions-split editor-draft-actions">
+            <button type="button" class="btn-small" onclick="saveCurrentProjectToHistory()">Enregistrer</button>
+            <button type="button" class="btn-small btn-secondary" onclick="createNewLocalProject()">Nouveau</button>
+          </div>
+        </div>
+
+        <div class="editor-toolbar">
+          <button class="btn-primary" onclick="genererCDC()">Générer</button>
+          <button class="btn-secondary" onclick="copierCDC()">Copier</button>
+          <button class="btn-secondary" onclick="telechargerPDF()">Télécharger PDF</button>
+          <button class="btn-secondary" onclick="sauvegarderProjet()">Sauvegarder</button>
+          <button class="btn-danger" onclick="viderFormulaire()">Vider</button>
+        </div>
+
+        <!-- =====================================================
+             TEMPLATE 1 : COMMANDE
+             ===================================================== -->
+        <div id="commandeForm" class="template-form active">
+          <div class="grid-2">
+            <div>
+              <label for="nomCommande">Nom de la commande</label>
+              <input type="text" id="nomCommande" placeholder="Ex : is Bank" />
+            </div>
+
+            <div>
+              <label for="commandePrincipale">Commande principale</label>
+              <input type="text" id="commandePrincipale" placeholder="Ex : /is bank" />
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div>
+              <label for="alias">Alias</label>
+              <input type="text" id="alias" placeholder="Ex : Aucun" />
+            </div>
+
+            <div>
+              <label for="permission">Permission</label>
+              <input type="text" id="permission" placeholder="Ex : Aucune" />
+            </div>
+          </div>
+
+          <label for="description">Description</label>
+          <textarea id="description" placeholder="Décris précisément la commande..."></textarea>
+
+          <label>Type</label>
+          <div class="checkbox-group">
+            <label><input type="checkbox" id="typeJoueur" checked /> Joueur</label>
+            <label><input type="checkbox" id="typeStaff" /> Staff</label>
+            <label><input type="checkbox" id="typeAdmin" /> Admin</label>
+          </div>
+
+          <label for="arguments">Arguments</label>
+          <textarea id="arguments" placeholder="Ex : Aucun"></textarea>
+
+          <h3>Conditions d’utilisation</h3>
+          <div class="grid-2">
+            <div>
+              <label for="mondeAutorise">Monde autorisé</label>
+              <input type="text" id="mondeAutorise" placeholder="Ex : skyblock" />
+            </div>
+            <div>
+              <label for="niveauRequis">Niveau requis</label>
+              <input type="text" id="niveauRequis" placeholder="Ex : Aucun" />
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div>
+              <label for="argentRequis">Argent requis</label>
+              <input type="text" id="argentRequis" placeholder="Ex : 0$" />
+            </div>
+            <div>
+              <label for="cooldown">Cooldown</label>
+              <input type="text" id="cooldown" placeholder="Ex : Aucun" />
+            </div>
+          </div>
+
+          <label for="fonctionnement">Fonctionnement</label>
+          <textarea id="fonctionnement" placeholder="Explique précisément le fonctionnement de la commande..."></textarea>
+
+          <h3>Interface</h3>
+          <div class="checkbox-group">
+            <label><input type="checkbox" id="interfaceChat" checked onchange="updateCommandeInterfaceFields()"> Chat</label>
+            <label><input type="checkbox" id="interfaceGUI" onchange="updateCommandeInterfaceFields()"> GUI</label>
+            <label><input type="checkbox" id="interfaceScoreboard" onchange="updateCommandeInterfaceFields()"> Scoreboard</label>
+            <label><input type="checkbox" id="interfaceActionBar" onchange="updateCommandeInterfaceFields()"> ActionBar</label>
+            <label><input type="checkbox" id="interfaceSoundDesign" onchange="updateCommandeInterfaceFields()"> SoundDesign</label>
+            <label><input type="checkbox" id="interfaceActionJoueur" onchange="updateCommandeInterfaceFields()"> Action joueur</label>
+          </div>
+
+          <!-- Bloc dynamique : messages -->
+          <div id="chatFields" class="dynamic-block">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+              <h3 style="margin:0;">Messages</h3>
+              <button type="button" class="btn-small" onclick="ajouterMessage()">+ Ajouter un message</button>
+            </div>
+
+            <div id="messagesContainer" style="margin-top:14px;"></div>
+          </div>
+
+          <!-- Bloc dynamique : GUI rattaché à une commande -->
+          <div id="commandeGuiFields" class="dynamic-block" style="display:none;">
+            <h3>GUI</h3>
+
+            <div class="grid-2">
+              <div>
+                <label for="nomGUICommande">Nom du GUI</label>
+                <input type="text" id="nomGUICommande" placeholder="Ex : Banque principale" />
+              </div>
+
+              <div>
+                <label for="tailleGUICommande">Taille</label>
+                <select id="tailleGUICommande">
+                  <option>1 ligne</option>
+                  <option>2 lignes</option>
+                  <option selected>3 lignes</option>
+                  <option>4 lignes</option>
+                  <option>5 lignes</option>
+                  <option>6 lignes</option>
+                </select>
+              </div>
+
+              <div>
+                <label for="imageGUICommande">Image du GUI</label>
+                <input type="file" id="imageGUICommande" accept="image/*" onchange="previewImage(event, 'previewImageGUICommande'); updateGuiCommandeVisualization();" />
+                <img id="previewImageGUICommande" class="image-preview" alt="Aperçu image GUI">
+              </div>
+
+              <div>
+                <label for="textureGUICommande">Lien de la texture</label>
+                <input type="text" id="textureGUICommande" placeholder="Ex : https://drive.google.com/file/d/1pSw06WknwlFsOxP1_M6BARXbv3JI_U_g/view?usp=drive_link" />
+              </div>
+            </div>
+
+            <div class="grid-3" style="margin-top:14px;">
+              <div>
+                <label for="guiCommandePresetSelect">Preset</label>
+                <select id="guiCommandePresetSelect">
+                  <option value="">Aucun preset disponible</option>
+                </select>
+              </div>
+
+              <div>
+                <label for="guiCommandePresetName">Nom du preset</label>
+                <input type="text" id="guiCommandePresetName" placeholder="Ex : Banque principale" />
+              </div>
+
+              <div class="gui-preset-actions">
+                <button type="button" class="btn-small" onclick="chargerGuiCommandePresetSelection()">Charger le preset</button>
+                <button type="button" class="btn-small btn-secondary" onclick="exportCurrentGuiCommandeAsPreset()">Enregistrer le preset</button>
+              </div>
+            </div>
+
+            <div id="guiCommandePresetStatus" class="muted gui-preset-status">Tu peux charger un preset existant ou enregistrer ce GUI de commande dans la même bibliothèque.</div>
+
+            <div class="dynamic-block gui-visualizer-block">
+              <div class="gui-item-header">
+                <div class="gui-item-title">Visualisation du GUI</div>
+                <div class="muted">Clique sur une case pour ajouter ou éditer un item.</div>
+              </div>
+              <div id="guiCommandeVisualPreview" class="gui-visualizer"></div>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+              <h3 style="margin:0;">Contenu du GUI</h3>
+              <button type="button" class="btn-small" onclick="ajouterItemGUICommande()">+ Ajouter un item</button>
+            </div>
+
+            <div id="guiItemsCommandeContainer" style="margin-top:14px;"></div>
+          </div>
+
+          <div id="scoreboardFields" class="dynamic-block" style="display:none;">
+            <h3>Scoreboard</h3>
+            <label for="contenuScoreboard">Contenu du scoreboard</label>
+            <textarea id="contenuScoreboard" placeholder="Ex : lignes affichées, ordre des infos, placeholders..."></textarea>
+          </div>
+
+          <div id="actionBarFields" class="dynamic-block" style="display:none;">
+            <h3>ActionBar</h3>
+            <div class="grid-2">
+              <div>
+                <label for="actionBarQui">QUI</label>
+                <input type="text" id="actionBarQui" placeholder="Ex : Joueur qui exécute la commande" />
+              </div>
+
+              <div>
+                <label for="actionBarMessage">Message</label>
+                <input type="text" id="actionBarMessage" placeholder="Ex : &aCommande exécutée avec succès" />
+              </div>
+            </div>
+          </div>
+
+          <div id="soundDesignFields" class="dynamic-block" style="display:none;">
+            <h3>SoundDesign</h3>
+            <div class="grid-2">
+              <div>
+                <label for="soundDesignQuandCommande">Quand</label>
+                <input type="text" id="soundDesignQuandCommande" placeholder="Ex : À l'ouverture du menu" />
+              </div>
+
+              <div>
+                <label for="soundDesignSonCommande">Son</label>
+                <div class="inline-field-group">
+                  <input type="text" id="soundDesignSonCommande" list="soundDesignSonCommandeOptions" placeholder="Choisir ou écrire un son Minecraft" />
+                  <datalist id="soundDesignSonCommandeOptions"></datalist>
+                  <button type="button" class="btn-secondary btn-inline" onclick="previewMinecraftSound('soundDesignSonCommande', 'soundDesignSonStatus')">Écouter</button>
+                </div>
+                <div id="soundDesignSonStatus" class="muted" style="margin-top:6px;">Catalogue disponible. Audio GitHub léger : ajoute les .ogg dans minecraft-sounds/ pour écouter.</div>
+              </div>
+            </div>
+          </div>
+
+          <div id="actionJoueurFields" class="dynamic-block" style="display:none;">
+            <h3>Action joueur</h3>
+            <label for="contenuActionJoueur">Action joueur</label>
+            <textarea id="contenuActionJoueur" placeholder="Ex : clic droit sur un NPC, interaction avec un bloc, ouverture au contact..."></textarea>
+          </div>
+        </div>
+
+        <!-- =====================================================
+             TEMPLATE 2 : GUI
+             ===================================================== -->
+        <div id="guiForm" class="template-form">
+          <div class="dynamic-block gui-preset-block">
+            <div class="gui-item-header">
+              <div class="gui-item-title">Bibliothèque de presets GUI</div>
+              <div class="muted">Charge un preset du projet ou exporte le GUI actuel en preset.</div>
+            </div>
+
+            <div class="grid-3">
+              <div>
+                <label for="guiPresetSelect">Preset</label>
+                <select id="guiPresetSelect">
+                  <option value="">Aucun preset disponible</option>
+                </select>
+              </div>
+
+              <div>
+                <label for="guiPresetName">Nom du preset</label>
+                <input type="text" id="guiPresetName" placeholder="Ex : Banque principale" />
+              </div>
+
+              <div class="gui-preset-actions">
+                <button type="button" class="btn-small" onclick="chargerGuiPresetSelection()">Charger le preset</button>
+                <button type="button" class="btn-small btn-secondary" onclick="exportCurrentGuiAsPreset()">Enregistrer le preset</button>
+              </div>
+            </div>
+
+              <div id="guiPresetStatus" class="muted gui-preset-status">Les presets sont lus depuis `gui-presets/`. Au premier enregistrement, choisis le dossier racine de l’outil.</div>
+            </div>
+
+          <div class="grid-2">
+            <div>
+              <label for="guiNom">Nom du GUI</label>
+              <input type="text" id="guiNom" placeholder="Ex : GUI Banque" />
+            </div>
+
+            <div>
+              <label for="guiNomAffiche">Nom affiché</label>
+              <input type="text" id="guiNomAffiche" placeholder='Ex : "&6Banque de l’île"' />
+            </div>
+          </div>
+
+          <h3>Ouverture</h3>
+          <div class="checkbox-group">
+            <label><input type="checkbox" id="ouvertureCommande" onchange="updateOuvertureFields()"> Commande</label>
+            <label><input type="checkbox" id="ouvertureNPC" onchange="updateOuvertureFields()"> NPC</label>
+            <label><input type="checkbox" id="ouvertureItem" onchange="updateOuvertureFields()"> Item</label>
+            <label><input type="checkbox" id="ouvertureAutreCheck" onchange="updateOuvertureFields()"> Autre</label>
+          </div>
+
+          <div id="ouvertureCommandeField" class="dynamic-block" style="display:none;">
+            <label for="guiCommande">Commande</label>
+            <input type="text" id="guiCommande" placeholder="Ex : /bank" />
+          </div>
+
+          <div id="ouvertureNPCField" class="dynamic-block" style="display:none;">
+            <div class="grid-2">
+              <div>
+                <label for="guiNPCNom">Nom</label>
+                <input type="text" id="guiNPCNom" placeholder="Ex : Banquier du spawn" />
+              </div>
+
+              <div>
+                <label for="guiNPCCoordonnee">Coordonnée</label>
+                <input type="text" id="guiNPCCoordonnee" placeholder="Ex : 125 64 -218" />
+              </div>
+            </div>
+          </div>
+
+          <div id="ouvertureItemField" class="dynamic-block" style="display:none;">
+            <label for="guiItemOuverture">Item</label>
+            <input type="text" id="guiItemOuverture" placeholder="Ex : coffre du banquier" />
+          </div>
+
+          <div id="ouvertureAutreField" class="dynamic-block" style="display:none;">
+            <label for="guiOuvertureAutre">Autre</label>
+            <input type="text" id="guiOuvertureAutre" placeholder="Ex : interaction bloc spécial" />
+          </div>
+
+          <div class="grid-3">
+            <div>
+              <label for="guiTaille">Taille</label>
+              <select id="guiTaille" onchange="updateGuiTailleField()">
+                <option value="3 lignes">3 lignes</option>
+                <option value="4 lignes">4 lignes</option>
+                <option value="5 lignes">5 lignes</option>
+                <option value="6 lignes">6 lignes</option>
+                <option value="Autre">Autre</option>
+              </select>
+            </div>
+
+            <div id="guiTailleAutreField" class="dynamic-block" style="display:none;">
+              <label for="guiTailleAutre">Autres</label>
+              <input type="text" id="guiTailleAutre" placeholder="Ex : 2 lignes" />
+            </div>
+
+            <div>
+              <label for="guiImage">Image du GUI</label>
+              <input type="file" id="guiImage" accept="image/*" onchange="previewImage(event, 'previewImageTemplate')" />
+              <img id="previewImageTemplate" class="image-preview" alt="Aperçu image GUI template">
+            </div>
+			
+			<div>
+              <label for="lienTextureGUI">Lien de la texture</label>
+              <input type="text" id="lienTextureGUI" placeholder="Ex : https://drive.google.com/file/d/1pSw06WknwlFsOxP1_M6BARXbv3JI_U_g/view?usp=drive_link" />
+            </div>
+          </div>
+
+          <div class="dynamic-block gui-visualizer-block">
+            <div class="gui-item-header">
+              <div class="gui-item-title">Visualisation du GUI</div>
+              <div class="muted">Les items s'ajoutent dans l'ordre des slots.</div>
+            </div>
+            <div id="guiVisualPreview" class="gui-visualizer"></div>
+          </div>
+
+          <label for="guiObjectif">Objectif</label>
+          <textarea id="guiObjectif" placeholder="Décris l’objectif du GUI..."></textarea>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+            <h3 style="margin:0;">Contenu du GUI</h3>
+            <button type="button" class="btn-small" onclick="ajouterItemGUITemplate()">+ Ajouter un Item</button>
+          </div>
+
+          <div id="guiItemsTemplateContainer" style="margin-top:14px;"></div>
+        </div>
+	
+	<!-- =====================================================
+             TEMPLATE 3 : ITEM CUSTOM
+             ===================================================== -->
+	<div id="itemCForm" class="template-form">
+	  <div class="grid-2">
+        <div>
+          <label for="nomItem">Nom de l'item</label>
+          <input type="text" id="nomItem" placeholder="Ex : Pioche Ultime" />
+        </div>
+		
+		<div>
+          <label for="itemMc">Item Minecraft</label>
+          <input type="text" id="itemMc" placeholder="Ex : Pioche en netherite" />
+        </div>
+      </div>
+       
+          <h3>Type d'item</h3>
+          <div class="checkbox-group">
+            <label><input type="checkbox" id="typeArme" onchange="updateTypeItemFields()"> Arme</label>
+            <label><input type="checkbox" id="typeOutil" onchange="updateTypeItemFields()"> Outil</label>
+            <label><input type="checkbox" id="typeObjet" onchange="updateTypeItemFields()"> Objet</label>
+            <label><input type="checkbox" id="typeConsommable" onchange="updateTypeItemFields()"> Consommable</label>
+	    <label><input type="checkbox" id="typeCle" onchange="updateTypeItemFields()"> Clé</label>
+	    <label><input type="checkbox" id="typeAutre" onchange="updateTypeItemFields()"> Autre</label>
+          </div>
+
+          <div id="typeAutreField" class="dynamic-block" style="display:none;">
+            <label for="selectTypeAutre">Autre</label>
+            <input type="text" id="selectTypeAutre" placeholder="Ex : bloc magique" />
+          </div>
+
+          <label for="itemRole">Rôle de l'item</label>
+          <textarea id="itemRole" placeholder="Ex : sert a miner plus vite, débloquer une zone, améliorer la progression du joueur..."></textarea>
+
+	  <h3>Obtention</h3>
+          <div class="checkbox-group">
+            <label><input type="checkbox" id="obtentionCraft" onchange="choiceObtentionFields()"> Craft</label>
+            <label><input type="checkbox" id="obtentionRecompense" onchange="choiceObtentionFields()"> Récompense</label>
+            <label><input type="checkbox" id="obtentionBoutique" onchange="choiceObtentionFields()"> Boutique</label>
+            <label><input type="checkbox" id="obtentionShop" onchange="choiceObtentionFields()"> Shop</label>
+	    <label><input type="checkbox" id="obtentionEvent" onchange="choiceObtentionFields()"> Event</label>
+	    <label><input type="checkbox" id="obtentionAutre" onchange="choiceObtentionFields()"> Autre</label>
+          </div>
+
+		  <div id="obtentionCraftField" class="dynamic-block" style="display:none;">
+            <label for="selectObtentionCraft">Image du Craft</label>
+            <input type="file" id="selectObtentionCraft" accept="image/*" onchange="previewImage(event, 'previewCraftTemplate')" />
+            <img id="previewCraftTemplate" class="image-preview" alt="Aperçu image du craft template">
+
+            <label for="craftRecipeItemCustom">Recette</label>
+            <textarea id="craftRecipeItemCustom" placeholder="Ex : bâton au centre, diamants en haut et au milieu."></textarea>
+          </div>
+
+          <div id="obtentionRecompenseField" class="dynamic-block" style="display:none;">
+            <label for="selectObtentionRecompense">Récompense</label>
+            <input type="text" id="selectObtentionRecompense" placeholder="Ex : niveau 55 mineur" />
+          </div>
+
+          <div id="obtentionBoutiqueField" class="dynamic-block" style="display:none;">
+            <label for="selectObtentionBoutiqueCategory">Catégorie</label>
+            <input type="text" id="selectObtentionBoutiqueCategory" placeholder="Ex : Outils" />
+
+            <label for="selectObtentionBoutiquePrice">Prix</label>
+            <input type="text" id="selectObtentionBoutiquePrice" placeholder="Ex : 100 crédits" />
+
+            <label for="selectObtentionBoutiqueCondition">Condition</label>
+            <input type="text" id="selectObtentionBoutiqueCondition" placeholder="Ex : VIP requis" />
+          </div>
+
+          <div id="obtentionShopField" class="dynamic-block" style="display:none;">
+            <label for="selectObtentionShopCategory">Catégorie</label>
+            <input type="text" id="selectObtentionShopCategory" placeholder="Ex : Outils" />
+
+            <label for="selectObtentionShopPrice">Prix</label>
+            <input type="text" id="selectObtentionShopPrice" placeholder="Ex : 100" />
+
+            <label for="selectObtentionShopCurrency">Devise</label>
+            <select id="selectObtentionShopCurrency">
+              <option value="">Choisir une devise</option>
+              <option value="Coins">Coins</option>
+              <option value="Argent">Argent</option>
+            </select>
+
+            <label for="selectObtentionShopCondition">Condition</label>
+            <input type="text" id="selectObtentionShopCondition" placeholder="Ex : Niveau 20 requis" />
+          </div>
+
+          <div id="obtentionEventField" class="dynamic-block" style="display:none;">
+            <label for="selectObtentionEventName">Nom de l’event</label>
+            <input type="text" id="selectObtentionEventName" placeholder="Ex : SellTop" />
+
+            <label for="selectObtentionEventMethod">Méthode d’obtention</label>
+            <input type="text" id="selectObtentionEventMethod" placeholder="Ex : terminer 2eme" />
+
+            <label for="selectObtentionEventCondition">Condition</label>
+            <input type="text" id="selectObtentionEventCondition" placeholder="Ex : participation obligatoire" />
+          </div>
+
+          <div id="obtentionAutreField" class="dynamic-block" style="display:none;">
+            <label for="selectObtentionAutre">Autre</label>
+            <input type="text" id="selectObtentionAutre" placeholder="Ex : minage" />
+          </div>
+		  
+		  <div class="grid-2">
+
+			<div>
+			  <label for="textureItemImage">Texture de l'item</label>
+		   	  <input type="file" id="textureItemImage" accept="image/*" onchange="previewImage(event, 'previewTextureItemTemplate')" />
+			  <img id="previewTextureItemTemplate" class="image-preview" alt="Aperçu image de la texture item">
+			</div>
+
+			<div>
+			  <label for="linkTexture">Lien de la texture</label>
+			  <input type="text" id="linkTexture" placeholder="Ex : https://drive.google.com/file/d/1pSw06WknwlFsOxP1_M6BARXbv3JI_U_g/view?usp=drive_link" />
+			</div>
+		  </div>
+
+		  <div class="grid-2">
+
+			<div>
+			  <label for="nameItem">Nom</label>
+			  <input type="text" id="nameItem" placeholder="Ex : '&e✦ &f&l┃ &ePioche Ultime'" />
+			</div>
+
+			<div>
+			  <label for="loreItem">Lore</label>
+          		  <textarea id="loreItem" placeholder="'&7&m---------------------------------'
+'&8[&b!&8] &7Niveau Requis&f: &aAucun'
+'&8[&b!&8] &7Obtention&f: &fShop'
+'&8[&b!&8] &7Appartient à&f &f%player%'
+'&f '
+'&6✸ &eFonctionnalités de la Pioche Ultime&f :'
+'&f &e➥ &6Minage Linéaire&f : casse une rangée de blocs'
+'&f &e➥ &6Hammer 3x3&f : casse en zone de 3x3 blocs'
+'&f &e➥ &6Extracteur de Gemme&f : chance d’extraction accrue de Gemmes'
+'&f '
+&8[&b●&8] &7Clique droit pour améliorer.
+&8[&b●&8] &7Uniquement utilisable par son propriétaire.
+'&7&m--------------------------------- '
+'&6➥ &f&l┃ &b&l/wiki &bpour plus d''infos.'
+'&7&m--------------------------------- '"></textarea>
+			</div>
+
+			<div>
+			  <label for="durabiliteItem">Durabilité</label>
+			  <input type="text" id="durabiliteItem" placeholder="Ex : 5 000" />
+			</div>
+
+			<div>
+			  <label for="effectDescription">Description de l'effet</label>
+          		  <textarea id="effectDescription" placeholder="Décris précisément le fonctionnement..."></textarea>
+			</div>
+		  </div>
+
+	  <h3>Utilisation</h3>
+          <div class="checkbox-group">
+            <label><input type="checkbox" id="utilisationClickDroit" onchange="utilisationChoiseItemFields()"> Clic Droit</label>
+            <label><input type="checkbox" id="utilisationClickGauche" onchange="utilisationChoiseItemFields()"> Clic Gauche</label>
+            <label><input type="checkbox" id="utilisationPassif" onchange="utilisationChoiseItemFields()"> Passif</label>
+          </div>
+
+      <div class="grid-2">
+          <div id="utilisationClickDroitField" class="dynamic-block" style="display:none;">
+            <label for="selectClicDroit">Description du clic Droit</label>
+            <textarea id="selectClicDroit" placeholder="Ex : Ouvre un inventaire"></textarea>
+          </div>
+
+          <div id="utilisationClickGaucheField" class="dynamic-block" style="display:none;">
+            <label for="selectClicGauche">Description du clic Gauche</label>
+            <textarea id="selectClicGauche" placeholder="Ex : effect normal d'une pioche"></textarea>
+          </div>
+
+          <div id="utilisationPassifField" class="dynamic-block" style="display:none;">
+            <label for="selectPassif">Description Passif</label>
+            <textarea id="selectPassif" placeholder="Ex : gain de 10 coins tout les 10 min"></textarea>
+          </div>
+      </div>
+
+	</div>
+
+        <!-- =====================================================
+             TEMPLATE 4 : EVENT
+             ===================================================== -->
+
+	<div id="eventForm" class="template-form">
+	  <div class="grid-2">
+	    <div>
+              <label for="nomEvent">Nom de l'évent</label>
+              <input type="text" id="nomEvent" placeholder="Ex : SellTop" />
+            </div>
+	  </div>
+
+	  <div class="grid-2">
+	    <div class="checkbox-group">
+              <h3>Type :</h3>
+              <label><input type="checkbox" id="typeSolo" onchange="genererCDC()"> Solo</label>
+              <label><input type="checkbox" id="typeIle" onchange="genererCDC()"> Îles</label>
+              <label><input type="checkbox" id="typeGlobal" onchange="genererCDC()"> Global</label>
+            </div>
+
+	    <div class="checkbox-group">
+              <h3>Fréquence :</h3>
+              <label><input type="checkbox" id="frequenceJournalier" onchange="genererCDC()"> Journalier</label>
+              <label><input type="checkbox" id="frequenceHebdomadaire" onchange="genererCDC()"> Hebdomadaire</label>
+              <label><input type="checkbox" id="frequenceMensuel" onchange="genererCDC()"> Mensuel</label>
+              <label><input type="checkbox" id="frequenceAnnuel" onchange="genererCDC()"> Annuel</label>
+            </div>
+
+	    <div>
+              <label for="horraireEvent">Horaire</label>
+              <input type="text" id="horraireEvent" placeholder="Ex : 18h" />
+            </div>
+
+	    <div>
+              <label for="dureeEvent">Durée</label>
+              <input type="text" id="dureeEvent" placeholder="Ex : 1h" />
+            </div>
+	  </div>
+
+       	  <div>
+      	    <label for="objectifEvent">Objectif joueur</label>
+            <textarea id="objectifEvent" placeholder="Ex : Vend le plus de ressources dans le temps imparti..."></textarea>
+          </div>
+
+	  <div class="grid-2">
+	    <div class="checkbox-group">
+              <h3>Déclenchement :</h3>
+              <label><input type="checkbox" id="startEventAuto" onchange="startEventFields()"> Automatique</label>
+              <label><input type="checkbox" id="startEventCommand" onchange="startEventFields()"> Commande</label>
+            </div>
+
+            <div id="startEventCommandField" class="dynamic-block" style="display:none;">
+              <label for="selectStartEventCommand">Commande</label>
+              <input type="text" id="selectStartEventCommand" placeholder="Ex : /start selltop" />
+            </div>
+          </div>
+
+	  <div class="dynamic-block">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+              <h3 style="margin:0;">Conditions de lancement :</h3>
+              <button type="button" class="btn-small" onclick="ajouterConditionEvent()">+ Ajouter une condition</button>
+            </div>
+
+            <label for="joueurMinimumEvent">Joueur minimum</label>
+            <input type="text" id="joueurMinimumEvent" placeholder="Ex : 10 joueurs" />
+
+            <div id="eventConditionsContainer" style="margin-top:14px;"></div>
+          </div>
+
+          <div class="dynamic-block">
+            <h3 style="margin-top:0;">Récompenses :</h3>
+
+            <div class="grid-3">
+              <div>
+                <label for="rewardFirstEvent">1er</label>
+                <input type="text" id="rewardFirstEvent" placeholder="Ex : 1 clé légendaire + 500 000$" />
+              </div>
+
+              <div>
+                <label for="rewardSecondEvent">2eme</label>
+                <input type="text" id="rewardSecondEvent" placeholder="Ex : 250 000$ + 3 boosters" />
+              </div>
+
+              <div>
+                <label for="rewardThirdEvent">3eme</label>
+                <input type="text" id="rewardThirdEvent" placeholder="Ex : 100 000$" />
+              </div>
+            </div>
+          </div>
+
+          <div class="dynamic-block">
+            <h3 style="margin-top:0;">Interface :</h3>
+
+            <div class="checkbox-group">
+              <label><input type="checkbox" id="eventInterfaceScoreboard" onchange="updateEventInterfaceFields()"> Scoreboard</label>
+              <label><input type="checkbox" id="eventInterfaceActionBar" onchange="updateEventInterfaceFields()"> ActionBar</label>
+              <label><input type="checkbox" id="eventInterfaceBossBar" onchange="updateEventInterfaceFields()"> BossBar</label>
+            </div>
+
+            <div id="eventScoreboardField" class="dynamic-block" style="display:none;">
+              <label for="eventScoreboardContent">Modifications du scoreboard</label>
+              <textarea id="eventScoreboardContent" placeholder="Ex : ajouter le timer de l'event, le top 3 en direct et le nombre de participants."></textarea>
+            </div>
+
+            <div id="eventActionBarField" class="dynamic-block" style="display:none;">
+              <label for="eventActionBarContent">Ajout de l'ActionBar</label>
+              <textarea id="eventActionBarContent" placeholder="Ex : afficher un rappel du temps restant et du classement du joueur."></textarea>
+            </div>
+
+            <div id="eventBossBarField" class="dynamic-block" style="display:none;">
+              <label for="eventBossBarContent">Ajout de la BossBar</label>
+              <textarea id="eventBossBarContent" placeholder="Ex : afficher la progression de l'event et le temps restant."></textarea>
+            </div>
+          </div>
+
+          <div class="dynamic-block">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+              <h3 style="margin:0;">Messages :</h3>
+              <button type="button" class="btn-small" onclick="ajouterMessageEvent()">+ Ajouter un message</button>
+            </div>
+
+            <div class="grid-2">
+              <div>
+                <label for="eventStartMessage">Message de lancement</label>
+                <textarea id="eventStartMessage" placeholder="Ex : L'événement commence maintenant !"></textarea>
+              </div>
+
+              <div>
+                <label for="eventEndMessage">Message de fin</label>
+                <textarea id="eventEndMessage" placeholder="Ex : L'événement est terminé, merci à tous !"></textarea>
+              </div>
+            </div>
+
+            <div>
+              <label for="eventNotEnoughPlayersMessage">Message pas assez de joueurs</label>
+              <textarea id="eventNotEnoughPlayersMessage" placeholder="Ex : L'événement ne peut pas démarrer, il manque des joueurs."></textarea>
+            </div>
+
+            <div id="eventMessagesContainer" style="margin-top:14px;"></div>
+          </div>
+
+          <div class="dynamic-block">
+            <h3 style="margin-top:0;">PARTIE ADMIN :</h3>
+
+            <label for="eventAdminStartCommand">Commande de lancement</label>
+            <textarea id="eventAdminStartCommand" placeholder="Ex : /event start selltop"></textarea>
+
+            <label for="eventAdminEndCommand">Commande de fin</label>
+            <textarea id="eventAdminEndCommand" placeholder="Ex : /event stop selltop"></textarea>
+
+            <label for="eventAdminForceStartNotEnoughPlayersCommand">Commande de forçage si pas assez de joueur</label>
+            <textarea id="eventAdminForceStartNotEnoughPlayersCommand" placeholder="Ex : /event forcestart selltop"></textarea>
+          </div>
+	</div>
+
+        <!-- =====================================================
+             TEMPLATE 5 : CAISSE
+             ===================================================== -->
+        <div id="caisseForm" class="template-form">
+          <div class="grid-2">
+            <div>
+              <label for="caisseNom">Nom de la caisse</label>
+              <input type="text" id="caisseNom" placeholder="Ex : Caisse Vote" />
+            </div>
+
+            <div>
+              <label for="caisseNomAffiche">Nom affiché</label>
+              <input type="text" id="caisseNomAffiche" placeholder='Ex : "&6Caisse Vote"' />
+            </div>
+          </div>
+
+          <div class="dynamic-block">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+              <h3 style="margin:0;">Récompenses</h3>
+              <button type="button" class="btn-small" onclick="ajouterRewardCaisse()">+ Ajouter une récompense</button>
+            </div>
+
+            <div id="caisseChanceHelper" class="chance-helper" style="margin-top:14px;">
+              <strong>Total :</strong> 0%
+              <span class="muted">|</span>
+              <strong>Reste :</strong> 100%
+            </div>
+
+            <div id="caisseRewardsContainer" style="margin-top:14px;"></div>
+          </div>
+        </div>
+
+        <!-- =====================================================
+             TEMPLATE 6 : SOUND DESIGN
+             ===================================================== -->
+        <div id="soundDesignForm" class="template-form">
+          <div class="dynamic-block">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+              <h3 style="margin:0;">Éléments sonores</h3>
+              <button type="button" class="btn-small" onclick="ajouterSoundDesignEntry()">+ Nouveau son</button>
+            </div>
+
+            <div id="soundDesignEntriesContainer" style="margin-top:14px;"></div>
+          </div>
+        </div>
+
+        <!-- =====================================================
+             TEMPLATE 7 : METIER
+             ===================================================== -->
+        <div id="metierForm" class="template-form">
+          <div class="dynamic-block">
+            <h3 style="margin-top:0;">Type de métier</h3>
+            <div class="checkbox-group">
+              <label><input type="checkbox" id="metierTypeFermier"> Fermier</label>
+              <label><input type="checkbox" id="metierTypeChasseur"> Chasseur</label>
+              <label><input type="checkbox" id="metierTypeMineur"> Mineur</label>
+              <label><input type="checkbox" id="metierTypeBucheron"> Bûcheron</label>
+            </div>
+          </div>
+
+          <label for="metierPresentation">Présentation du métier</label>
+          <textarea id="metierPresentation" placeholder="Décris le rôle du métier, sa boucle de progression et son intérêt pour le joueur..."></textarea>
+
+          <div class="dynamic-block">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+              <h3 style="margin:0;">Liste d’item + niveau de déblocage + XP donné</h3>
+              <button type="button" class="btn-small" onclick="ajouterMetierItemRow()">+ Ajouter une ligne</button>
+            </div>
+
+            <div id="metierItemsContainer" style="margin-top:14px;"></div>
+          </div>
+
+          <div class="dynamic-block">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+              <h3 style="margin:0;">XP + récompense par niveaux</h3>
+              <button type="button" class="btn-small" onclick="ajouterMetierLevelRewardRow()">+ Ajouter une ligne</button>
+            </div>
+
+            <div id="metierLevelRewardsContainer" style="margin-top:14px;"></div>
+          </div>
+
+          <div class="dynamic-block">
+            <h3 style="margin-top:0;">Message d'évolution d'XP</h3>
+
+            <div class="checkbox-group">
+              <label><input type="checkbox" id="metierXpMessageChat" onchange="updateMetierXpMessageFields()"> Chat</label>
+              <label><input type="checkbox" id="metierXpMessageActionBar" onchange="updateMetierXpMessageFields()"> ActionBar</label>
+              <label><input type="checkbox" id="metierXpMessageBossBar" onchange="updateMetierXpMessageFields()"> BossBar</label>
+              <label><input type="checkbox" id="metierXpMessageAutre" onchange="updateMetierXpMessageFields()"> Autre</label>
+            </div>
+
+            <div id="metierXpMessageChatField" class="dynamic-block" style="display:none;">
+              <label for="metierXpMessageChatContent">Message Chat</label>
+              <textarea id="metierXpMessageChatContent" placeholder="Ex : &a+25 XP métier &7(Blé récolté)"></textarea>
+            </div>
+
+            <div id="metierXpMessageActionBarField" class="dynamic-block" style="display:none;">
+              <label for="metierXpMessageActionBarContent">Message ActionBar</label>
+              <textarea id="metierXpMessageActionBarContent" placeholder="Ex : &a+25 XP métier"></textarea>
+            </div>
+
+            <div id="metierXpMessageBossBarField" class="dynamic-block" style="display:none;">
+              <label for="metierXpMessageBossBarContent">Message BossBar</label>
+              <textarea id="metierXpMessageBossBarContent" placeholder="Ex : &6Progression métier en cours"></textarea>
+            </div>
+
+            <div id="metierXpMessageAutreField" class="dynamic-block" style="display:none;">
+              <label for="metierXpMessageAutreContent">Autre affichage</label>
+              <textarea id="metierXpMessageAutreContent" placeholder="Ex : Toast, hologramme, particules, popup..."></textarea>
+            </div>
+          </div>
+
+          <div class="dynamic-block">
+            <h3 style="margin-top:0;">Message gain de niveau</h3>
+
+            <label for="metierLevelMessageChatContent">Message Chat</label>
+            <textarea id="metierLevelMessageChatContent" placeholder="Ex : &6Tu viens de passer niveau 10 dans ce métier !"></textarea>
+          </div>
+
+          <div class="dynamic-block">
+            <h3 style="margin-top:0;">GUI XP par item</h3>
+            <div class="grid-2">
+              <div>
+                <label for="metierGuiXpImage">Image du GUI</label>
+                <input type="file" id="metierGuiXpImage" accept="image/*" onchange="previewImage(event, 'previewMetierGuiXpImage')" />
+                <img id="previewMetierGuiXpImage" class="image-preview" alt="Aperçu image GUI métier">
+              </div>
+
+              <div>
+                <label for="metierGuiTexture">Lien de la texture</label>
+                <input type="text" id="metierGuiTexture" placeholder="Ex : https://drive.google.com/file/d/.../view?usp=drive_link" />
+              </div>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+              <h3 style="margin:18px 0 0;">Items du GUI</h3>
+              <button type="button" class="btn-small" onclick="ajouterMetierGuiItem()">+ Ajouter un item</button>
+            </div>
+
+            <div id="metierGuiItemsContainer" style="margin-top:14px;"></div>
+          </div>
+
+          <label for="metierSpecificite">Spécificité métier</label>
+          <textarea id="metierSpecificite" placeholder="Décris les règles particulières, bonus, limites ou mécaniques propres à ce métier..."></textarea>
+        </div>
+
+        <!-- =====================================================
+             TEMPLATE 8 : MOBS
+             ===================================================== -->
+        <div id="mobsForm" class="template-form">
+          <div class="grid-2">
+            <div>
+              <label for="mobNom">Nom du mob</label>
+              <input type="text" id="mobNom" placeholder="Ex : Golem des ruines" />
+            </div>
+
+            <div>
+              <label for="mobType">Type</label>
+              <input type="text" id="mobType" placeholder="Ex : Mort-vivant / Elite / Boss" />
+            </div>
+          </div>
+
+          <label for="mobZone">Zone</label>
+          <input type="text" id="mobZone" placeholder="Ex : Mine abandonnée - étage 2" />
+
+          <div class="dynamic-block">
+            <h3 style="margin-top:0;">Stats</h3>
+
+            <div class="grid-2">
+              <div>
+                <label for="mobPv">PV</label>
+                <input type="text" id="mobPv" placeholder="Ex : 250" />
+              </div>
+
+              <div>
+                <label for="mobAttaque">Attaque</label>
+                <input type="text" id="mobAttaque" placeholder="Ex : 18" />
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <div>
+                <label for="mobVitesse">Vitesse</label>
+                <input type="text" id="mobVitesse" placeholder="Ex : 0.35" />
+              </div>
+
+              <div>
+                <label for="mobCooldown">Cooldown</label>
+                <input type="text" id="mobCooldown" placeholder="Ex : 2 secondes" />
+              </div>
+            </div>
+          </div>
+
+          <div class="dynamic-block">
+            <h3 style="margin-top:0;">Comportement</h3>
+
+            <label for="mobComportementType">Type</label>
+            <select id="mobComportementType">
+              <option value="Agressif">Agressif</option>
+              <option value="Passif">Passif</option>
+              <option value="Neutre">Neutre</option>
+            </select>
+          </div>
+
+          <div class="dynamic-block">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+              <h3 style="margin:0;">Spawn</h3>
+              <button type="button" class="btn-small" onclick="ajouterMobSpawn()">+ Ajouter un spawn</button>
+            </div>
+
+            <div id="mobSpawnsContainer" style="margin-top:14px;"></div>
+          </div>
+
+          <div class="dynamic-block">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+              <h3 style="margin:0;">Drops</h3>
+              <button type="button" class="btn-small" onclick="ajouterMobDrop()">+ Ajouter un drop</button>
+            </div>
+
+            <div id="mobDropsContainer" style="margin-top:14px;"></div>
+          </div>
+
+          <div class="dynamic-block">
+            <h3 style="margin-top:0;">XP</h3>
+
+            <div class="grid-2">
+              <div>
+                <label for="mobXpGagne">XP gagné</label>
+                <input type="text" id="mobXpGagne" placeholder="Ex : 45 XP" />
+              </div>
+
+              <div>
+                <label for="mobNiveauRequis">Niveau requis</label>
+                <input type="text" id="mobNiveauRequis" placeholder="Ex : 12" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="libreForm" class="template-form">
+          <div class="grid-2">
+            <div>
+              <label for="libreNom">Nom du sujet</label>
+              <input type="text" id="libreNom" placeholder="Ex : Particule de téléportation" />
+            </div>
+
+            <div>
+              <label for="libreCategorie">Catégorie</label>
+              <input type="text" id="libreCategorie" placeholder="Ex : Particule / Effet visuel / Autre" />
+            </div>
+          </div>
+
+          <label for="librePresentation">Présentation générale</label>
+          <textarea id="librePresentation" placeholder="Décris ici le besoin, le contexte ou l'objectif global."></textarea>
+
+          <div class="dynamic-block">
+            <div class="gui-item-header">
+              <div class="gui-item-title">Blocs libres</div>
+              <button type="button" class="btn-small" onclick="ajouterLibreSection()">+ Ajouter un bloc</button>
+            </div>
+
+            <div id="libreSectionsContainer"></div>
+          </div>
+        </div>
+
+        <!-- =====================================================
+             BOUTONS D'ACTION
+             ===================================================== -->
+      </div>
+
+      <!-- =======================================================
+           APERÇU FINAL
+           - rendu HTML
+           - affiche les images
+           ======================================================= -->
+      <div class="card">
+        <h2 class="preview-title">Aperçu prêt pour Google Docs</h2>
+        <div id="preview" class="doc-preview"></div>
+      </div>
+
+      <div class="card editor-history-card">
+        <div class="sidebar-section-header">
+          <div class="sidebar-preview-header">CDC du projet</div>
+          <span id="projectHistoryCount" class="sidebar-count-badge">0</span>
+        </div>
+
+        <div class="history-toolbar">
+          <input type="text" id="projectHistorySearch" placeholder="Rechercher par nom ou template..." oninput="renderProjectHistory()" />
+          <select id="projectHistorySort" onchange="renderProjectHistory()">
+            <option value="recent">Plus récent</option>
+            <option value="oldest">Plus ancien</option>
+            <option value="name">Nom</option>
+            <option value="template">Template</option>
+          </select>
+        </div>
+
+        <div class="history-subtitle history-subtitle-list">Mes projets</div>
+        <div id="projectHistoryList" class="project-history-list"></div>
+      </div>
+    </main>
+  </div>
+
+  <datalist id="minecraftItemOptions"></datalist>
+
+  <script src="./minecraft-sounds-catalog.js" defer></script>
+  <script src="./minecraft-items-catalog.js" defer></script>
+  <script src="./minecraft-item-texture-map.js" defer></script>
+  <script src="./minecraft-item-block-faces-map.js" defer></script>
+  <script src="./gui-presets/manifest.js" defer></script>
+  <script src="./gui-presets/presets.js" defer></script>
+  <script src="./cdc-projects/manifest.js" defer></script>
+  <script src="./cdc-navigation.js" defer></script>
+  <script src="./cdc-project-storage.js" defer></script>
+  <script src="./cdc-generator-template-helpers.js" defer></script>
+  <script src="./cdc-generator-template-commande.js" defer></script>
+  <script src="./cdc-generator-template-gui.js" defer></script>
+  <script src="./cdc-generator-template-itemc.js" defer></script>
+  <script src="./cdc-generator-template-event.js" defer></script>
+  <script src="./cdc-generator-template-caisse-sound.js" defer></script>
+  <script src="./cdc-generator-template-metier.js" defer></script>
+  <script src="./cdc-generator-template-mobs.js" defer></script>
+  <script src="./cdc-generator-template-libre.js" defer></script>
+  <script src="./cdc-generator.js" defer></script>
+</body>
+</html>

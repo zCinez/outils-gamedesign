@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Neodium - Architecture template</title>
+  <link rel="stylesheet" href="./cdc-generator.css" />
+</head>
+<body class="settings-page settings-template-page page-nav">
+  <div class="settings-shell">
+    <div class="top-tabs-shell">
+      <nav class="top-tabs" aria-label="Navigation principale">
+        <a class="top-tab" href="./index.html">Accueil</a>
+        <a id="settingsTemplateTopTabProject" class="top-tab" href="./projects.html">Projet</a>
+        <a id="settingsTemplateTopTabEditor" class="top-tab" href="./cdc-generator.html">Éditeur</a>
+        <a class="top-tab is-active" href="./settings.html">Paramètres</a>
+      </nav>
+    </div>
+
+    <div class="settings-template-page-layout">
+      <aside class="card settings-template-sidebar">
+        <a class="sidebar-link settings-template-back" href="./settings.html#template">Retour aux templates</a>
+        <div class="template-badge">Architecture</div>
+        <h1 id="settingsTemplatePageName">Template</h1>
+        <p id="settingsTemplatePageDescription" class="muted settings-template-sidebar-copy">
+          Chargement de l’architecture du template.
+        </p>
+
+        <div class="settings-template-page-stats">
+          <div class="settings-template-page-stat">
+            <div class="settings-template-page-stat-label">Formulaire</div>
+            <div id="settingsTemplatePageFormId" class="settings-template-page-stat-value">-</div>
+          </div>
+
+          <div class="settings-template-page-stat">
+            <div class="settings-template-page-stat-label">Sections</div>
+            <div id="settingsTemplatePageSections" class="settings-template-page-stat-value">0</div>
+          </div>
+
+          <div class="settings-template-page-stat">
+            <div class="settings-template-page-stat-label">Blocs repérés</div>
+            <div id="settingsTemplatePageBlocks" class="settings-template-page-stat-value">0</div>
+          </div>
+
+        </div>
+      </aside>
+
+      <main class="settings-main">
+        <section class="card settings-panel is-active">
+          <div class="settings-panel-header">
+            <div>
+              <div class="template-badge">Vue dédiée</div>
+            </div>
+            <div class="settings-panel-mark" aria-hidden="true">AR</div>
+          </div>
+
+          <div id="settingsTemplateArchitecture" class="settings-template-detail"></div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script src="./cdc-navigation.js" defer></script>
+  <script src="./cdc-settings.js" defer></script>
+  <script src="./cdc-settings-template.js" defer></script>
+</body>
+</html>

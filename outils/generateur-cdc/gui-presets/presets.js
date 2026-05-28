@@ -1,0 +1,1 @@
+window.GUI_CUSTOM_PRESETS_FILE = [];
