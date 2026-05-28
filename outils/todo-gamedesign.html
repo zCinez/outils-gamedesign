@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Todo Game Design - Neodium</title>
+  <meta name="description" content="Todo list interne pour le game design de Neodium." />
+
+  <style>
+    :root {
+      --bg: #070a12;
+      --bg-soft: #0d1220;
+      --card: rgba(255, 255, 255, 0.065);
+      --card-hover: rgba(255, 255, 255, 0.1);
+      --border: rgba(255, 255, 255, 0.12);
+      --text: #f5f7fb;
+      --muted: #9aa4b2;
+      --muted-2: #707b8d;
+      --accent: #5eead4;
+      --blue: #60a5fa;
+      --purple: #a78bfa;
+      --green: #34d399;
+      --yellow: #facc15;
+      --orange: #fb923c;
+      --red: #fb7185;
+      --shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+      --radius: 22px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(94, 234, 212, 0.18), transparent 32%),
+        radial-gradient(circle at 85% 15%, rgba(167, 139, 250, 0.14), transparent 34%),
+        linear-gradient(135deg, #050712 0%, #0a0f1f 52%, #050712 100%);
+      line-height: 1.6;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    .page {
+      width: min(1260px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 28px 0 54px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 34px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .logo {
+      width: 46px;
+      height: 46px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: linear-gradient(135deg, rgba(94, 234, 212, 0.22), rgba(96, 165, 250, 0.12));
+      box-shadow: var(--shadow);
+      font-weight: 900;
+      color: var(--accent);
+    }
+
+    .brand-text strong {
+      display: block;
+      font-size: 1.05rem;
+      letter-spacing: 0.2px;
+    }
+
+    .brand-text span {
+      display: block;
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .btn {
+      min-height: 42px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      padding: 0 14px;
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.055);
+      font-weight: 800;
+      transition: 0.18s ease;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.08);
+    }
+
+    .btn-primary {
+      color: #041012;
+      background: linear-gradient(135deg, var(--accent), var(--blue));
+      border-color: transparent;
+    }
+
+    .btn-danger {
+      color: #fff;
+      border-color: rgba(251, 113, 133, 0.26);
+      background: rgba(251, 113, 133, 0.12);
+    }
+
+    .btn-small {
+      min-height: 34px;
+      padding: 0 10px;
+      border-radius: 11px;
+      font-size: 0.84rem;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+
+    .card {
+      border: 1px solid var(--border);
+      background: var(--card);
+      backdrop-filter: blur(18px);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .hero-main {
+      padding: 34px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-main::after {
+      content: "";
+      position: absolute;
+      width: 260px;
+      height: 260px;
+      right: -90px;
+      top: -90px;
+      border-radius: 999px;
+      background: rgba(94, 234, 212, 0.11);
+      filter: blur(8px);
+      pointer-events: none;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(94, 234, 212, 0.1);
+      border: 1px solid rgba(94, 234, 212, 0.24);
+      color: var(--accent);
+      font-size: 0.88rem;
+      font-weight: 800;
+      margin-bottom: 18px;
+    }
+
+    h1 {
+      max-width: 760px;
+      font-size: clamp(2rem, 5vw, 4rem);
+      line-height: 0.98;
+      letter-spacing: -2px;
+      margin-bottom: 18px;
+    }
+
+    .hero-main p {
+      max-width: 720px;
+      color: var(--muted);
+      font-size: 1rem;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      padding: 18px;
+    }
+
+    .stat {
+      min-height: 96px;
+      padding: 16px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.052);
+      border: 1px solid var(--border);
+    }
+
+    .stat strong {
+      display: block;
+      font-size: 1.7rem;
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+
+    .stat span {
+      color: var(--muted);
+      font-size: 0.86rem;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .panel {
+      padding: 22px;
+    }
+
+    .panel h2,
+    .board-head h2 {
+      font-size: 1.16rem;
+      margin-bottom: 6px;
+    }
+
+    .panel-desc,
+    .board-head p {
+      color: var(--muted);
+      font-size: 0.92rem;
+      margin-bottom: 18px;
+    }
+
+    .form-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 0.86rem;
+      font-weight: 800;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.065);
+      color: var(--text);
+      padding: 12px 13px;
+      outline: none;
+    }
+
+    select option {
+      color: #111827;
+    }
+
+    textarea {
+      min-height: 92px;
+      resize: vertical;
+    }
+
+    input::placeholder,
+    textarea::placeholder {
+      color: #707b8d;
+    }
+
+    .double {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .board {
+      padding: 22px;
+    }
+
+    .board-head {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .filters {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr 0.8fr 0.8fr;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .tasks {
+      display: grid;
+      gap: 12px;
+    }
+
+    .task {
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.052);
+      border-radius: 18px;
+      padding: 16px;
+      transition: 0.18s ease;
+    }
+
+    .task:hover {
+      background: var(--card-hover);
+      border-color: rgba(94, 234, 212, 0.22);
+    }
+
+    .task-top {
+      display: flex;
+      align-items: start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .task-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .check {
+      width: 22px;
+      height: 22px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.06);
+      flex: 0 0 auto;
+    }
+
+    .task.done .check {
+      background: linear-gradient(135deg, var(--green), var(--accent));
+      border-color: transparent;
+    }
+
+    .task.done h3 {
+      text-decoration: line-through;
+      color: var(--muted);
+    }
+
+    .task h3 {
+      font-size: 1rem;
+      line-height: 1.3;
+    }
+
+    .task p {
+      color: var(--muted);
+      font-size: 0.92rem;
+      margin: 8px 0 12px;
+      white-space: pre-wrap;
+    }
+
+    .chips {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 9px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.04);
+      font-size: 0.78rem;
+      font-weight: 800;
+    }
+
+    .priority-critique {
+      color: var(--red);
+      border-color: rgba(251, 113, 133, 0.3);
+      background: rgba(251, 113, 133, 0.09);
+    }
+
+    .priority-haute {
+      color: var(--orange);
+      border-color: rgba(251, 146, 60, 0.3);
+      background: rgba(251, 146, 60, 0.09);
+    }
+
+    .priority-moyenne {
+      color: var(--yellow);
+      border-color: rgba(250, 204, 21, 0.3);
+      background: rgba(250, 204, 21, 0.08);
+    }
+
+    .priority-basse {
+      color: var(--blue);
+      border-color: rgba(96, 165, 250, 0.3);
+      background: rgba(96, 165, 250, 0.08);
+    }
+
+    .status-afaire { color: var(--muted); }
+    .status-encours { color: var(--blue); }
+    .status-atester { color: var(--purple); }
+    .status-valide { color: var(--green); }
+
+    .task-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .empty {
+      padding: 30px;
+      border: 1px dashed var(--border);
+      border-radius: 18px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .import-file {
+      display: none;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .footer-note {
+      margin-top: 20px;
+      color: var(--muted-2);
+      font-size: 0.84rem;
+      text-align: center;
+    }
+
+    @media (max-width: 1050px) {
+      .hero,
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .filters {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 660px) {
+      .page {
+        width: min(100% - 20px, 1260px);
+        padding-top: 18px;
+      }
+
+      .topbar,
+      .board-head,
+      .top-actions {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .hero-main,
+      .panel,
+      .board {
+        padding: 20px;
+      }
+
+      .stats,
+      .double,
+      .filters {
+        grid-template-columns: 1fr;
+      }
+
+      .task-top {
+        flex-direction: column;
+      }
+
+      .task-actions {
+        justify-content: flex-start;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="page">
+    <header class="topbar">
+      <a class="brand" href="../index.html" aria-label="Retour à l'accueil">
+        <div class="logo">N</div>
+        <div class="brand-text">
+          <strong>Todo Game Design</strong>
+          <span>Neodium — Outils internes</span>
+        </div>
+      </a>
+
+      <div class="top-actions">
+        <button class="btn" type="button" id="exportBtn">Exporter JSON</button>
+        <button class="btn" type="button" id="importBtn">Importer JSON</button>
+        <input class="import-file" type="file" id="importFile" accept="application/json" />
+        <a class="btn btn-primary" href="../index.html">Accueil</a>
+      </div>
+    </header>
+
+    <section class="hero">
+      <div class="card hero-main">
+        <span class="badge">✅ Suivi Game Design</span>
+        <h1>Organise les idées, corrections et ajouts Neodium.</h1>
+        <p>
+          Cette page te sert à suivre les tâches de game design : équilibrage, CDC, bugs,
+          wiki, métiers, quêtes, événements et améliorations serveur. Les données sont sauvegardées
+          dans ton navigateur avec localStorage.
+        </p>
+      </div>
+
+      <aside class="card stats">
+        <div class="stat">
+          <strong id="statTotal">0</strong>
+          <span>tâches totales</span>
+        </div>
+        <div class="stat">
+          <strong id="statTodo">0</strong>
+          <span>à faire</span>
+        </div>
+        <div class="stat">
+          <strong id="statProgress">0</strong>
+          <span>en cours / test</span>
+        </div>
+        <div class="stat">
+          <strong id="statDone">0</strong>
+          <span>validées</span>
+        </div>
+      </aside>
+    </section>
+
+    <section class="layout">
+      <aside class="card panel">
+        <h2 id="formTitle">Ajouter une tâche</h2>
+        <p class="panel-desc">Renseigne une tâche claire, avec une priorité et un statut.</p>
+
+        <form class="form-grid" id="taskForm">
+          <input type="hidden" id="taskId" />
+
+          <label>
+            Titre de la tâche
+            <input id="title" type="text" placeholder="Ex : Revoir la courbe XP Mineur 70-100" required />
+          </label>
+
+          <label>
+            Description
+            <textarea id="description" placeholder="Explique le problème, l'objectif ou les détails importants."></textarea>
+          </label>
+
+          <div class="double">
+            <label>
+              Catégorie
+              <select id="category">
+                <option value="CDC">CDC</option>
+                <option value="Équilibrage">Équilibrage</option>
+                <option value="Métiers">Métiers</option>
+                <option value="Quêtes">Quêtes</option>
+                <option value="Events">Events</option>
+                <option value="Wiki">Wiki</option>
+                <option value="Boutique">Boutique</option>
+                <option value="Bug">Bug</option>
+                <option value="Autre">Autre</option>
+              </select>
+            </label>
+
+            <label>
+              Priorité
+              <select id="priority">
+                <option value="Critique">Critique</option>
+                <option value="Haute">Haute</option>
+                <option value="Moyenne" selected>Moyenne</option>
+                <option value="Basse">Basse</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="double">
+            <label>
+              Statut
+              <select id="status">
+                <option value="À faire" selected>À faire</option>
+                <option value="En cours">En cours</option>
+                <option value="À tester">À tester</option>
+                <option value="Validé">Validé</option>
+              </select>
+            </label>
+
+            <label>
+              Deadline
+              <input id="deadline" type="date" />
+            </label>
+          </div>
+
+          <div class="double">
+            <label>
+              Responsable
+              <input id="owner" type="text" placeholder="Ex : Samuel, Dev, Staff..." />
+            </label>
+
+            <label>
+              Version
+              <input id="version" type="text" placeholder="Ex : V2.5, V3, Beta..." />
+            </label>
+          </div>
+
+          <button class="btn btn-primary" type="submit" id="submitBtn">Ajouter la tâche</button>
+          <button class="btn" type="button" id="cancelEditBtn" style="display:none;">Annuler la modification</button>
+          <button class="btn btn-danger" type="button" id="clearDoneBtn">Supprimer les tâches validées</button>
+        </form>
+      </aside>
+
+      <section class="card board">
+        <div class="board-head">
+          <div>
+            <h2>Liste des tâches</h2>
+            <p>Filtre, modifie et valide les tâches au fur et à mesure.</p>
+          </div>
+        </div>
+
+        <div class="filters">
+          <input id="search" type="search" placeholder="Rechercher une tâche..." />
+          <select id="filterStatus">
+            <option value="all">Tous les statuts</option>
+            <option value="À faire">À faire</option>
+            <option value="En cours">En cours</option>
+            <option value="À tester">À tester</option>
+            <option value="Validé">Validé</option>
+          </select>
+          <select id="filterCategory">
+            <option value="all">Toutes les catégories</option>
+            <option value="CDC">CDC</option>
+            <option value="Équilibrage">Équilibrage</option>
+            <option value="Métiers">Métiers</option>
+            <option value="Quêtes">Quêtes</option>
+            <option value="Events">Events</option>
+            <option value="Wiki">Wiki</option>
+            <option value="Boutique">Boutique</option>
+            <option value="Bug">Bug</option>
+            <option value="Autre">Autre</option>
+          </select>
+          <select id="sortBy">
+            <option value="createdDesc">Plus récent</option>
+            <option value="createdAsc">Plus ancien</option>
+            <option value="priority">Priorité</option>
+            <option value="deadline">Deadline</option>
+          </select>
+        </div>
+
+        <div class="tasks" id="tasks"></div>
+      </section>
+    </section>
+
+    <p class="footer-note">
+      Important : cette todo est locale. Si tu changes de navigateur ou de PC, utilise Exporter JSON puis Importer JSON.
+    </p>
+  </main>
+
+  <script>
+    const STORAGE_KEY = "neodium_todo_gamedesign_v1";
+
+    const defaultTasks = [
+      {
+        id: crypto.randomUUID(),
+        title: "Créer les premiers CDC prioritaires",
+        description: "Lister les ajouts importants et rédiger les CDC avant développement.",
+        category: "CDC",
+        priority: "Haute",
+        status: "À faire",
+        deadline: "",
+        owner: "Samuel",
+        version: "V3",
+        createdAt: Date.now() - 3000
+      },
+      {
+        id: crypto.randomUUID(),
+        title: "Vérifier l'équilibrage des métiers",
+        description: "Comparer XP, gains, prix, valeurs et progression pour éviter les écarts trop violents.",
+        category: "Équilibrage",
+        priority: "Haute",
+        status: "En cours",
+        deadline: "",
+        owner: "Game Design",
+        version: "V3",
+        createdAt: Date.now() - 2000
+      },
+      {
+        id: crypto.randomUUID(),
+        title: "Mettre à jour les pages wiki importantes",
+        description: "Priorité aux pages utiles pour les joueurs : métiers, shop, quêtes, events et objets spéciaux.",
+        category: "Wiki",
+        priority: "Moyenne",
+        status: "À faire",
+        deadline: "",
+        owner: "Staff",
+        version: "Beta",
+        createdAt: Date.now() - 1000
+      }
+    ];
+
+    let tasks = loadTasks();
+
+    const taskForm = document.getElementById("taskForm");
+    const taskId = document.getElementById("taskId");
+    const title = document.getElementById("title");
+    const description = document.getElementById("description");
+    const category = document.getElementById("category");
+    const priority = document.getElementById("priority");
+    const status = document.getElementById("status");
+    const deadline = document.getElementById("deadline");
+    const owner = document.getElementById("owner");
+    const version = document.getElementById("version");
+
+    const formTitle = document.getElementById("formTitle");
+    const submitBtn = document.getElementById("submitBtn");
+    const cancelEditBtn = document.getElementById("cancelEditBtn");
+    const clearDoneBtn = document.getElementById("clearDoneBtn");
+
+    const search = document.getElementById("search");
+    const filterStatus = document.getElementById("filterStatus");
+    const filterCategory = document.getElementById("filterCategory");
+    const sortBy = document.getElementById("sortBy");
+    const tasksContainer = document.getElementById("tasks");
+
+    const statTotal = document.getElementById("statTotal");
+    const statTodo = document.getElementById("statTodo");
+    const statProgress = document.getElementById("statProgress");
+    const statDone = document.getElementById("statDone");
+
+    const exportBtn = document.getElementById("exportBtn");
+    const importBtn = document.getElementById("importBtn");
+    const importFile = document.getElementById("importFile");
+
+    function loadTasks() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (!saved) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultTasks));
+        return defaultTasks;
+      }
+
+      try {
+        const parsed = JSON.parse(saved);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function saveTasks() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+    }
+
+    function escapeHtml(value) {
+      return String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function slug(value) {
+      return String(value || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "")
+        .trim();
+    }
+
+    function priorityWeight(value) {
+      const weights = {
+        "Critique": 4,
+        "Haute": 3,
+        "Moyenne": 2,
+        "Basse": 1
+      };
+      return weights[value] || 0;
+    }
+
+    function formatDate(dateValue) {
+      if (!dateValue) return "Sans deadline";
+      const date = new Date(dateValue + "T00:00:00");
+      return date.toLocaleDateString("fr-FR", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric"
+      });
+    }
+
+    function getFilteredTasks() {
+      const query = search.value.toLowerCase().trim();
+      const selectedStatus = filterStatus.value;
+      const selectedCategory = filterCategory.value;
+
+      let result = tasks.filter((task) => {
+        const text = [
+          task.title,
+          task.description,
+          task.category,
+          task.priority,
+          task.status,
+          task.owner,
+          task.version
+        ].join(" ").toLowerCase();
+
+        const matchesSearch = text.includes(query);
+        const matchesStatus = selectedStatus === "all" || task.status === selectedStatus;
+        const matchesCategory = selectedCategory === "all" || task.category === selectedCategory;
+
+        return matchesSearch && matchesStatus && matchesCategory;
+      });
+
+      result.sort((a, b) => {
+        if (sortBy.value === "createdAsc") return a.createdAt - b.createdAt;
+        if (sortBy.value === "priority") return priorityWeight(b.priority) - priorityWeight(a.priority);
+        if (sortBy.value === "deadline") {
+          if (!a.deadline && !b.deadline) return 0;
+          if (!a.deadline) return 1;
+          if (!b.deadline) return -1;
+          return a.deadline.localeCompare(b.deadline);
+        }
+        return b.createdAt - a.createdAt;
+      });
+
+      return result;
+    }
+
+    function renderStats() {
+      statTotal.textContent = tasks.length;
+      statTodo.textContent = tasks.filter((task) => task.status === "À faire").length;
+      statProgress.textContent = tasks.filter((task) => task.status === "En cours" || task.status === "À tester").length;
+      statDone.textContent = tasks.filter((task) => task.status === "Validé").length;
+    }
+
+    function renderTasks() {
+      const list = getFilteredTasks();
+      renderStats();
+
+      if (list.length === 0) {
+        tasksContainer.innerHTML = `
+          <div class="empty">
+            Aucune tâche trouvée. Ajoute une tâche ou modifie tes filtres.
+          </div>
+        `;
+        return;
+      }
+
+      tasksContainer.innerHTML = list.map((task) => {
+        const isDone = task.status === "Validé";
+        const priorityClass = `priority-${slug(task.priority)}`;
+        const statusClass = `status-${slug(task.status)}`;
+
+        return `
+          <article class="task ${isDone ? "done" : ""}">
+            <div class="task-top">
+              <div class="task-title">
+                <button class="check" type="button" title="Valider / remettre à faire" onclick="toggleDone('${task.id}')"></button>
+                <h3>${escapeHtml(task.title)}</h3>
+              </div>
+
+              <div class="task-actions">
+                <button class="btn btn-small" type="button" onclick="editTask('${task.id}')">Modifier</button>
+                <button class="btn btn-small btn-danger" type="button" onclick="deleteTask('${task.id}')">Supprimer</button>
+              </div>
+            </div>
+
+            ${task.description ? `<p>${escapeHtml(task.description)}</p>` : ""}
+
+            <div class="chips">
+              <span class="chip">${escapeHtml(task.category)}</span>
+              <span class="chip ${priorityClass}">${escapeHtml(task.priority)}</span>
+              <span class="chip ${statusClass}">${escapeHtml(task.status)}</span>
+              <span class="chip">📅 ${formatDate(task.deadline)}</span>
+              ${task.owner ? `<span class="chip">👤 ${escapeHtml(task.owner)}</span>` : ""}
+              ${task.version ? `<span class="chip">🏷️ ${escapeHtml(task.version)}</span>` : ""}
+            </div>
+          </article>
+        `;
+      }).join("");
+    }
+
+    function resetForm() {
+      taskForm.reset();
+      taskId.value = "";
+      priority.value = "Moyenne";
+      status.value = "À faire";
+      formTitle.textContent = "Ajouter une tâche";
+      submitBtn.textContent = "Ajouter la tâche";
+      cancelEditBtn.style.display = "none";
+    }
+
+    taskForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+
+      const payload = {
+        title: title.value.trim(),
+        description: description.value.trim(),
+        category: category.value,
+        priority: priority.value,
+        status: status.value,
+        deadline: deadline.value,
+        owner: owner.value.trim(),
+        version: version.value.trim()
+      };
+
+      if (!payload.title) return;
+
+      if (taskId.value) {
+        tasks = tasks.map((task) => task.id === taskId.value ? { ...task, ...payload } : task);
+      } else {
+        tasks.unshift({
+          id: crypto.randomUUID(),
+          ...payload,
+          createdAt: Date.now()
+        });
+      }
+
+      saveTasks();
+      resetForm();
+      renderTasks();
+    });
+
+    cancelEditBtn.addEventListener("click", resetForm);
+
+    clearDoneBtn.addEventListener("click", () => {
+      const doneCount = tasks.filter((task) => task.status === "Validé").length;
+      if (doneCount === 0) return alert("Aucune tâche validée à supprimer.");
+      if (!confirm(`Supprimer ${doneCount} tâche(s) validée(s) ?`)) return;
+
+      tasks = tasks.filter((task) => task.status !== "Validé");
+      saveTasks();
+      renderTasks();
+    });
+
+    window.editTask = function(id) {
+      const task = tasks.find((item) => item.id === id);
+      if (!task) return;
+
+      taskId.value = task.id;
+      title.value = task.title;
+      description.value = task.description || "";
+      category.value = task.category;
+      priority.value = task.priority;
+      status.value = task.status;
+      deadline.value = task.deadline || "";
+      owner.value = task.owner || "";
+      version.value = task.version || "";
+
+      formTitle.textContent = "Modifier la tâche";
+      submitBtn.textContent = "Enregistrer";
+      cancelEditBtn.style.display = "inline-flex";
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    };
+
+    window.deleteTask = function(id) {
+      const task = tasks.find((item) => item.id === id);
+      if (!task) return;
+      if (!confirm(`Supprimer la tâche : ${task.title} ?`)) return;
+
+      tasks = tasks.filter((item) => item.id !== id);
+      saveTasks();
+      renderTasks();
+    };
+
+    window.toggleDone = function(id) {
+      tasks = tasks.map((task) => {
+        if (task.id !== id) return task;
+        return {
+          ...task,
+          status: task.status === "Validé" ? "À faire" : "Validé"
+        };
+      });
+
+      saveTasks();
+      renderTasks();
+    };
+
+    [search, filterStatus, filterCategory, sortBy].forEach((element) => {
+      element.addEventListener("input", renderTasks);
+      element.addEventListener("change", renderTasks);
+    });
+
+    exportBtn.addEventListener("click", () => {
+      const data = JSON.stringify(tasks, null, 2);
+      const blob = new Blob([data], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "todo-gamedesign-neodium.json";
+      link.click();
+      URL.revokeObjectURL(url);
+    });
+
+    importBtn.addEventListener("click", () => importFile.click());
+
+    importFile.addEventListener("change", async () => {
+      const file = importFile.files[0];
+      if (!file) return;
+
+      try {
+        const text = await file.text();
+        const imported = JSON.parse(text);
+
+        if (!Array.isArray(imported)) {
+          alert("Le fichier JSON n'est pas valide.");
+          return;
+        }
+
+        if (!confirm("Importer ce fichier va remplacer la todo actuelle. Continuer ?")) return;
+
+        tasks = imported.map((task) => ({
+          id: task.id || crypto.randomUUID(),
+          title: task.title || "Tâche sans titre",
+          description: task.description || "",
+          category: task.category || "Autre",
+          priority: task.priority || "Moyenne",
+          status: task.status || "À faire",
+          deadline: task.deadline || "",
+          owner: task.owner || "",
+          version: task.version || "",
+          createdAt: task.createdAt || Date.now()
+        }));
+
+        saveTasks();
+        resetForm();
+        renderTasks();
+      } catch {
+        alert("Impossible de lire ce fichier JSON.");
+      } finally {
+        importFile.value = "";
+      }
+    });
+
+    renderTasks();
+  </script>
+</body>
+</html>
