@@ -1,0 +1,362 @@
+:root,
+[data-theme="light"],
+[data-theme="dark"],
+body[data-theme="light"],
+body[data-theme="dark"] {
+  color-scheme: dark;
+  --neo-bg: #080b0f;
+  --neo-bg-soft: #0d141d;
+  --neo-surface: rgba(16, 23, 34, 0.92);
+  --neo-surface-2: rgba(21, 31, 44, 0.94);
+  --neo-surface-3: rgba(29, 42, 56, 0.92);
+  --neo-border: rgba(233, 239, 246, 0.14);
+  --neo-border-hot: rgba(85, 224, 202, 0.38);
+  --neo-text: #f4f7fb;
+  --neo-muted: #aab6c4;
+  --neo-muted-2: #788697;
+  --neo-teal: #55e0ca;
+  --neo-blue: #6aa7ff;
+  --neo-gold: #f1bc52;
+  --neo-green: #4ade80;
+  --neo-red: #fb7185;
+  --neo-radius: 8px;
+  --neo-shadow: 0 18px 54px rgba(0, 0, 0, 0.32);
+
+  --bg: var(--neo-bg) !important;
+  --bg-accent: var(--neo-bg-soft) !important;
+  --bg-soft: var(--neo-bg-soft) !important;
+  --surface: var(--neo-surface) !important;
+  --surface-strong: var(--neo-surface-2) !important;
+  --surface-dark: var(--neo-surface) !important;
+  --surface-dark-soft: var(--neo-surface-2) !important;
+  --card: var(--neo-surface) !important;
+  --card-hover: var(--neo-surface-2) !important;
+  --border: var(--neo-border) !important;
+  --line: var(--neo-border) !important;
+  --line-strong: var(--neo-border-hot) !important;
+  --line-hot: var(--neo-border-hot) !important;
+  --text: var(--neo-text) !important;
+  --muted: var(--neo-muted) !important;
+  --muted-2: var(--neo-muted-2) !important;
+  --subtle: var(--neo-muted-2) !important;
+  --accent: var(--neo-teal) !important;
+  --accent-2: var(--neo-blue) !important;
+  --primary: var(--neo-teal) !important;
+  --primary-hover: var(--neo-blue) !important;
+  --blue: var(--neo-blue) !important;
+  --cyan: var(--neo-blue) !important;
+  --orange: var(--neo-teal) !important;
+  --orange-2: var(--neo-blue) !important;
+  --green: var(--neo-green) !important;
+  --red: var(--neo-red) !important;
+  --radius: var(--neo-radius) !important;
+  --radius-xl: var(--neo-radius) !important;
+  --radius-lg: var(--neo-radius) !important;
+  --radius-md: var(--neo-radius) !important;
+  --shadow: var(--neo-shadow) !important;
+  --shadow-lg: var(--neo-shadow) !important;
+  --shadow-md: 0 14px 38px rgba(0, 0, 0, 0.26) !important;
+  --shadow-sm: 0 8px 22px rgba(0, 0, 0, 0.22) !important;
+}
+
+html {
+  background: var(--neo-bg) !important;
+}
+
+body {
+  color: var(--neo-text) !important;
+  background:
+    linear-gradient(180deg, rgba(8, 11, 15, 0.08), var(--neo-bg) 640px),
+    linear-gradient(90deg, rgba(85, 224, 202, 0.06), rgba(241, 188, 82, 0.04), rgba(106, 167, 255, 0.05)),
+    var(--neo-bg) !important;
+  font-family: Arial, Helvetica, sans-serif !important;
+  overflow-x: hidden;
+}
+
+body::before {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.024) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.024) 1px, transparent 1px) !important;
+  background-size: 54px 54px !important;
+}
+
+body::after {
+  background: linear-gradient(to top, rgba(8, 11, 15, 0.82), transparent) !important;
+}
+
+h1,
+h2,
+h3,
+.brand__title strong,
+.brand__title span,
+.eyebrow,
+.template-badge,
+.chip,
+.tag,
+.mini-stat span,
+.stat-table th,
+.global-nav-brand-subtitle {
+  letter-spacing: 0 !important;
+}
+
+.topbar,
+.global-nav-shell,
+.top-tabs-shell.global-nav-shell,
+.top-tabs-shell,
+.card,
+.panel,
+.section,
+.hero-main,
+.hero-card,
+.side-card,
+.sidebar,
+.main,
+.main-panel,
+.panel-card,
+.stat-card,
+.form-card,
+.reference-card,
+.created-card,
+.board,
+.metric,
+.stat,
+.task,
+.suggestion,
+.tool-card,
+.section-card,
+.home-hero,
+.home-projects-card,
+.project-draft-panel,
+.project-history-item,
+.dynamic-block,
+.editor-history-card,
+.doc-preview,
+.message-item,
+.event-condition-item,
+.gui-item,
+.checkbox-group,
+.minecraft-format-preview,
+.minecraft-inline-preview,
+.preset,
+.mini-stat,
+.roadmap-item,
+.timeline li,
+.score-card,
+.hero__banner,
+.gui-visualizer,
+.settings-panel,
+.settings-template-item,
+.settings-template-detail-surface,
+.settings-architecture-section,
+.settings-architecture-step,
+.library-stat,
+.library-item,
+.library-content,
+.dev-meta-card,
+.dev-comment-item,
+.library-empty,
+.library-raw,
+.empty {
+  border: 1px solid var(--neo-border) !important;
+  border-radius: var(--neo-radius) !important;
+  background: var(--neo-surface) !important;
+  box-shadow: var(--neo-shadow) !important;
+}
+
+.topbar,
+.global-nav-shell,
+.top-tabs-shell.global-nav-shell {
+  background: rgba(8, 11, 15, 0.86) !important;
+  backdrop-filter: blur(18px);
+}
+
+.brand-mark,
+.logo,
+.brand__logo,
+.global-nav-brand-logo,
+.global-nav-brand-mark,
+.settings-panel-mark,
+.tool-mark {
+  border-radius: var(--neo-radius) !important;
+  border-color: var(--neo-border-hot) !important;
+  background: var(--neo-surface-3) !important;
+  color: var(--neo-teal) !important;
+}
+
+.brand__logo,
+.global-nav-brand-logo {
+  object-fit: cover;
+}
+
+.nav,
+.top-tabs,
+.nav-actions,
+.hero-actions,
+.top-actions {
+  gap: 8px !important;
+}
+
+.nav,
+.top-tabs {
+  border: 1px solid var(--neo-border) !important;
+  border-radius: var(--neo-radius) !important;
+  background: rgba(255, 255, 255, 0.045) !important;
+}
+
+.btn,
+.btn-primary,
+.btn-secondary,
+.btn-small,
+.primary-btn,
+.ghost-btn,
+.theme-toggle,
+.theme-switch,
+.top-tab,
+.nav a,
+button[type="submit"],
+button[type="button"] {
+  border-radius: var(--neo-radius) !important;
+  font-weight: 850 !important;
+  letter-spacing: 0 !important;
+}
+
+.btn-primary,
+.primary-btn,
+.nav a[aria-current="page"],
+.top-tab.is-active,
+.segment.is-active {
+  border-color: transparent !important;
+  color: #061114 !important;
+  background: linear-gradient(135deg, var(--neo-teal), var(--neo-blue)) !important;
+  box-shadow: 0 14px 28px rgba(85, 224, 202, 0.18) !important;
+}
+
+.btn,
+.btn-secondary,
+.btn-small,
+.ghost-btn,
+.top-tab,
+.nav a,
+.theme-toggle,
+.theme-switch,
+button[type="button"] {
+  border: 1px solid var(--neo-border) !important;
+  color: var(--neo-text) !important;
+  background: rgba(255, 255, 255, 0.055) !important;
+  box-shadow: none !important;
+}
+
+.btn:hover,
+.btn-secondary:hover,
+.btn-small:hover,
+.ghost-btn:hover,
+.top-tab:hover,
+.nav a:hover,
+button[type="button"]:hover {
+  border-color: var(--neo-border-hot) !important;
+  background: rgba(255, 255, 255, 0.09) !important;
+  transform: translateY(-1px);
+}
+
+.btn-danger,
+button.btn-danger {
+  border-color: rgba(251, 113, 133, 0.34) !important;
+  color: #fff !important;
+  background: rgba(251, 113, 133, 0.14) !important;
+}
+
+input:not([type="file"]),
+select,
+textarea,
+.control,
+.search {
+  border: 1px solid var(--neo-border) !important;
+  border-radius: var(--neo-radius) !important;
+  color: var(--neo-text) !important;
+  background: rgba(255, 255, 255, 0.065) !important;
+  box-shadow: none !important;
+}
+
+input:focus,
+select:focus,
+textarea:focus,
+.control:focus,
+.search:focus {
+  border-color: var(--neo-border-hot) !important;
+  box-shadow: 0 0 0 4px rgba(85, 224, 202, 0.12) !important;
+}
+
+select option {
+  color: var(--neo-text) !important;
+  background: #101722 !important;
+}
+
+.badge,
+.eyebrow,
+.template-badge,
+.count-pill,
+.tag-ready,
+.status.ready,
+.chip,
+.project-history-template {
+  border-color: rgba(85, 224, 202, 0.32) !important;
+  color: var(--neo-teal) !important;
+  background: rgba(85, 224, 202, 0.09) !important;
+}
+
+.tag-planned,
+.status.wip {
+  border-color: rgba(241, 188, 82, 0.34) !important;
+  color: var(--neo-gold) !important;
+  background: rgba(241, 188, 82, 0.09) !important;
+}
+
+.tool-card:hover,
+.task:hover,
+.suggestion:hover,
+.preset:hover,
+.card:hover {
+  border-color: var(--neo-border-hot) !important;
+}
+
+.hero__banner,
+.brand-lockup,
+.score-ring,
+.theme-toggle__knob,
+.theme-switch-thumb {
+  box-shadow: none !important;
+}
+
+.score-ring {
+  border-radius: 50% !important;
+  background:
+    radial-gradient(circle, var(--neo-surface-2) 0 52%, transparent 53%),
+    conic-gradient(var(--neo-teal) 0 76%, rgba(255, 255, 255, 0.11) 76% 100%) !important;
+}
+
+.meter__bar,
+.check,
+.task.done .check {
+  background: linear-gradient(90deg, var(--neo-teal), var(--neo-blue), var(--neo-gold)) !important;
+}
+
+.footer,
+.footer-note,
+footer {
+  color: var(--neo-muted-2) !important;
+}
+
+@media (max-width: 680px) {
+  .nav,
+  .top-tabs {
+    border-radius: var(--neo-radius) !important;
+  }
+
+  .nav a,
+  .top-tab,
+  .btn,
+  .btn-primary,
+  .btn-secondary {
+    min-width: 0;
+  }
+}
