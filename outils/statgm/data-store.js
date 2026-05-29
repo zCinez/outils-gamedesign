@@ -68,24 +68,19 @@ const StatGMStore = (() => {
     });
   };
 
-  const removeLegacyLocalStorage = () => {
-    trackedKeys.forEach((key) => {
-      try {
-        localStorage.removeItem(key);
-      } catch {
-        // Ignore legacy cleanup failures.
-      }
-    });
-  };
-
-  const parseLegacyValue = (key) => {
+  const readLocalMirror = (key) => {
     try {
       const rawValue = localStorage.getItem(key);
-      if (!rawValue) return [];
+      if (rawValue === null) {
+        return { hasValue: false, value: [] };
+      }
       const parsed = JSON.parse(rawValue);
-      return Array.isArray(parsed) ? parsed : [];
+      return {
+        hasValue: true,
+        value: Array.isArray(parsed) ? parsed : []
+      };
     } catch {
-      return [];
+      return { hasValue: false, value: [] };
     }
   };
 
@@ -93,22 +88,30 @@ const StatGMStore = (() => {
     await openDatabase();
 
     const legacyValues = new Map(
-      trackedKeys.map((key) => [key, parseLegacyValue(key)])
+      trackedKeys.map((key) => [key, readLocalMirror(key)])
     );
 
     for (const key of trackedKeys) {
       const storedValue = await readRecord(key);
-      if (Array.isArray(storedValue)) {
-        cache.set(key, storedValue);
+      const legacyValue = legacyValues.get(key);
+
+      if (legacyValue?.hasValue) {
+        cache.set(key, legacyValue.value);
+        await writeRecord(key, legacyValue.value);
         continue;
       }
 
-      const fallbackValue = legacyValues.get(key) || [];
+      if (Array.isArray(storedValue)) {
+        cache.set(key, storedValue);
+        localStorage.setItem(key, JSON.stringify(storedValue));
+        continue;
+      }
+
+      const fallbackValue = [];
       cache.set(key, fallbackValue);
       await writeRecord(key, fallbackValue);
+      localStorage.setItem(key, JSON.stringify(fallbackValue));
     }
-
-    removeLegacyLocalStorage();
   };
 
   const ready = async () => {
@@ -116,7 +119,7 @@ const StatGMStore = (() => {
       readyPromise = hydrateCache().catch(() => {
         useLocalStorageFallback = true;
         trackedKeys.forEach((key) => {
-          cache.set(key, parseLegacyValue(key));
+          cache.set(key, readLocalMirror(key).value);
         });
       });
     }
@@ -132,8 +135,8 @@ const StatGMStore = (() => {
   const setList = async (key, values) => {
     const safeValues = Array.isArray(values) ? values : [];
     cache.set(key, cloneValue(safeValues));
+    localStorage.setItem(key, JSON.stringify(safeValues));
     if (useLocalStorageFallback) {
-      localStorage.setItem(key, JSON.stringify(safeValues));
       return;
     }
     await writeRecord(key, safeValues);

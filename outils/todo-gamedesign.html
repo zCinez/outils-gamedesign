@@ -519,6 +519,8 @@
     }
   </style>
   <link rel="stylesheet" href="../assets/neodium-unified.css?v=20260528b" />
+  <script src="../assets/supabase-config.js"></script>
+  <script src="../assets/cloud-sync.js"></script>
 </head>
 
 <body>
@@ -547,7 +549,7 @@
         <p>
           Cette page te sert à suivre les tâches de game design : équilibrage, CDC, bugs,
           wiki, métiers, quêtes, événements et améliorations serveur. Les données sont sauvegardées
-          dans ton navigateur avec localStorage.
+          par defaut en local, puis se synchronisent entre PC une fois le cloud connecte.
         </p>
       </div>
 
@@ -693,7 +695,7 @@
     </section>
 
     <p class="footer-note">
-      Important : cette todo est locale. Si tu changes de navigateur ou de PC, utilise Exporter JSON puis Importer JSON.
+      Important : sans connexion cloud, cette todo reste locale. Avec Supabase connecte, elle se retrouve sur tes autres PC.
     </p>
   </main>
 
