@@ -1,6 +1,6 @@
 (function () {
   const config = window.NEODIUM_SUPABASE_CONFIG || {};
-  const mode = config.mode || "shared_public";
+  const mode = config.mode || "shared_team_auth";
   const syncKeyPrefixes = Array.isArray(config.syncKeyPrefixes) ? config.syncKeyPrefixes : [];
   const syncKeys = new Set(Array.isArray(config.syncKeys) ? config.syncKeys : []);
   const hasConfig = Boolean(config.url && config.anonKey);
@@ -8,6 +8,8 @@
   const workspaceId = config.workspaceId || "global";
   const syncStateEventName = "neodium-cloud-state";
   const panelStorageKey = "neodium-cloud-panel-open";
+  const reloadStorageKey = "neodium-cloud-last-reload-user";
+  const emailStorageKey = "neodium-cloud-last-email";
   const styleElementId = "neodium-cloud-sync-style";
 
   const storageProto = Object.getPrototypeOf(window.localStorage);
@@ -15,20 +17,27 @@
   const nativeGetItem = storageProto.getItem;
   const nativeRemoveItem = storageProto.removeItem;
   const nativeClear = storageProto.clear;
+  const nativeSessionSetItem = window.sessionStorage.setItem.bind(window.sessionStorage);
+  const nativeSessionGetItem = window.sessionStorage.getItem.bind(window.sessionStorage);
+  const nativeSessionRemoveItem = window.sessionStorage.removeItem.bind(window.sessionStorage);
 
   const pendingMutations = new Map();
   let suppressTrackedWrites = false;
   let initialSyncComplete = false;
   let supabaseClient = null;
+  let authSubscription = null;
   let syncLock = Promise.resolve();
+  let currentUserId = "";
+  let currentEmail = "";
   let widget = null;
 
   const state = {
     configured: hasConfig,
     ready: false,
     status: hasConfig ? "booting" : "disabled",
-    message: hasConfig ? "Initialisation du cloud partage..." : "Ajoute Supabase dans assets/supabase-config.js",
-    label: mode === "shared_public" ? "Partage equipe" : "Cloud",
+    message: hasConfig ? "Initialisation du cloud equipe..." : "Ajoute Supabase dans assets/supabase-config.js",
+    label: "Local",
+    email: "",
     syncing: false,
     pending: 0
   };
@@ -50,14 +59,9 @@
     if (key.startsWith("sb-") || key.startsWith("supabase.") || key.startsWith("neodium-cloud-")) {
       return false;
     }
+
     if (syncKeys.has(key)) return true;
     return syncKeyPrefixes.some((prefix) => key.startsWith(prefix));
-  }
-
-  function updateState(patch) {
-    Object.assign(state, patch, { pending: pendingMutations.size });
-    window.dispatchEvent(new CustomEvent(syncStateEventName, { detail: getPublicState() }));
-    renderWidget();
   }
 
   function getPublicState() {
@@ -67,16 +71,24 @@
       status: state.status,
       message: state.message,
       label: state.label,
+      email: state.email,
       syncing: state.syncing,
       pending: state.pending
     };
+  }
+
+  function updateState(patch) {
+    Object.assign(state, patch, { pending: pendingMutations.size });
+    window.dispatchEvent(new CustomEvent(syncStateEventName, { detail: getPublicState() }));
+    renderWidget();
   }
 
   function queueMutation(type, key, value) {
     if (!isTrackedKey(key) || suppressTrackedWrites) return;
     pendingMutations.set(key, { type, value: value ?? "" });
     updateState({});
-    if (initialSyncComplete && supabaseClient) {
+
+    if (initialSyncComplete && currentUserId) {
       void flushPendingMutations();
     }
   }
@@ -127,6 +139,15 @@
     return entries;
   }
 
+  function rememberEmail(value) {
+    if (!value) return;
+    rawSetLocal(emailStorageKey, value);
+  }
+
+  function getRememberedEmail() {
+    return rawGetLocal(emailStorageKey) || "";
+  }
+
   function setPanelOpen(open) {
     if (open) {
       rawSetLocal(panelStorageKey, "1");
@@ -137,6 +158,18 @@
 
   function isPanelOpen() {
     return rawGetLocal(panelStorageKey) === "1";
+  }
+
+  function getReloadMarker() {
+    return nativeSessionGetItem(reloadStorageKey) || "";
+  }
+
+  function setReloadMarker(value) {
+    if (!value) {
+      nativeSessionRemoveItem(reloadStorageKey);
+      return;
+    }
+    nativeSessionSetItem(reloadStorageKey, value);
   }
 
   function injectStyles() {
@@ -249,6 +282,28 @@
         margin-bottom: 12px;
       }
 
+      .neodium-cloud__field {
+        display: grid;
+        gap: 6px;
+        margin-bottom: 12px;
+      }
+
+      .neodium-cloud__field label {
+        color: #aab6c4;
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .neodium-cloud__field input {
+        min-height: 44px;
+        width: 100%;
+        padding: 0 12px;
+        border: 1px solid rgba(233, 239, 246, 0.14);
+        border-radius: 8px;
+        color: #f4f7fb;
+        background: rgba(255, 255, 255, 0.065);
+      }
+
       .neodium-cloud__actions {
         display: flex;
         flex-wrap: wrap;
@@ -276,6 +331,14 @@
         opacity: 0.5;
         cursor: not-allowed;
       }
+
+      @media (max-width: 680px) {
+        .neodium-cloud {
+          right: 12px;
+          bottom: 12px;
+          width: calc(100vw - 24px);
+        }
+      }
     `;
     document.head.appendChild(style);
   }
@@ -302,6 +365,10 @@
         </div>
         <div class="neodium-cloud__status">
           <div class="neodium-cloud__meta" data-role="meta"></div>
+        </div>
+        <div class="neodium-cloud__field" data-role="email-field">
+          <label for="neodiumCloudEmail">Email</label>
+          <input id="neodiumCloudEmail" type="email" placeholder="staff@neodium.fr" autocomplete="email" />
         </div>
         <div class="neodium-cloud__actions" data-role="actions"></div>
         <p class="neodium-cloud__hint" data-role="hint"></p>
@@ -341,6 +408,8 @@
     const meta = widget.querySelector("[data-role='meta']");
     const actions = widget.querySelector("[data-role='actions']");
     const hint = widget.querySelector("[data-role='hint']");
+    const emailField = widget.querySelector("[data-role='email-field']");
+    const emailInput = widget.querySelector("#neodiumCloudEmail");
     const toggle = widget.querySelector(".neodium-cloud__toggle");
 
     const statusForDot = state.status === "ready"
@@ -353,31 +422,51 @@
 
     dot.dataset.status = statusForDot;
     toggle.setAttribute("aria-expanded", String(widget.classList.contains("is-open")));
-    toggleLabel.textContent = state.label;
+    toggleLabel.textContent = state.email || state.label;
     message.textContent = state.message;
+
+    if (emailInput && !emailInput.value) {
+      emailInput.value = getRememberedEmail();
+    }
 
     if (!state.configured) {
       meta.textContent = "Supabase n'est pas configure.";
+      emailField.style.display = "none";
       actions.innerHTML = "";
       hint.textContent = "Ajoute l'URL et la cle publique dans assets/supabase-config.js.";
       return;
     }
 
-    meta.textContent = mode === "shared_public"
-      ? "Tous les visiteurs du portail partagent les memes donnees."
-      : "Mode cloud actif.";
-
-    actions.innerHTML = `
-      <button type="button" class="neodium-cloud__button neodium-cloud__button--primary" data-action="sync"${state.syncing ? " disabled" : ""}>Synchroniser</button>
-      <button type="button" class="neodium-cloud__button" data-action="reload"${state.syncing ? " disabled" : ""}>Recharger le cloud</button>
-    `;
-    hint.textContent = mode === "shared_public"
-      ? "Toute modification sur le portail peut etre retrouvee par les autres visiteurs."
-      : "Synchronisation cloud active.";
+    if (state.email) {
+      emailField.style.display = "none";
+      meta.textContent = `Connecte en tant que ${state.email}`;
+      actions.innerHTML = `
+        <button type="button" class="neodium-cloud__button neodium-cloud__button--primary" data-action="sync"${state.syncing ? " disabled" : ""}>Synchroniser</button>
+        <button type="button" class="neodium-cloud__button" data-action="reload"${state.syncing ? " disabled" : ""}>Recharger le cloud</button>
+        <button type="button" class="neodium-cloud__button" data-action="signout"${state.syncing ? " disabled" : ""}>Se deconnecter</button>
+      `;
+      hint.textContent = "Les utilisateurs autorises partagent les memes donnees une fois connectes.";
+    } else {
+      emailField.style.display = "";
+      meta.textContent = "Pas de session cloud active";
+      actions.innerHTML = `
+        <button type="button" class="neodium-cloud__button neodium-cloud__button--primary" data-action="signin"${state.syncing ? " disabled" : ""}>Recevoir un lien</button>
+      `;
+      hint.textContent = "Seules les adresses autorisees dans Supabase auront acces aux donnees partagees.";
+    }
 
     actions.querySelectorAll("[data-action]").forEach((button) => {
       button.addEventListener("click", async () => {
         const action = button.getAttribute("data-action");
+        if (action === "signin") {
+          const email = String(emailInput?.value || "").trim();
+          await window.NeodiumCloudSync.signInWithMagicLink(email);
+          return;
+        }
+        if (action === "signout") {
+          await window.NeodiumCloudSync.signOut();
+          return;
+        }
         if (action === "sync") {
           await window.NeodiumCloudSync.forceSync();
           return;
@@ -390,7 +479,7 @@
   }
 
   async function flushPendingMutations() {
-    if (!supabaseClient || !initialSyncComplete || pendingMutations.size === 0) {
+    if (!supabaseClient || !currentUserId || !initialSyncComplete || pendingMutations.size === 0) {
       updateState({});
       return;
     }
@@ -454,71 +543,172 @@
     return syncLock;
   }
 
-  async function loadSharedSnapshot() {
-    return withSyncLock(async () => {
-      if (!supabaseClient) return;
+  function isUnauthorizedError(error) {
+    const message = String(error?.message || "").toLowerCase();
+    return message.includes("row-level security") || message.includes("permission denied");
+  }
 
+  async function applyRemoteSnapshot(session) {
+    if (!session?.user?.id) {
+      currentUserId = "";
+      currentEmail = "";
+      initialSyncComplete = false;
+      setReloadMarker("");
       updateState({
         ready: true,
-        syncing: true,
-        status: "syncing",
-        message: "Chargement du cloud partage..."
-      });
-
-      const { data, error } = await supabaseClient
-        .from(storageTable)
-        .select("storage_key, storage_value")
-        .eq("workspace_id", workspaceId)
-        .order("storage_key", { ascending: true });
-
-      if (error) {
-        updateState({
-          ready: true,
-          syncing: false,
-          status: "error",
-          message: error.message || "Lecture Supabase impossible."
-        });
-        return;
-      }
-
-      const remoteRows = Array.isArray(data) ? data : [];
-      const remoteMap = new Map();
-      remoteRows.forEach((row) => {
-        if (!row || !isTrackedKey(row.storage_key)) return;
-        remoteMap.set(row.storage_key, String(row.storage_value ?? ""));
-      });
-
-      let appliedRemoteChanges = false;
-      suppressTrackedWrites = true;
-      remoteMap.forEach((value, key) => {
-        const localValue = rawGetLocal(key);
-        if (localValue !== value) {
-          rawSetLocal(key, value);
-          appliedRemoteChanges = true;
-        }
-        pendingMutations.delete(key);
-      });
-      suppressTrackedWrites = false;
-
-      if (remoteMap.size === 0) {
-        getTrackedSnapshot().forEach((entry) => {
-          pendingMutations.set(entry.key, { type: "set", value: entry.value });
-        });
-      }
-
-      initialSyncComplete = true;
-      updateState({
-        ready: true,
+        status: "signed_out",
         syncing: false,
-        status: "ready",
-        message: "Cloud partage connecte."
+        label: "Local",
+        email: "",
+        message: "Connexion cloud disponible."
       });
+      return;
+    }
 
-      await flushPendingMutations();
+    currentUserId = session.user.id;
+    currentEmail = session.user.email || "";
+    updateState({
+      ready: true,
+      status: "syncing",
+      syncing: true,
+      label: "Partage equipe",
+      email: currentEmail,
+      message: "Chargement du cloud partage..."
+    });
 
-      if (appliedRemoteChanges) {
-        window.location.reload();
+    const { data, error } = await supabaseClient
+      .from(storageTable)
+      .select("storage_key, storage_value")
+      .eq("workspace_id", workspaceId)
+      .order("storage_key", { ascending: true });
+
+    if (error) {
+      updateState({
+        ready: true,
+        status: "error",
+        syncing: false,
+        label: "Partage equipe",
+        email: currentEmail,
+        message: isUnauthorizedError(error)
+          ? "Cet email n'est pas autorise pour le partage."
+          : (error.message || "Lecture Supabase impossible.")
+      });
+      return;
+    }
+
+    const remoteRows = Array.isArray(data) ? data : [];
+    const remoteMap = new Map();
+    remoteRows.forEach((row) => {
+      if (!row || !isTrackedKey(row.storage_key)) return;
+      remoteMap.set(row.storage_key, String(row.storage_value ?? ""));
+    });
+
+    let appliedRemoteChanges = false;
+    suppressTrackedWrites = true;
+    remoteMap.forEach((value, key) => {
+      const localValue = rawGetLocal(key);
+      if (localValue !== value) {
+        rawSetLocal(key, value);
+        appliedRemoteChanges = true;
       }
+      pendingMutations.delete(key);
+    });
+    suppressTrackedWrites = false;
+
+    if (remoteMap.size === 0) {
+      getTrackedSnapshot().forEach((entry) => {
+        pendingMutations.set(entry.key, { type: "set", value: entry.value });
+      });
+    }
+
+    initialSyncComplete = true;
+    updateState({
+      ready: true,
+      status: "ready",
+      syncing: false,
+      label: "Partage equipe",
+      email: currentEmail,
+      message: "Cloud partage connecte."
+    });
+
+    await flushPendingMutations();
+
+    const reloadMarker = getReloadMarker();
+    if (appliedRemoteChanges && reloadMarker !== currentUserId) {
+      setReloadMarker(currentUserId);
+      window.location.reload();
+      return;
+    }
+
+    if (!appliedRemoteChanges && reloadMarker === currentUserId) {
+      setReloadMarker("");
+    }
+  }
+
+  async function syncSession(session) {
+    return withSyncLock(async () => {
+      await applyRemoteSnapshot(session);
+    });
+  }
+
+  async function signInWithMagicLink(email) {
+    if (!supabaseClient) {
+      updateState({ status: "error", message: "Supabase n'est pas pret." });
+      return;
+    }
+
+    const normalizedEmail = String(email || "").trim();
+    if (!normalizedEmail) {
+      updateState({ status: "error", message: "Saisis un email avant de continuer." });
+      return;
+    }
+
+    rememberEmail(normalizedEmail);
+    updateState({ syncing: true, status: "syncing", message: "Envoi du lien magique..." });
+
+    const { error } = await supabaseClient.auth.signInWithOtp({
+      email: normalizedEmail,
+      options: {
+        emailRedirectTo: config.emailRedirectTo || (window.location.origin + window.location.pathname)
+      }
+    });
+
+    if (error) {
+      updateState({ syncing: false, status: "error", message: error.message || "Envoi impossible." });
+      return;
+    }
+
+    updateState({
+      syncing: false,
+      status: "ready",
+      label: "Partage equipe",
+      email: "",
+      message: `Lien envoye a ${normalizedEmail}.`
+    });
+  }
+
+  async function signOut() {
+    if (!supabaseClient) return;
+
+    updateState({ syncing: true, status: "syncing", message: "Deconnexion..." });
+    const { error } = await supabaseClient.auth.signOut();
+
+    if (error) {
+      updateState({ syncing: false, status: "error", message: error.message || "Deconnexion impossible." });
+      return;
+    }
+
+    currentUserId = "";
+    currentEmail = "";
+    initialSyncComplete = false;
+    setReloadMarker("");
+    updateState({
+      ready: true,
+      syncing: false,
+      status: "signed_out",
+      label: "Local",
+      email: "",
+      message: "Deconnecte. Les outils restent utilisables en local."
     });
   }
 
@@ -540,13 +730,23 @@
       const module = await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm");
       supabaseClient = module.createClient(config.url, config.anonKey, {
         auth: {
-          persistSession: false,
-          autoRefreshToken: false,
-          detectSessionInUrl: false
+          persistSession: true,
+          autoRefreshToken: true,
+          detectSessionInUrl: true
         }
       });
 
-      await loadSharedSnapshot();
+      const { data, error } = await supabaseClient.auth.getSession();
+      if (error) {
+        updateState({ ready: true, status: "error", message: error.message || "Session Supabase indisponible." });
+      } else {
+        await syncSession(data.session);
+      }
+
+      const authListener = supabaseClient.auth.onAuthStateChange((_event, session) => {
+        void syncSession(session);
+      });
+      authSubscription = authListener?.data?.subscription || null;
     } catch (error) {
       updateState({
         ready: true,
@@ -559,9 +759,16 @@
 
   window.NeodiumCloudSync = {
     getState: getPublicState,
+    signInWithMagicLink,
+    signOut,
     forceSync,
-    reloadFromCloud: loadSharedSnapshot,
-    whenReady: () => syncLock
+    reloadFromCloud: async () => {
+      if (!supabaseClient) return;
+      const { data } = await supabaseClient.auth.getSession();
+      await syncSession(data?.session || null);
+    },
+    whenReady: () => syncLock,
+    unsubscribe: () => authSubscription?.unsubscribe?.()
   };
 
   if (document.readyState === "loading") {
