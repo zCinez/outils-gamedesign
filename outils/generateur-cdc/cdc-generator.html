@@ -47,6 +47,7 @@
                 <option value="itemC">Item Custom</option>
                 <option value="event">Event</option>
                 <option value="metier">Métier</option>
+                <option value="rankUp">Rank-up</option>
                 <option value="mobs">Mobs</option>
                 <option value="libre">Libre</option>
                 <option value="caisse">Caisse</option>
@@ -897,7 +898,21 @@
         </div>
 
         <!-- =====================================================
-             TEMPLATE 8 : MOBS
+             TEMPLATE 8 : RANK-UP
+             ===================================================== -->
+        <div id="rankUpForm" class="template-form">
+          <div class="dynamic-block">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+              <h3 style="margin:0;">Paliers de rank-up</h3>
+              <button type="button" class="btn-small" onclick="ajouterRankUp()">+ Ajouter un rank-up</button>
+            </div>
+
+            <div id="rankUpContainer" style="margin-top:14px;"></div>
+          </div>
+        </div>
+
+        <!-- =====================================================
+             TEMPLATE 9 : MOBS
              ===================================================== -->
         <div id="mobsForm" class="template-form">
           <div class="grid-2">
@@ -1070,6 +1085,7 @@
   <script src="./cdc-generator-template-event.js" defer></script>
   <script src="./cdc-generator-template-caisse-sound.js" defer></script>
   <script src="./cdc-generator-template-metier.js" defer></script>
+  <script src="./cdc-generator-template-rankup.js" defer></script>
   <script src="./cdc-generator-template-mobs.js" defer></script>
   <script src="./cdc-generator-template-libre.js" defer></script>
   <script src="./cdc-generator.js" defer></script>

@@ -13,6 +13,8 @@
     let metierItemIndex = 0;
     let metierLevelRewardIndex = 0;
     let metierGuiItemIndex = 0;
+    let rankUpIndex = 0;
+    let rankUpRewardIndex = 0;
     let mobSpawnIndex = 0;
     let mobDropIndex = 0;
     let libreSectionIndex = 0;
@@ -227,6 +229,7 @@
     let currentProjectId = null;
     let activeWorkspaceProjectId = "";
     let activeWorkspaceProjectName = "";
+    let requestedHistoryProjectId = "";
     let isCDCDirty = true;
     let scheduledCDCGenerationId = null;
     let autosaveTimeoutId = null;
@@ -263,6 +266,12 @@
         textGenerator: genererTemplateMetier,
         previewGenerator: genererPreviewMetierHtml
       },
+      rankUp: {
+        formId: "rankUpForm",
+        badge: "Template actif : Rank-up",
+        textGenerator: genererTemplateRankUp,
+        previewGenerator: genererPreviewRankUpHtml
+      },
       mobs: {
         formId: "mobsForm",
         badge: "Template actif : Mobs",
@@ -294,6 +303,7 @@
       itemC: "Item Custom",
       event: "Event",
       metier: "Métier",
+      rankUp: "Rank-up",
       mobs: "Mobs",
       libre: "Libre",
       caisse: "Caisse",
@@ -807,6 +817,7 @@
     function resolveWorkspaceProjectContext() {
       const url = new URL(window.location.href);
       const projectIdFromUrl = url.searchParams.get("projectId");
+      requestedHistoryProjectId = url.searchParams.get("cdcId") || "";
       const storedProjectId = localStorage.getItem(ACTIVE_PROJECT_STORAGE_KEY);
       const resolvedProjectId = projectIdFromUrl || storedProjectId || "";
       const project = resolvedProjectId ? getWorkspaceProjectById(resolvedProjectId) : null;
@@ -827,6 +838,11 @@
         url.searchParams.set("projectId", activeWorkspaceProjectId);
       } else {
         url.searchParams.delete("projectId");
+      }
+      if (currentProjectId) {
+        url.searchParams.set("cdcId", currentProjectId);
+      } else {
+        url.searchParams.delete("cdcId");
       }
       window.history.replaceState({}, "", url.toString());
     }
@@ -3657,6 +3673,7 @@
           metierItems: recupererMetierItems(),
           metierLevelRewards: recupererMetierLevelRewards(),
           metierGuiItems: recupererMetierGuiItems(),
+          rankUps: recupererRankUps(),
           mobSpawns: recupererMobSpawns(),
           mobDrops: recupererMobDrops(),
           libreSections: recupererLibreSections(),
@@ -3784,7 +3801,7 @@
         ["metierXpMessageAutre", false]
       ].forEach(([id, checked]) => setChecked(id, checked));
 
-      ["messagesContainer", "guiItemsCommandeContainer", "guiItemsTemplateContainer", "eventConditionsContainer", "eventMessagesContainer", "metierItemsContainer", "metierLevelRewardsContainer", "metierGuiItemsContainer", "mobSpawnsContainer", "mobDropsContainer", "libreSectionsContainer", "caisseRewardsContainer", "soundDesignEntriesContainer"].forEach(clearElement);
+      ["messagesContainer", "guiItemsCommandeContainer", "guiItemsTemplateContainer", "eventConditionsContainer", "eventMessagesContainer", "metierItemsContainer", "metierLevelRewardsContainer", "metierGuiItemsContainer", "rankUpContainer", "mobSpawnsContainer", "mobDropsContainer", "libreSectionsContainer", "caisseRewardsContainer", "soundDesignEntriesContainer"].forEach(clearElement);
 
       messageIndex = 0;
       guiCommandeItemIndex = 0;
@@ -3794,6 +3811,8 @@
       metierItemIndex = 0;
       metierLevelRewardIndex = 0;
       metierGuiItemIndex = 0;
+      rankUpIndex = 0;
+      rankUpRewardIndex = 0;
       mobSpawnIndex = 0;
       mobDropIndex = 0;
       libreSectionIndex = 0;
@@ -3865,6 +3884,7 @@
       (dynamic.metierItems || []).forEach(item => ajouterMetierItemRow(item));
       (dynamic.metierLevelRewards || []).forEach(entry => ajouterMetierLevelRewardRow(entry));
       (dynamic.metierGuiItems || []).forEach(item => ajouterMetierGuiItem(item));
+      (dynamic.rankUps || []).forEach(rankUp => ajouterRankUp(rankUp));
       (dynamic.mobSpawns || []).forEach(spawn => ajouterMobSpawn(spawn));
       (dynamic.mobDrops || []).forEach(drop => ajouterMobDrop(drop));
       (dynamic.libreSections || []).forEach(section => ajouterLibreSection(section));
@@ -3914,6 +3934,22 @@
       updateGuiTemplateVisualization();
       renderProjectHistory();
       genererCDC(true);
+      syncWorkspaceProjectInUrl();
+    }
+
+    function loadRequestedHistoryProjectIfAny() {
+      if (!requestedHistoryProjectId) return false;
+
+      const project = getLocalProjectHistory().find(entry => entry.id === requestedHistoryProjectId);
+      if (!project) {
+        requestedHistoryProjectId = "";
+        syncWorkspaceProjectInUrl();
+        return false;
+      }
+
+      requestedHistoryProjectId = "";
+      loadProjectState(project);
+      return true;
     }
 
     function openHistoryProject(projectId) {
@@ -4041,6 +4077,7 @@
     ajouterSoundDesignEntry();
     switchTemplate();
     defaultProjectSnapshot = buildProjectSnapshot(collectProjectState());
+    loadRequestedHistoryProjectIfAny();
 
     void window.hydrateCdcProjectsFromFiles?.().then(result => {
       if (result?.ok && result.hydrated) {
@@ -4048,6 +4085,7 @@
         populateWorkspaceProjectSelect();
         updateWorkspaceProjectUi();
         renderProjectHistory();
+        loadRequestedHistoryProjectIfAny();
       }
     });
   

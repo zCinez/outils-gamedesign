@@ -12,6 +12,21 @@ let pendingScrollPlacement = "top";
 let currentWorkspaceProjectId = "";
 let currentWorkspaceProject = null;
 
+function buildEditorUrlForCdc(entry) {
+  const projectId = currentWorkspaceProjectId || entry?.projectId || "";
+  const params = new URLSearchParams();
+
+  if (projectId) {
+    params.set("projectId", projectId);
+  }
+
+  if (entry?.id) {
+    params.set("cdcId", entry.id);
+  }
+
+  return `./cdc-generator.html${params.toString() ? `?${params.toString()}` : ""}`;
+}
+
 function getLibraryHistory() {
   try {
     const raw = localStorage.getItem(LIBRARY_HISTORY_STORAGE_KEY);
@@ -400,6 +415,59 @@ function selectCdcEntry(id) {
   renderCdcLibrary();
 }
 
+function editLibraryCdc(cdcId) {
+  const entry = getLibraryHistory().find(item => item.id === cdcId);
+  if (!entry) {
+    alert("CDC introuvable.");
+    renderCdcLibrary();
+    return;
+  }
+
+  const targetUrl = buildEditorUrlForCdc(entry);
+  window.navigateToPage?.(targetUrl) || (window.location.href = targetUrl);
+}
+
+function editSelectedCdc() {
+  if (!selectedCdcId) {
+    alert("Aucun CDC sélectionné.");
+    return;
+  }
+
+  editLibraryCdc(selectedCdcId);
+}
+
+function deleteLibraryCdc(cdcId) {
+  const history = getLibraryHistory();
+  const entry = history.find(item => item.id === cdcId);
+  if (!entry) {
+    renderCdcLibrary();
+    return;
+  }
+
+  const confirmed = window.confirm(`Supprimer le CDC "${entry.projectName || "CDC sans nom"}" ?`);
+  if (!confirmed) return;
+
+  const nextHistory = history.filter(item => item.id !== cdcId);
+  saveLibraryHistory(nextHistory);
+
+  if (selectedCdcId === cdcId) {
+    const currentItems = nextHistory.filter(item => !currentWorkspaceProjectId || item.projectId === currentWorkspaceProjectId);
+    selectedCdcId = currentItems[0]?.id || null;
+  }
+
+  void window.syncCdcProjectsDirectoryFromStorage?.();
+  renderCdcLibrary();
+}
+
+function deleteSelectedCdc() {
+  if (!selectedCdcId) {
+    alert("Aucun CDC sélectionné.");
+    return;
+  }
+
+  deleteLibraryCdc(selectedCdcId);
+}
+
 function getSelectedLibraryIndex(items) {
   return items.findIndex(item => item.id === selectedCdcId);
 }
@@ -443,8 +511,16 @@ function renderCdcLibrary() {
   list.innerHTML = items.map(item => `
     <div class="library-item${item.id === selectedCdcId ? " is-active" : ""}" onclick="selectCdcEntry('${item.id}')">
       <div class="library-item-top">
-        <p class="library-item-title">${escapeLibraryHtml(item.projectName || "CDC sans nom")}</p>
+        <div>
+          <p class="library-item-title">${escapeLibraryHtml(item.projectName || "CDC sans nom")}</p>
+          <div class="library-item-date">Modifié le ${escapeLibraryHtml(formatLibraryTimestamp(item.updatedAt || item.createdAt))}</div>
+        </div>
         <span class="project-history-template">${escapeLibraryHtml(item.templateLabel || item.template || "Template")}</span>
+      </div>
+      <div class="library-item-actions">
+        <button type="button" class="project-history-open" onclick="event.stopPropagation(); selectCdcEntry('${item.id}')">Voir</button>
+        <button type="button" class="project-history-edit" onclick="event.stopPropagation(); editLibraryCdc('${item.id}')">Modifier</button>
+        <button type="button" class="project-history-delete" onclick="event.stopPropagation(); deleteLibraryCdc('${item.id}')">Supprimer</button>
       </div>
     </div>
   `).join("");
@@ -577,6 +653,11 @@ resolveLibraryProjectContext();
 updateLibraryProjectUi();
 renderCdcLibrary();
 initLibraryAutoAdvance();
+
+window.editSelectedCdc = editSelectedCdc;
+window.deleteSelectedCdc = deleteSelectedCdc;
+window.editLibraryCdc = editLibraryCdc;
+window.deleteLibraryCdc = deleteLibraryCdc;
 
 void window.hydrateCdcProjectsFromFiles?.().then(result => {
   if (result?.ok && result.hydrated) {

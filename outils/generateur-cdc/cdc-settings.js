@@ -349,6 +349,35 @@ const SETTINGS_TEMPLATE_CATALOG = [
     ]
   },
   {
+    id: "rankUp",
+    label: "Rank-up",
+    formId: "rankUpForm",
+    description: "Template pour documenter une progression de ranks avec prix, prÃ©requis et rÃ©compenses par palier.",
+    sections: [
+      {
+        title: "Paliers de rank-up",
+        mode: "Dynamique",
+        description: "Le template est organisÃ© autour d'une liste de ranks successifs.",
+        items: [
+          "Bouton d'ajout d'un rank",
+          "Liste dynamique de ranks"
+        ]
+      },
+      {
+        title: "Structure d'un rank",
+        mode: "Dynamique",
+        description: "Chaque palier contient les champs nÃ©cessaires Ã  la progression.",
+        items: [
+          "Nom du rank",
+          "Prix du rank",
+          "PrÃ©requis",
+          "Liste dynamique de rÃ©compenses",
+          "Structure d'une rÃ©compense : texte libre"
+        ]
+      }
+    ]
+  },
+  {
     id: "mobs",
     label: "Mobs",
     formId: "mobsForm",

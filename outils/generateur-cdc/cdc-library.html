@@ -18,7 +18,7 @@
         <button type="button" class="sidebar-link sidebar-link-button" onclick="renameCurrentWorkspaceProject()">Renommer le projet</button>
       </div>
       <h1 id="libraryProjectTitle">Projet CDC</h1>
-      <p id="libraryProjectIntro">Consulte les CDC du projet, ouvre un document et exporte-le directement en PDF.</p>
+      <p id="libraryProjectIntro">Consulte les CDC du projet, ouvre un document, modifie-le ou exporte-le directement en PDF.</p>
 
       <div class="card sidebar-card library-list-card">
         <div class="sidebar-section-header">
@@ -82,6 +82,8 @@
               <h2 id="cdcDetailTitle" style="margin-bottom:8px;">Nom du CDC</h2>
             </div>
             <div class="library-detail-actions">
+              <button type="button" class="project-history-edit" onclick="editSelectedCdc()">Modifier</button>
+              <button type="button" class="project-history-delete" onclick="deleteSelectedCdc()">Supprimer</button>
               <button type="button" class="btn-primary" onclick="downloadSelectedCdcPdf()">Télécharger PDF</button>
             </div>
           </div>
