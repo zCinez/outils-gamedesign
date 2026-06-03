@@ -3,29 +3,8 @@ const LIBRARY_HISTORY_STORAGE_KEY = "neodium-cdc-project-history";
 const LIBRARY_PROJECTS_STORAGE_KEY = "neodium-cdc-projects";
 const LIBRARY_ACTIVE_PROJECT_STORAGE_KEY = "neodium-cdc-active-project";
 
-let selectedCdcId = null;
-let autoAdvanceLocked = false;
-let lastLibraryScrollY = 0;
-let libraryScrollIgnoreUntil = 0;
-let pendingBoundaryDirection = null;
-let pendingScrollPlacement = "top";
 let currentWorkspaceProjectId = "";
 let currentWorkspaceProject = null;
-
-function buildEditorUrlForCdc(entry) {
-  const projectId = currentWorkspaceProjectId || entry?.projectId || "";
-  const params = new URLSearchParams();
-
-  if (projectId) {
-    params.set("projectId", projectId);
-  }
-
-  if (entry?.id) {
-    params.set("cdcId", entry.id);
-  }
-
-  return `./cdc-generator.html${params.toString() ? `?${params.toString()}` : ""}`;
-}
 
 function getLibraryHistory() {
   try {
@@ -140,12 +119,6 @@ function applyLibraryTheme(theme) {
   window.syncGlobalThemeSwitch?.(normalizedTheme);
 }
 
-function toggleLibraryTheme() {
-  const nextTheme = document.body.dataset.theme === "dark" ? "light" : "dark";
-  applyLibraryTheme(nextTheme);
-  localStorage.setItem(LIBRARY_THEME_STORAGE_KEY, nextTheme);
-}
-
 function initLibraryTheme() {
   applyLibraryTheme(localStorage.getItem(LIBRARY_THEME_STORAGE_KEY) || "light");
 }
@@ -166,12 +139,12 @@ function normalizePdfText(value) {
   return String(value ?? "")
     .replaceAll("\r\n", "\n")
     .replaceAll("\r", "\n")
-    .replaceAll("’", "'")
-    .replaceAll("“", '"')
-    .replaceAll("”", '"')
-    .replaceAll("–", "-")
-    .replaceAll("—", "-")
-    .replaceAll("•", "-");
+    .replaceAll("â€™", "'")
+    .replaceAll("â€œ", '"')
+    .replaceAll("â€", '"')
+    .replaceAll("â€“", "-")
+    .replaceAll("â€”", "-")
+    .replaceAll("â€¢", "-");
 }
 
 function splitPdfWrappedLines(text, maxChars = 92) {
@@ -340,6 +313,21 @@ function buildSimplePdfDocument(title, bodyText) {
   return buildPdfFromJpegPages(imagePages.length ? imagePages : renderPdfPages(title, ""));
 }
 
+function buildEditorUrlForCdc(entry) {
+  const projectId = currentWorkspaceProjectId || entry?.projectId || "";
+  const params = new URLSearchParams();
+
+  if (projectId) {
+    params.set("projectId", projectId);
+  }
+
+  if (entry?.id) {
+    params.set("cdcId", entry.id);
+  }
+
+  return `./cdc-generator.html${params.toString() ? `?${params.toString()}` : ""}`;
+}
+
 function getFilteredLibraryItems() {
   const search = document.getElementById("librarySearch")?.value.trim().toLowerCase() || "";
   const sortMode = document.getElementById("librarySort")?.value || "recent";
@@ -410,11 +398,6 @@ function renderLibraryStats(items) {
   if (lastUpdateEl) lastUpdateEl.textContent = count ? formatLibraryTimestamp(lastUpdated) : "-";
 }
 
-function selectCdcEntry(id) {
-  selectedCdcId = id;
-  renderCdcLibrary();
-}
-
 function editLibraryCdc(cdcId) {
   const entry = getLibraryHistory().find(item => item.id === cdcId);
   if (!entry) {
@@ -425,15 +408,6 @@ function editLibraryCdc(cdcId) {
 
   const targetUrl = buildEditorUrlForCdc(entry);
   window.navigateToPage?.(targetUrl) || (window.location.href = targetUrl);
-}
-
-function editSelectedCdc() {
-  if (!selectedCdcId) {
-    alert("Aucun CDC sélectionné.");
-    return;
-  }
-
-  editLibraryCdc(selectedCdcId);
 }
 
 function deleteLibraryCdc(cdcId) {
@@ -447,134 +421,17 @@ function deleteLibraryCdc(cdcId) {
   const confirmed = window.confirm(`Supprimer le CDC "${entry.projectName || "CDC sans nom"}" ?`);
   if (!confirmed) return;
 
-  const nextHistory = history.filter(item => item.id !== cdcId);
-  saveLibraryHistory(nextHistory);
-
-  if (selectedCdcId === cdcId) {
-    const currentItems = nextHistory.filter(item => !currentWorkspaceProjectId || item.projectId === currentWorkspaceProjectId);
-    selectedCdcId = currentItems[0]?.id || null;
-  }
-
+  saveLibraryHistory(history.filter(item => item.id !== cdcId));
   void window.syncCdcProjectsDirectoryFromStorage?.();
   renderCdcLibrary();
 }
 
-function deleteSelectedCdc() {
-  if (!selectedCdcId) {
-    alert("Aucun CDC sélectionné.");
-    return;
-  }
-
-  deleteLibraryCdc(selectedCdcId);
-}
-
-function getSelectedLibraryIndex(items) {
-  return items.findIndex(item => item.id === selectedCdcId);
-}
-
-function selectNextCdc() {
-  const items = getFilteredLibraryItems();
-  const currentIndex = getSelectedLibraryIndex(items);
-  if (currentIndex === -1 || currentIndex >= items.length - 1) return;
-  pendingScrollPlacement = "top";
-  selectCdcEntry(items[currentIndex + 1].id);
-}
-
-function selectPreviousCdc() {
-  const items = getFilteredLibraryItems();
-  const currentIndex = getSelectedLibraryIndex(items);
-  if (currentIndex <= 0) return;
-  pendingScrollPlacement = "bottom";
-  selectCdcEntry(items[currentIndex - 1].id);
-}
-
-function renderCdcLibrary() {
-  const list = document.getElementById("cdcLibraryList");
-  if (!list) return;
-
-  const items = getFilteredLibraryItems();
-  renderLibraryStats(items);
-
-  if (!selectedCdcId && items.length > 0) {
-    selectedCdcId = items[0].id;
-  }
-  if (selectedCdcId && !items.some(item => item.id === selectedCdcId)) {
-    selectedCdcId = items[0]?.id || null;
-  }
-
-  if (items.length === 0) {
-    list.innerHTML = `<div class="library-empty">Aucun CDC enregistré pour le moment. Retourne sur la page de création pour enregistrer un premier document.</div>`;
-    renderCdcDetail();
-    return;
-  }
-
-  list.innerHTML = items.map(item => `
-    <div class="library-item${item.id === selectedCdcId ? " is-active" : ""}" onclick="selectCdcEntry('${item.id}')">
-      <div class="library-item-top">
-        <div>
-          <p class="library-item-title">${escapeLibraryHtml(item.projectName || "CDC sans nom")}</p>
-          <div class="library-item-date">Modifié le ${escapeLibraryHtml(formatLibraryTimestamp(item.updatedAt || item.createdAt))}</div>
-        </div>
-        <span class="project-history-template">${escapeLibraryHtml(item.templateLabel || item.template || "Template")}</span>
-      </div>
-      <div class="library-item-actions">
-        <button type="button" class="project-history-open" onclick="event.stopPropagation(); selectCdcEntry('${item.id}')">Voir</button>
-        <button type="button" class="project-history-edit" onclick="event.stopPropagation(); editLibraryCdc('${item.id}')">Modifier</button>
-        <button type="button" class="project-history-delete" onclick="event.stopPropagation(); deleteLibraryCdc('${item.id}')">Supprimer</button>
-      </div>
-    </div>
-  `).join("");
-
-  renderCdcDetail();
-}
-
-function getSelectedLibraryEntry() {
-  if (!selectedCdcId) return null;
-  return getLibraryHistory().find(entry => entry.id === selectedCdcId) || null;
-}
-
-function renderCdcDetail() {
-  const empty = document.getElementById("cdcDetailEmpty");
-  const detail = document.getElementById("cdcDetailView");
-  const entry = getSelectedLibraryEntry();
-
+function downloadLibraryCdcPdf(cdcId) {
+  const entry = getLibraryHistory().find(item => item.id === cdcId);
   if (!entry) {
-    if (empty) empty.style.display = "block";
-    if (detail) detail.style.display = "none";
+    alert("CDC introuvable.");
     return;
   }
-
-  if (empty) empty.style.display = "none";
-  if (detail) detail.style.display = "block";
-
-  document.getElementById("cdcDetailTemplate").textContent = entry.templateLabel || entry.template || "Template";
-  document.getElementById("cdcDetailTitle").textContent = entry.projectName || "CDC sans nom";
-  document.getElementById("cdcDetailCreated").textContent = `Créé le ${formatLibraryTimestamp(entry.createdAt || entry.updatedAt)}`;
-  document.getElementById("cdcDetailUpdated").textContent = `Modifié le ${formatLibraryTimestamp(entry.updatedAt)}`;
-
-  const preview = document.getElementById("cdcDetailPreview");
-  preview.innerHTML = entry.renderedHtml
-    ? entry.renderedHtml
-    : `<div class="library-empty">Ce CDC ne contient pas encore de rendu enrichi. Ouvre-le dans la page de création puis enregistre-le à nouveau pour générer l’aperçu.</div>`;
-
-  libraryScrollIgnoreUntil = Date.now() + 700;
-  pendingBoundaryDirection = null;
-
-  if (pendingScrollPlacement === "bottom") {
-    const bottomTarget = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
-    lastLibraryScrollY = bottomTarget;
-    window.scrollTo({ top: bottomTarget, behavior: "smooth" });
-  } else {
-    lastLibraryScrollY = 0;
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
-
-  pendingScrollPlacement = "top";
-}
-
-function downloadSelectedCdcPdf() {
-  const entry = getSelectedLibraryEntry();
-  if (!entry) return;
 
   const pdfBytes = buildSimplePdfDocument(
     entry.projectName || "CDC sans nom",
@@ -588,76 +445,45 @@ function downloadSelectedCdcPdf() {
   );
 }
 
-function initLibraryAutoAdvance() {
-  window.addEventListener("scroll", () => {
-    if (Date.now() < libraryScrollIgnoreUntil) {
-      lastLibraryScrollY = window.scrollY;
-      return;
-    }
+function renderCdcLibrary() {
+  const list = document.getElementById("cdcLibraryList");
+  if (!list) return;
 
-    const currentScrollY = window.scrollY;
-    const remaining = document.documentElement.scrollHeight - window.innerHeight - currentScrollY;
-    const atBottom = remaining <= 24;
-    const atTop = currentScrollY <= 8;
+  const items = getFilteredLibraryItems();
+  renderLibraryStats(items);
 
-    if (!atBottom && !atTop) {
-      pendingBoundaryDirection = null;
-    }
+  if (items.length === 0) {
+    list.innerHTML = `<div class="library-empty">Aucun CDC enregistré pour le moment. Retourne sur la page de création pour enregistrer un premier document.</div>`;
+    return;
+  }
 
-    lastLibraryScrollY = currentScrollY;
-  });
-
-  window.addEventListener("wheel", (event) => {
-    if (autoAdvanceLocked) return;
-    if (Date.now() < libraryScrollIgnoreUntil) return;
-
-    const currentScrollY = window.scrollY;
-    const remaining = document.documentElement.scrollHeight - window.innerHeight - currentScrollY;
-    const atBottom = remaining <= 24;
-    const atTop = currentScrollY <= 8;
-
-    if (event.deltaY > 0 && atBottom) {
-      if (pendingBoundaryDirection === "bottom") {
-        autoAdvanceLocked = true;
-        selectNextCdc();
-        window.setTimeout(() => {
-          autoAdvanceLocked = false;
-        }, 500);
-      } else {
-        pendingBoundaryDirection = "bottom";
-      }
-      return;
-    }
-
-    if (event.deltaY < 0 && atTop) {
-      if (pendingBoundaryDirection === "top") {
-        autoAdvanceLocked = true;
-        selectPreviousCdc();
-        window.setTimeout(() => {
-          autoAdvanceLocked = false;
-        }, 500);
-      } else {
-        pendingBoundaryDirection = "top";
-      }
-      return;
-    }
-
-    if (!atBottom && !atTop) {
-      pendingBoundaryDirection = null;
-    }
-  }, { passive: true });
+  list.innerHTML = items.map(item => `
+    <article class="library-item">
+      <div class="library-item-top">
+        <div>
+          <p class="library-item-title">${escapeLibraryHtml(item.projectName || "CDC sans nom")}</p>
+          <div class="library-item-date">Créé le ${escapeLibraryHtml(formatLibraryTimestamp(item.createdAt || item.updatedAt))}</div>
+          <div class="library-item-date">Modifié le ${escapeLibraryHtml(formatLibraryTimestamp(item.updatedAt || item.createdAt))}</div>
+        </div>
+        <span class="project-history-template">${escapeLibraryHtml(item.templateLabel || item.template || "Template")}</span>
+      </div>
+      <div class="library-item-actions">
+        <button type="button" class="project-history-edit" onclick="editLibraryCdc('${item.id}')">Modifier</button>
+        <button type="button" class="project-history-delete" onclick="deleteLibraryCdc('${item.id}')">Supprimer</button>
+        <button type="button" class="btn-primary" onclick="downloadLibraryCdcPdf('${item.id}')">Télécharger PDF</button>
+      </div>
+    </article>
+  `).join("");
 }
 
 initLibraryTheme();
 resolveLibraryProjectContext();
 updateLibraryProjectUi();
 renderCdcLibrary();
-initLibraryAutoAdvance();
 
-window.editSelectedCdc = editSelectedCdc;
-window.deleteSelectedCdc = deleteSelectedCdc;
 window.editLibraryCdc = editLibraryCdc;
 window.deleteLibraryCdc = deleteLibraryCdc;
+window.downloadLibraryCdcPdf = downloadLibraryCdcPdf;
 
 void window.hydrateCdcProjectsFromFiles?.().then(result => {
   if (result?.ok && result.hydrated) {

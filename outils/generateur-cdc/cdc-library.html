@@ -18,24 +18,7 @@
         <button type="button" class="sidebar-link sidebar-link-button" onclick="renameCurrentWorkspaceProject()">Renommer le projet</button>
       </div>
       <h1 id="libraryProjectTitle">Projet CDC</h1>
-      <p id="libraryProjectIntro">Consulte les CDC du projet, ouvre un document, modifie-le ou exporte-le directement en PDF.</p>
-
-      <div class="card sidebar-card library-list-card">
-        <div class="sidebar-section-header">
-          <div class="sidebar-preview-header">CDC du projet</div>
-          <span id="libraryCount" class="sidebar-count-badge">0</span>
-        </div>
-        <div class="library-toolbar">
-          <input type="text" id="librarySearch" placeholder="Rechercher un CDC..." oninput="renderCdcLibrary()" />
-          <select id="librarySort" onchange="renderCdcLibrary()">
-            <option value="recent">Plus récent</option>
-            <option value="oldest">Plus ancien</option>
-            <option value="name">Nom</option>
-            <option value="template">Template</option>
-          </select>
-        </div>
-        <div id="cdcLibraryList" class="library-list" style="margin-top:14px;"></div>
-      </div>
+      <p id="libraryProjectIntro">Cette page affiche uniquement la liste des CDC du projet.</p>
     </aside>
 
     <main class="main">
@@ -48,11 +31,11 @@
         </nav>
       </div>
 
-      <div class="card library-header-card">
+      <section class="card library-header-card">
         <div class="template-badge">Espace projet</div>
         <h2 id="libraryHeaderProjectName">Bibliothèque du projet</h2>
         <p class="library-intro">
-          Cette page regroupe uniquement les CDC enregistrés dans ce projet. Sélectionne un document à gauche ou crée un nouveau CDC pour continuer.
+          Retrouve ici tous les CDC enregistrés dans ce projet. Tu peux les modifier, les supprimer ou les exporter directement en PDF.
         </p>
         <div class="library-stats">
           <div class="library-stat">
@@ -68,38 +51,24 @@
             <div id="libraryStatLastUpdate" class="library-stat-value" style="font-size:18px;">-</div>
           </div>
         </div>
-      </div>
+      </section>
 
-      <div class="card library-detail-card">
-        <div id="cdcDetailEmpty" class="library-empty">
-          Sélectionne un CDC dans la liste de gauche pour afficher son contenu et l’exporter en PDF.
+      <section class="card library-list-card library-main-list-card">
+        <div class="sidebar-section-header">
+          <div class="sidebar-preview-header">CDC du projet</div>
+          <span id="libraryCount" class="sidebar-count-badge">0</span>
         </div>
-
-        <div id="cdcDetailView" style="display:none;">
-          <div class="library-detail-top">
-            <div>
-              <div id="cdcDetailTemplate" class="template-badge">Template</div>
-              <h2 id="cdcDetailTitle" style="margin-bottom:8px;">Nom du CDC</h2>
-            </div>
-            <div class="library-detail-actions">
-              <button type="button" class="project-history-edit" onclick="editSelectedCdc()">Modifier</button>
-              <button type="button" class="project-history-delete" onclick="deleteSelectedCdc()">Supprimer</button>
-              <button type="button" class="btn-primary" onclick="downloadSelectedCdcPdf()">Télécharger PDF</button>
-            </div>
-          </div>
-
-          <div class="library-detail-meta" style="margin-top:12px;">
-            <span id="cdcDetailCreated">Créé le -</span>
-            <span id="cdcDetailUpdated">Modifié le -</span>
-          </div>
-
-          <p class="muted sidebar-muted" style="margin-top:12px;">Astuce : descends jusqu’en bas du document pour passer rapidement au CDC suivant.</p>
-
-          <div id="cdcDetailScroll" class="library-content">
-            <div id="cdcDetailPreview" class="doc-preview"></div>
-          </div>
+        <div class="library-toolbar">
+          <input type="text" id="librarySearch" placeholder="Rechercher un CDC..." oninput="renderCdcLibrary()" />
+          <select id="librarySort" onchange="renderCdcLibrary()">
+            <option value="recent">Plus récent</option>
+            <option value="oldest">Plus ancien</option>
+            <option value="name">Nom</option>
+            <option value="template">Template</option>
+          </select>
         </div>
-      </div>
+        <div id="cdcLibraryList" class="library-list" style="margin-top:18px;"></div>
+      </section>
     </main>
   </div>
 

@@ -2875,6 +2875,10 @@ body[data-theme="dark"] .project-history-delete {
       gap: 18px;
     }
 
+    .library-main-list-card {
+      margin-top: 24px;
+    }
+
     .library-header-card,
     .library-list-card,
     .library-detail-card {
@@ -2943,10 +2947,9 @@ body[data-theme="dark"] .project-history-delete {
     .library-item {
       padding: 12px 14px;
       border-radius: 14px;
-      border: 1px solid transparent;
+      border: 1px solid rgba(201, 122, 31, 0.12);
       border-left: 4px solid rgba(201, 122, 31, 0.12);
       background: rgba(255, 255, 255, 0.24);
-      cursor: pointer;
       transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
     }
 
@@ -2954,13 +2957,6 @@ body[data-theme="dark"] .project-history-delete {
       transform: translateY(-1px);
       border-left-color: rgba(201, 122, 31, 0.3);
       background: rgba(255, 255, 255, 0.42);
-    }
-
-    .library-item.is-active {
-      border-color: rgba(201, 122, 31, 0.22);
-      border-left-color: rgba(201, 122, 31, 0.7);
-      background: rgba(255, 246, 233, 0.82);
-      box-shadow: inset 0 0 0 1px rgba(201, 122, 31, 0.08);
     }
 
     .library-item-top,
@@ -3046,12 +3042,6 @@ body[data-theme="dark"] .project-history-delete {
     body[data-theme="dark"] .library-raw {
       background: rgba(255, 255, 255, 0.05);
       border-color: rgba(255, 255, 255, 0.08);
-    }
-
-    body[data-theme="dark"] .library-item.is-active {
-      background: rgba(224, 154, 66, 0.12);
-      border-color: rgba(224, 154, 66, 0.18);
-      border-left-color: rgba(224, 154, 66, 0.6);
     }
 
     body[data-theme="dark"] .library-content {
