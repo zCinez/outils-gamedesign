@@ -70,20 +70,6 @@
     });
   }
 
-  function syncGlobalThemeSwitch(theme) {
-    const themeSwitch = document.getElementById("globalThemeSwitch");
-    if (!themeSwitch) return;
-
-    const normalizedTheme = theme === "dark" ? "dark" : "light";
-    const isDark = normalizedTheme === "dark";
-    const nextLabel = isDark ? "Passer en mode clair" : "Passer en mode sombre";
-
-    themeSwitch.setAttribute("aria-checked", String(isDark));
-    themeSwitch.setAttribute("aria-label", nextLabel);
-    themeSwitch.setAttribute("title", nextLabel);
-    themeSwitch.dataset.theme = normalizedTheme;
-  }
-
   function setGlobalNavOffset() {
     const navShell = document.querySelector(".global-nav-shell");
     if (!navShell) return;
@@ -111,7 +97,6 @@
     document.body.dataset.theme = nextTheme;
     document.documentElement.style.colorScheme = nextTheme;
     localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
-    syncGlobalThemeSwitch(nextTheme);
   }
 
   function toggleGlobalTheme() {
@@ -120,7 +105,6 @@
     for (const functionName of toggleFunctionNames) {
       if (typeof window[functionName] === "function") {
         window[functionName]();
-        syncGlobalThemeSwitch(document.body.dataset.theme || localStorage.getItem(THEME_STORAGE_KEY) || "light");
         return;
       }
     }
@@ -175,26 +159,10 @@
       </div>
     `;
 
-    const themeSwitch = document.createElement("button");
-    themeSwitch.type = "button";
-    themeSwitch.id = "globalThemeSwitch";
-    themeSwitch.className = "theme-switch";
-    themeSwitch.setAttribute("role", "switch");
-    themeSwitch.setAttribute("aria-checked", "false");
-    themeSwitch.innerHTML = `
-      <span class="theme-switch-track">
-        <span class="theme-switch-icon theme-switch-icon-sun" aria-hidden="true">&#9728;</span>
-        <span class="theme-switch-icon theme-switch-icon-moon" aria-hidden="true">&#9790;</span>
-        <span class="theme-switch-thumb" aria-hidden="true"></span>
-      </span>
-    `;
-    themeSwitch.addEventListener("click", toggleGlobalTheme);
-
     navShell.replaceChildren(inner);
-    actions.append(navElement, themeSwitch);
+    actions.append(navElement);
     inner.append(brand, actions);
     document.body.prepend(navShell);
-    syncGlobalThemeSwitch(document.body.dataset.theme || localStorage.getItem(THEME_STORAGE_KEY) || "light");
     observeGlobalNavigation(navShell);
   }
 

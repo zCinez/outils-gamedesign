@@ -8,6 +8,8 @@
   <title>StatGM Design - Stat Game-design</title>
   <link rel="preload" as="image" href="logo-neodium.png">
   <link rel="preload" as="image" href="Banniere-Neodium.png">
+  <link rel="stylesheet" href="../../assets/neodium-global-header.css?v=20260604a">
+  <script src="../../assets/neodium-global-header.js?v=20260604a" defer></script>
   <style>
     :root {
       color-scheme: dark;
@@ -935,11 +937,6 @@
         <a href="../../index.html" data-portal-link>Portail outils</a>
       </nav>
 
-      <button class="theme-toggle" type="button" aria-label="Passer en mode clair" aria-pressed="false" data-theme-toggle>
-        <span class="theme-toggle__icon theme-toggle__icon--sun" aria-hidden="true"></span>
-        <span class="theme-toggle__icon theme-toggle__icon--moon" aria-hidden="true"></span>
-        <span class="theme-toggle__knob" aria-hidden="true"></span>
-      </button>
     </header>
 
     <main>
@@ -1176,8 +1173,10 @@
     const setTheme = (theme) => {
       const nextTheme = theme === "light" ? "light" : "dark";
       root.dataset.theme = nextTheme;
-      themeToggle.setAttribute("aria-pressed", nextTheme === "light");
-      themeToggle.setAttribute("aria-label", nextTheme === "light" ? "Passer en mode sombre" : "Passer en mode clair");
+      if (themeToggle) {
+        themeToggle.setAttribute("aria-pressed", nextTheme === "light");
+        themeToggle.setAttribute("aria-label", nextTheme === "light" ? "Passer en mode sombre" : "Passer en mode clair");
+      }
       localStorage.setItem("statgm-theme", nextTheme);
     };
 
@@ -1203,9 +1202,11 @@
       empty.classList.toggle("is-visible", visible === 0);
     };
 
-    themeToggle.addEventListener("click", () => {
-      setTheme(root.dataset.theme === "light" ? "dark" : "light");
-    });
+    if (themeToggle) {
+      themeToggle.addEventListener("click", () => {
+        setTheme(root.dataset.theme === "light" ? "dark" : "light");
+      });
+    }
 
     search.addEventListener("input", updatePresets);
     sort.addEventListener("change", updatePresets);
