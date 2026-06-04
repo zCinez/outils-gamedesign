@@ -83,14 +83,19 @@
     .logo {
       width: 46px;
       height: 46px;
-      display: grid;
-      place-items: center;
+      display: block;
       border: 1px solid var(--border);
       border-radius: 16px;
       background: linear-gradient(135deg, rgba(94, 234, 212, 0.22), rgba(96, 165, 250, 0.12));
       box-shadow: var(--shadow);
-      font-weight: 900;
-      color: var(--accent);
+      overflow: hidden;
+    }
+
+    .logo img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
     }
 
     .brand-text strong {
@@ -244,13 +249,14 @@
 
     .layout {
       display: grid;
-      grid-template-columns: 390px 1fr;
+      grid-template-columns: 1fr;
       gap: 18px;
       align-items: start;
     }
 
     .panel,
-    .board {
+    .board,
+    .modal-card {
       padding: 22px;
     }
 
@@ -318,6 +324,14 @@
       justify-content: space-between;
       gap: 16px;
       margin-bottom: 18px;
+    }
+
+    .board-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
     }
 
     .filters {
@@ -461,6 +475,54 @@
       display: none;
     }
 
+    .modal-shell {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: rgba(4, 10, 18, 0.82);
+      backdrop-filter: blur(8px);
+      z-index: 80;
+    }
+
+    .modal-shell.is-open {
+      display: flex;
+    }
+
+    .modal-card {
+      width: min(760px, 100%);
+      max-height: min(88vh, 980px);
+      overflow: auto;
+    }
+
+    .modal-head {
+      display: flex;
+      align-items: start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .modal-head p {
+      color: var(--muted);
+      font-size: 0.92rem;
+      margin-top: 6px;
+    }
+
+    .modal-close {
+      width: 42px;
+      min-width: 42px;
+      padding: 0;
+      font-size: 1.2rem;
+      line-height: 1;
+    }
+
+    body.modal-open {
+      overflow: hidden;
+    }
+
     .footer-note {
       margin-top: 20px;
       color: var(--muted-2);
@@ -511,6 +573,12 @@
       .task-actions {
         justify-content: flex-start;
       }
+
+      .board-actions,
+      .modal-head {
+        align-items: flex-start;
+        flex-direction: column;
+      }
     }
   </style>
   <link rel="stylesheet" href="../assets/neodium-unified.css?v=20260528b" />
@@ -522,7 +590,7 @@
   <main class="page">
     <header class="topbar">
       <a class="brand" href="../index.html" aria-label="Retour à l'accueil">
-        <div class="logo">N</div>
+        <div class="logo"><img src="../outils/statgm/logo-neodium.png" alt="Logo Neodium" /></div>
         <div class="brand-text">
           <strong>Suggestions joueurs</strong>
           <span>Neodium — Outils internes</span>
@@ -530,9 +598,6 @@
       </a>
 
       <div class="top-actions">
-        <button class="btn" type="button" id="exportBtn">Exporter JSON</button>
-        <button class="btn" type="button" id="importBtn">Importer JSON</button>
-        <input class="import-file" type="file" id="importFile" accept="application/json" />
         <a class="btn btn-primary" href="../index.html">Accueil</a>
       </div>
     </header>
@@ -569,9 +634,64 @@
     </section>
 
     <section class="layout">
-      <aside class="card panel">
-        <h2 id="formTitle">Ajouter une suggestion</h2>
-        <p class="panel-desc">Rentre ici les suggestions des joueurs à la main.</p>
+      <section class="card board">
+        <div class="board-head">
+          <div>
+            <h2>Liste des suggestions</h2>
+            <p>Filtre, classe et garde une trace de ce qui a été proposé.</p>
+          </div>
+
+          <div class="board-actions">
+            <button class="btn btn-primary" type="button" id="openSuggestionModalBtn">Ajouter une suggestion</button>
+          </div>
+        </div>
+
+        <div class="filters">
+          <input id="search" type="search" placeholder="Rechercher une suggestion..." />
+          <select id="filterStatus">
+            <option value="all">Tous les statuts</option>
+            <option value="À trier">À trier</option>
+            <option value="En discussion">En discussion</option>
+            <option value="Acceptée">Acceptée</option>
+            <option value="Refusée">Refusée</option>
+            <option value="À développer">À développer</option>
+            <option value="En test">En test</option>
+            <option value="Implémentée">Implémentée</option>
+          </select>
+          <select id="filterCategory">
+            <option value="all">Toutes les catégories</option>
+            <option value="Gameplay">Gameplay</option>
+            <option value="Économie">Économie</option>
+            <option value="Métiers">Métiers</option>
+            <option value="Quêtes">Quêtes</option>
+            <option value="Boutique">Boutique</option>
+            <option value="Interface / Scoreboard">Interface / Scoreboard</option>
+            <option value="Events">Events</option>
+            <option value="Qualité de vie">Qualité de vie</option>
+            <option value="Bug / Exploit">Bug / Exploit</option>
+            <option value="Autre">Autre</option>
+          </select>
+          <select id="sortBy">
+            <option value="createdDesc">Plus récent</option>
+            <option value="createdAsc">Plus ancien</option>
+            <option value="priority">Priorité</option>
+            <option value="date">Date de suggestion</option>
+          </select>
+        </div>
+
+        <div class="suggestions" id="suggestions"></div>
+      </section>
+    </section>
+
+    <div class="modal-shell" id="suggestionModal" aria-hidden="true">
+      <div class="card modal-card">
+        <div class="modal-head">
+          <div>
+            <h2 id="formTitle">Ajouter une suggestion</h2>
+            <p class="panel-desc">Rentre ici les suggestions des joueurs à la main.</p>
+          </div>
+          <button class="btn modal-close" type="button" id="closeSuggestionModalBtn" aria-label="Fermer">×</button>
+        </div>
 
         <form class="form-grid" id="suggestionForm">
           <input type="hidden" id="suggestionId" />
@@ -659,54 +779,9 @@
 
           <button class="btn btn-primary" type="submit" id="submitBtn">Ajouter la suggestion</button>
           <button class="btn" type="button" id="cancelEditBtn" style="display:none;">Annuler la modification</button>
-          <button class="btn btn-danger" type="button" id="clearImplementedBtn">Supprimer les implémentées</button>
         </form>
-      </aside>
-
-      <section class="card board">
-        <div class="board-head">
-          <div>
-            <h2>Liste des suggestions</h2>
-            <p>Filtre, classe et garde une trace de ce qui a été proposé.</p>
-          </div>
-        </div>
-
-        <div class="filters">
-          <input id="search" type="search" placeholder="Rechercher une suggestion..." />
-          <select id="filterStatus">
-            <option value="all">Tous les statuts</option>
-            <option value="À trier">À trier</option>
-            <option value="En discussion">En discussion</option>
-            <option value="Acceptée">Acceptée</option>
-            <option value="Refusée">Refusée</option>
-            <option value="À développer">À développer</option>
-            <option value="En test">En test</option>
-            <option value="Implémentée">Implémentée</option>
-          </select>
-          <select id="filterCategory">
-            <option value="all">Toutes les catégories</option>
-            <option value="Gameplay">Gameplay</option>
-            <option value="Économie">Économie</option>
-            <option value="Métiers">Métiers</option>
-            <option value="Quêtes">Quêtes</option>
-            <option value="Boutique">Boutique</option>
-            <option value="Interface / Scoreboard">Interface / Scoreboard</option>
-            <option value="Events">Events</option>
-            <option value="Qualité de vie">Qualité de vie</option>
-            <option value="Bug / Exploit">Bug / Exploit</option>
-            <option value="Autre">Autre</option>
-          </select>
-          <select id="sortBy">
-            <option value="createdDesc">Plus récent</option>
-            <option value="createdAsc">Plus ancien</option>
-            <option value="priority">Priorité</option>
-            <option value="date">Date de suggestion</option>
-          </select>
-        </div>
-
-        <div class="suggestions" id="suggestions"></div>
-      </section>
-    </section>
+      </div>
+    </div>
 
     <p class="footer-note">
       Important : sans connexion cloud, les donnees restent locales. Avec Supabase connecte, elles se synchronisent entre tes PC.
@@ -779,7 +854,9 @@
     const formTitle = document.getElementById("formTitle");
     const submitBtn = document.getElementById("submitBtn");
     const cancelEditBtn = document.getElementById("cancelEditBtn");
-    const clearImplementedBtn = document.getElementById("clearImplementedBtn");
+    const openSuggestionModalBtn = document.getElementById("openSuggestionModalBtn");
+    const closeSuggestionModalBtn = document.getElementById("closeSuggestionModalBtn");
+    const suggestionModal = document.getElementById("suggestionModal");
 
     const search = document.getElementById("search");
     const filterStatus = document.getElementById("filterStatus");
@@ -791,10 +868,6 @@
     const statTrier = document.getElementById("statTrier");
     const statAccepted = document.getElementById("statAccepted");
     const statDone = document.getElementById("statDone");
-
-    const exportBtn = document.getElementById("exportBtn");
-    const importBtn = document.getElementById("importBtn");
-    const importFile = document.getElementById("importFile");
 
     function loadSuggestions() {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -956,6 +1029,19 @@
       }).join("");
     }
 
+    function openSuggestionModal() {
+      suggestionModal.classList.add("is-open");
+      suggestionModal.setAttribute("aria-hidden", "false");
+      document.body.classList.add("modal-open");
+      setTimeout(() => title.focus(), 0);
+    }
+
+    function closeSuggestionModal() {
+      suggestionModal.classList.remove("is-open");
+      suggestionModal.setAttribute("aria-hidden", "true");
+      document.body.classList.remove("modal-open");
+    }
+
     function resetForm() {
       suggestionForm.reset();
       suggestionId.value = "";
@@ -965,6 +1051,22 @@
       submitBtn.textContent = "Ajouter la suggestion";
       cancelEditBtn.style.display = "none";
     }
+
+    openSuggestionModalBtn.addEventListener("click", () => {
+      resetForm();
+      openSuggestionModal();
+    });
+
+    closeSuggestionModalBtn.addEventListener("click", () => {
+      resetForm();
+      closeSuggestionModal();
+    });
+
+    suggestionModal.addEventListener("click", (event) => {
+      if (event.target !== suggestionModal) return;
+      resetForm();
+      closeSuggestionModal();
+    });
 
     suggestionForm.addEventListener("submit", (event) => {
       event.preventDefault();
@@ -998,23 +1100,13 @@
 
       saveSuggestions();
       resetForm();
+      closeSuggestionModal();
       renderSuggestions();
     });
 
-    cancelEditBtn.addEventListener("click", resetForm);
-
-    clearImplementedBtn.addEventListener("click", () => {
-      const count = suggestions.filter((item) => item.status === "Implémentée").length;
-      if (count === 0) {
-        alert("Aucune suggestion implémentée à supprimer.");
-        return;
-      }
-
-      if (!confirm(`Supprimer ${count} suggestion(s) implémentée(s) ?`)) return;
-
-      suggestions = suggestions.filter((item) => item.status !== "Implémentée");
-      saveSuggestions();
-      renderSuggestions();
+    cancelEditBtn.addEventListener("click", () => {
+      resetForm();
+      closeSuggestionModal();
     });
 
     window.editSuggestion = function(id) {
@@ -1036,7 +1128,7 @@
       formTitle.textContent = "Modifier la suggestion";
       submitBtn.textContent = "Enregistrer";
       cancelEditBtn.style.display = "inline-flex";
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      openSuggestionModal();
     };
 
     window.deleteSuggestion = function(id) {
@@ -1054,57 +1146,10 @@
       element.addEventListener("change", renderSuggestions);
     });
 
-    exportBtn.addEventListener("click", () => {
-      const data = JSON.stringify(suggestions, null, 2);
-      const blob = new Blob([data], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = "suggestions-neodium.json";
-      link.click();
-      URL.revokeObjectURL(url);
-    });
-
-    importBtn.addEventListener("click", () => importFile.click());
-
-    importFile.addEventListener("change", async () => {
-      const file = importFile.files[0];
-      if (!file) return;
-
-      try {
-        const text = await file.text();
-        const imported = JSON.parse(text);
-
-        if (!Array.isArray(imported)) {
-          alert("Le fichier JSON n'est pas valide.");
-          return;
-        }
-
-        if (!confirm("Importer ce fichier va remplacer les suggestions actuelles. Continuer ?")) return;
-
-        suggestions = imported.map((item) => ({
-          id: item.id || crypto.randomUUID(),
-          title: item.title || "Suggestion sans titre",
-          description: item.description || "",
-          author: item.author || "",
-          suggestionDate: item.suggestionDate || "",
-          discordLink: item.discordLink || "",
-          category: item.category || "Autre",
-          priority: item.priority || "Moyenne",
-          status: item.status || "À trier",
-          version: item.version || "",
-          staffNote: item.staffNote || "",
-          createdAt: item.createdAt || Date.now()
-        }));
-
-        saveSuggestions();
-        resetForm();
-        renderSuggestions();
-      } catch {
-        alert("Impossible de lire ce fichier JSON.");
-      } finally {
-        importFile.value = "";
-      }
+    document.addEventListener("keydown", (event) => {
+      if (event.key !== "Escape" || !suggestionModal.classList.contains("is-open")) return;
+      resetForm();
+      closeSuggestionModal();
     });
 
     renderSuggestions();
