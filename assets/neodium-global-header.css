@@ -1,12 +1,12 @@
 .neodium-global-header-active {
-  padding-top: 92px;
+  padding-top: 0;
 }
 
 .neodium-global-header {
-  position: fixed;
-  inset: 0 0 auto 0;
-  z-index: 1200;
+  position: relative;
+  inset: auto;
   min-height: 76px;
+  margin-bottom: 18px;
   border-bottom: 1px solid rgba(233, 239, 246, 0.1);
   background: rgba(10, 14, 20, 0.94);
   backdrop-filter: blur(16px);
@@ -110,7 +110,7 @@
 
 @media (max-width: 880px) {
   .neodium-global-header-active {
-    padding-top: 126px;
+    padding-top: 0;
   }
 
   .neodium-global-header__inner {
@@ -128,7 +128,7 @@
 
 @media (max-width: 640px) {
   .neodium-global-header-active {
-    padding-top: 150px;
+    padding-top: 0;
   }
 
   .neodium-global-header__inner {
