@@ -1491,6 +1491,40 @@ body[data-theme="dark"] .project-history-delete {
     }
 
     /* =========================================================
+       Correctifs de contraste avec le theme Neodium unifie
+       - certains panneaux de l'editeur restaient tres clairs
+       - les boutons secondaires devenaient alors quasi invisibles
+       ========================================================= */
+    .editor-page .editor-project-summary,
+    .editor-page .project-draft-panel,
+    .editor-page .project-draft-panel-strong,
+    .editor-page .editor-toolbar {
+      background: rgba(255, 255, 255, 0.06) !important;
+      border-color: rgba(255, 255, 255, 0.1) !important;
+      color: var(--text) !important;
+    }
+
+    .editor-page .project-status-pill {
+      background: rgba(74, 222, 128, 0.14) !important;
+      color: #d5ffe2 !important;
+      border-color: rgba(74, 222, 128, 0.2) !important;
+    }
+
+    .editor-page .editor-toolbar .btn-secondary,
+    .editor-page .editor-draft-actions .btn-secondary {
+      background: rgba(255, 255, 255, 0.08) !important;
+      color: var(--text) !important;
+      border-color: rgba(255, 255, 255, 0.14) !important;
+      box-shadow: none !important;
+    }
+
+    .editor-page .editor-toolbar .btn-secondary:hover,
+    .editor-page .editor-draft-actions .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.12) !important;
+      border-color: rgba(85, 224, 202, 0.28) !important;
+    }
+
+    /* =========================================================
        6. BLOCS DYNAMIQUES
        - messages
        - items GUI
@@ -2864,6 +2898,97 @@ body[data-theme="dark"] .project-history-delete {
       color: #ffd9a5;
       border-color: rgba(224, 154, 66, 0.18);
       background: rgba(224, 154, 66, 0.12);
+    }
+
+    /* =========================================================
+       Compatibilite du theme unifie Neodium sur la page Parametres
+       - la page force deja une palette sombre via le CSS global
+       - mais ses variantes "dark" dependaient encore de data-theme
+       ========================================================= */
+    .settings-page .settings-menu-item {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(26, 23, 20, 0.9) 100%) !important;
+      border-color: rgba(255, 255, 255, 0.08) !important;
+      color: var(--text) !important;
+    }
+
+    .settings-page .settings-menu-item:hover {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(31, 27, 24, 0.96) 100%) !important;
+      border-color: rgba(224, 154, 66, 0.16) !important;
+    }
+
+    .settings-page .settings-menu-item.is-active {
+      background: linear-gradient(135deg, rgba(224, 154, 66, 0.14) 0%, rgba(70, 116, 86, 0.18) 100%) !important;
+      border-color: rgba(224, 154, 66, 0.18) !important;
+      box-shadow: inset 0 0 0 1px rgba(224, 154, 66, 0.08) !important;
+    }
+
+    .settings-page .settings-panel::after {
+      background: radial-gradient(circle, rgba(224, 154, 66, 0.16), transparent 72%) !important;
+    }
+
+    .settings-page .settings-panel-mark,
+    .settings-page .settings-placeholder-card,
+    .settings-page .settings-template-item,
+    .settings-page .settings-template-page-stat,
+    .settings-page .settings-template-meta-panel,
+    .settings-page .settings-template-detail-controls,
+    .settings-page .settings-template-detail-surface,
+    .settings-page .settings-architecture-section {
+      background: rgba(255, 255, 255, 0.05) !important;
+      border-color: rgba(255, 255, 255, 0.08) !important;
+      color: var(--text) !important;
+      box-shadow: none !important;
+    }
+
+    .settings-page .settings-placeholder {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, rgba(30, 27, 24, 0.92) 100%) !important;
+      border-color: rgba(255, 243, 229, 0.12) !important;
+    }
+
+    .settings-page .settings-template-item:hover {
+      background: rgba(255, 255, 255, 0.08) !important;
+      border-color: rgba(224, 154, 66, 0.16) !important;
+    }
+
+    .settings-page .settings-template-item.is-active {
+      background: linear-gradient(180deg, rgba(224, 154, 66, 0.12) 0%, rgba(40, 35, 30, 0.92) 100%) !important;
+      border-color: rgba(224, 154, 66, 0.18) !important;
+      box-shadow: inset 0 0 0 1px rgba(224, 154, 66, 0.08) !important;
+    }
+
+    .settings-page .settings-template-chip {
+      background: rgba(224, 154, 66, 0.12) !important;
+      border-color: rgba(224, 154, 66, 0.16) !important;
+      color: #ffd9a5 !important;
+    }
+
+    .settings-page .settings-template-chip-soft,
+    .settings-page .settings-template-status-button {
+      background: rgba(255, 255, 255, 0.06) !important;
+      border-color: rgba(255, 255, 255, 0.08) !important;
+      color: var(--text) !important;
+    }
+
+    .settings-page .settings-template-status-button:hover {
+      border-color: rgba(224, 154, 66, 0.2) !important;
+    }
+
+    .settings-page .settings-architecture-step {
+      background: rgba(224, 154, 66, 0.12) !important;
+      border-color: rgba(224, 154, 66, 0.16) !important;
+      color: #ffd9a5 !important;
+    }
+
+    .settings-page .settings-panel[data-settings-panel="gui"] .settings-panel-mark {
+      color: #b8e0c4 !important;
+      border-color: rgba(91, 140, 110, 0.22) !important;
+      background: rgba(91, 140, 110, 0.14) !important;
+    }
+
+    .settings-page .settings-panel[data-settings-panel="template"] .settings-panel-mark {
+      color: #ffd9a5 !important;
+      border-color: rgba(224, 154, 66, 0.18) !important;
+      background: rgba(224, 154, 66, 0.12) !important;
     }
 
     .library-page .app {
