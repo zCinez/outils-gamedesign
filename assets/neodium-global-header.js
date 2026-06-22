@@ -8,31 +8,38 @@
   const rootPath = rootUrl.pathname.toLowerCase();
   const rootIndexPath = new URL("index.html", rootUrl).pathname.toLowerCase();
 
+  const isCdcPage = () => /\/outils\/generateur-cdc(?:\/|\.html|$)/.test(currentPath);
+  const isStatGmPage = () => /\/outils\/statgm(?:\/|\.html|$)/.test(currentPath);
+  const isTodoPage = () => /\/outils\/todo-gamedesign\.html$/.test(currentPath);
+  const isSuggestionsPage = () => /\/outils\/suggestions\.html$/.test(currentPath);
+  const isPortalPage = () => currentPath === rootPath || currentPath === rootIndexPath;
+  const isOtherToolPage = () => /\/outils\//.test(currentPath) && ![isCdcPage, isStatGmPage, isTodoPage, isSuggestionsPage].some((matcher) => matcher());
+
   const links = [
     {
       label: "CDC",
       href: new URL("outils/generateur-cdc/index.html", rootUrl).href,
-      isActive: () => /\/outils\/generateur-cdc(?:\/|\.html|$)/.test(currentPath)
+      isActive: isCdcPage
     },
     {
       label: "StatGM",
       href: new URL("outils/statgm/index.html", rootUrl).href,
-      isActive: () => /\/outils\/statgm(?:\/|\.html|$)/.test(currentPath)
+      isActive: isStatGmPage
     },
     {
       label: "Todo",
       href: new URL("outils/todo-gamedesign.html", rootUrl).href,
-      isActive: () => /\/outils\/todo-gamedesign\.html$/.test(currentPath)
+      isActive: isTodoPage
     },
     {
       label: "Suggestions",
       href: new URL("outils/suggestions.html", rootUrl).href,
-      isActive: () => /\/outils\/suggestions\.html$/.test(currentPath)
+      isActive: isSuggestionsPage
     },
     {
       label: "Voir les outils",
       href: new URL("index.html", rootUrl).href,
-      isActive: () => currentPath === rootPath || currentPath === rootIndexPath
+      isActive: () => isPortalPage() || isOtherToolPage()
     }
   ];
 

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Couleurs Minecraft - Neodium</title>
+  <meta name="description" content="Apercu live des codes couleur Minecraft avec rendu chat et copie rapide." />
+  <link rel="stylesheet" href="../assets/neodium-global-header.css?v=20260604a" />
+  <link rel="stylesheet" href="./minecraft-color-preview.css?v=20260611a" />
+  <script src="../assets/neodium-global-header.js?v=20260604a" defer></script>
+  <script src="./minecraft-color-preview.js?v=20260611a" defer></script>
+</head>
+<body class="minecraft-color-tool-page">
+  <main class="page">
+    <section class="hero card">
+      <div class="hero-copy">
+        <span class="eyebrow">Minecraft / Texte</span>
+        <h1>Visualiseur de couleurs Minecraft</h1>
+        <p>
+          Teste tes codes couleur, styles et formats avant de les coller dans tes configs. Le rendu se met a jour en direct
+          pour les messages Minecraft.
+        </p>
+        <div class="hero-actions">
+          <button type="button" class="btn btn-primary" id="copyRawHeroButton">Copier le texte</button>
+          <button type="button" class="btn btn-secondary" id="copySectionHeroButton">Copier en &#167;</button>
+        </div>
+      </div>
+
+      <div class="hero-stats">
+        <article class="stat">
+          <strong>16</strong>
+          <span>couleurs classiques</span>
+        </article>
+        <article class="stat">
+          <strong>6</strong>
+          <span>styles et reset</span>
+        </article>
+        <article class="stat">
+          <strong>HEX</strong>
+          <span>support &amp;#RRGGBB et &amp;x</span>
+        </article>
+      </div>
+    </section>
+
+    <section class="workspace">
+      <div class="workspace-main">
+        <section class="card editor-card">
+          <div class="section-head">
+            <div>
+              <span class="section-kicker">Editeur</span>
+              <h2>Texte a previsualiser</h2>
+            </div>
+            <div class="section-actions">
+              <button type="button" class="btn btn-secondary" id="copyRawButton">Copier</button>
+              <button type="button" class="btn btn-secondary" id="copySectionButton">Copier en &#167;</button>
+              <button type="button" class="btn btn-danger" id="clearButton">Vider</button>
+            </div>
+          </div>
+
+          <label class="field-label" for="minecraftInput">Texte avec codes Minecraft</label>
+          <textarea
+            id="minecraftInput"
+            spellcheck="false"
+            placeholder="Ex : &6[Neodium] &fBienvenue sur le serveur !&#10;&7Passe en &a/warp spawn &7pour commencer."
+          ></textarea>
+
+          <div class="output-grid">
+            <div class="output-card">
+              <span class="output-label">Format &</span>
+              <div class="output-value" id="rawOutput"></div>
+            </div>
+            <div class="output-card">
+              <span class="output-label">Format &#167;</span>
+              <div class="output-value" id="sectionOutput"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card preview-card">
+          <div class="section-head">
+            <div>
+              <span class="section-kicker">Apercus</span>
+              <h2>Rendus Minecraft</h2>
+            </div>
+          </div>
+
+          <div class="preview-stack">
+            <div class="preview-block">
+              <div class="preview-head">
+                <strong>Chat</strong>
+                <span>Message joueur / annonce</span>
+              </div>
+              <div class="mc-render mc-render-chat" id="chatPreview"></div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <aside class="workspace-side workspace-side-left">
+        <section class="card palette-card">
+          <div class="section-head">
+            <div>
+              <span class="section-kicker">Palette</span>
+              <h2>Codes rapides</h2>
+            </div>
+          </div>
+
+          <div class="palette-group">
+            <div class="palette-title">Couleurs</div>
+            <div class="palette-grid" id="colorPalette"></div>
+          </div>
+
+          <div class="palette-group">
+            <div class="palette-title">Styles</div>
+            <div class="palette-grid palette-grid-formats" id="formatPalette"></div>
+          </div>
+
+          <div class="palette-group">
+            <div class="palette-title">Couleur HEX</div>
+            <div class="hex-builder">
+              <input type="color" id="hexColorInput" value="#55e0ca" aria-label="Choisir une couleur HEX" />
+              <input type="text" id="hexCodeInput" value="#55E0CA" maxlength="7" aria-label="Code HEX" />
+              <button type="button" class="btn btn-secondary" id="insertHexButton">Inserer &amp;#RRGGBB</button>
+            </div>
+          </div>
+        </section>
+      </aside>
+    </section>
+  </main>
+</body>
+</html>

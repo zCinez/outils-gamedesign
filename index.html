@@ -174,6 +174,7 @@
 
     .hero {
       min-height: 520px;
+      position: relative;
       display: flex;
       align-items: end;
       background-image:
@@ -183,9 +184,38 @@
       background-size: cover;
       background-position: center;
       border-bottom: 1px solid rgba(233, 239, 246, 0.1);
+      overflow: hidden;
+    }
+
+    .hero::before,
+    .hero::after {
+      content: "";
+      position: absolute;
+      bottom: -10px;
+      width: clamp(172px, 13.8vw, 248px);
+      aspect-ratio: 1;
+      background-repeat: no-repeat;
+      background-size: contain;
+      pointer-events: none;
+      z-index: 0;
+      filter: drop-shadow(0 22px 40px rgba(0, 0, 0, 0.5));
+    }
+
+    .hero::before {
+      left: clamp(6px, 1.3vw, 24px);
+      background-image: url("assets/envoye-royal-homme-portrait-512.png");
+      background-position: left bottom;
+    }
+
+    .hero::after {
+      right: clamp(6px, 1.3vw, 24px);
+      background-image: url("assets/envoyee-royale-femme-portrait-512.png");
+      background-position: right bottom;
     }
 
     .hero-inner {
+      position: relative;
+      z-index: 1;
       padding: 92px 0 48px;
     }
 
@@ -530,6 +560,11 @@
         background-position: 56% center;
       }
 
+      .hero::before,
+      .hero::after {
+        width: clamp(112px, 13vw, 156px);
+      }
+
       .status-strip,
       .tools-grid,
       .quick-section {
@@ -601,6 +636,11 @@
 
       .hero-copy {
         max-width: 100%;
+      }
+
+      .hero::before,
+      .hero::after {
+        display: none;
       }
 
       .status-strip,
@@ -844,6 +884,21 @@
             <span class="tool-meta">interface</span>
           </div>
         </article>
+
+        <a class="tool-card" href="outils/minecraft-color-preview.html" data-status="ready" data-name="minecraft couleurs color code hex lore chat tooltip panneau texte formatage neodium">
+          <div>
+            <div class="tool-head">
+              <span class="tool-mark">MC</span>
+              <span class="tag tag-ready">Prêt</span>
+            </div>
+            <h3>Couleurs Minecraft</h3>
+            <p>Previsualiser les codes couleur, les styles, le format HEX et copier rapidement le rendu a coller dans les configs.</p>
+          </div>
+          <div class="tool-footer">
+            <span>Ouvrir</span>
+            <span class="tool-meta">texte</span>
+          </div>
+        </a>
       </section>
 
       <p class="empty" id="emptyState">Aucun outil ne correspond à cette recherche.</p>
