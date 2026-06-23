@@ -25,6 +25,7 @@
     const ACTIVE_PROJECT_STORAGE_KEY = "neodium-cdc-active-project";
     const LOCAL_MINECRAFT_SOUNDS_BASE_PATH = "./minecraft-sounds";
     const LOCAL_MINECRAFT_ITEM_TEXTURES_BASE_PATH = "./minecraft-item-textures";
+    const HEADDATABASE_REMOTE_TEXTURES_PATH = "./headdb-remote-textures.txt?v=20260623a";
     const GUI_PRESETS_MANIFEST = Array.isArray(window.GUI_PRESETS_MANIFEST) ? window.GUI_PRESETS_MANIFEST : [];
     const GUI_CUSTOM_PRESETS_FILE = Array.isArray(window.GUI_CUSTOM_PRESETS_FILE) ? window.GUI_CUSTOM_PRESETS_FILE : [];
     const GUI_PRESET_OVERRIDES_STORAGE_KEY = "neodium-gui-preset-overrides";
@@ -36,6 +37,7 @@
       : [];
     const MINECRAFT_ITEM_TEXTURE_MAP = window.MINECRAFT_ITEM_TEXTURE_MAP || {};
     const MINECRAFT_ITEM_BLOCK_FACES_MAP = window.MINECRAFT_ITEM_BLOCK_FACES_MAP || {};
+    let headDatabaseTextureMapPromise = null;
     const BUILTIN_MINECRAFT_SOUND_EVENTS = [
       "ambient.cave",
       "block.amethyst_block.break",
@@ -2496,8 +2498,9 @@
         const expandBottom = (layout.expandBottom || 0) + (rowExpandBottom[row] || 0);
         const expandLeft = (layout.expandLeft || 0) + (rowExpandLeft[row] || 0);
         const item = itemsBySlot.get(index);
+        const headDatabaseHead = item ? parseHeadDatabaseHead(item.item) : null;
         const label = item
-          ? (stripMinecraftFormatting(item.nom) || stripMinecraftFormatting(item.item) || `Slot ${index}`)
+          ? (stripMinecraftFormatting(item.nom) || (headDatabaseHead ? `HeadDatabase #${headDatabaseHead.id}` : stripMinecraftFormatting(item.item)) || `Slot ${index}`)
           : String(index);
         const blockFaces = item ? getMinecraftItemBlockFaces(item.item) : null;
         const textureUrl = item ? resolveMinecraftItemTextureUrl(item.item) : "";
@@ -2510,7 +2513,13 @@
           (blockFaces.top && blockFaces.top.includes("/block/"))
         );
         const slotTooltipHtml = item ? buildGuiSlotTooltipHtml(item, index) : "";
-        const slotContent = isBlockLike
+        const slotContent = headDatabaseHead
+          ? `
+            <div class="gui-slot-hdb-placeholder" data-hdb-id="${escapeHtml(headDatabaseHead.id)}" data-hdb-label="${escapeHtml(label)}">
+              <span>HDB</span>
+            </div>
+          `
+          : isBlockLike
           ? `
             <img class="gui-slot-rendered-item-texture gui-slot-block-inventory-texture" src="${inviconUrl}" alt="${escapeHtml(label)}" title="${escapeHtml(label)}" data-fallback="${localFallbackTexture}" onerror="if (this.dataset.fallback) { this.onerror = null; this.src = this.dataset.fallback; this.classList.add('is-local-fallback'); }">
           `
@@ -2556,6 +2565,7 @@
 
       const tooltip = preview.querySelector(`#${previewId}Tooltip`);
       const stage = preview.querySelector(".gui-visualizer-stage");
+      void hydrateHeadDatabasePreviewSlots(preview);
 
       const hideTooltip = () => {
         if (!tooltip) return;
@@ -2744,7 +2754,10 @@
     function buildGuiSlotTooltipHtml(item, slotIndex) {
       if (!item) return "";
 
-      const fallbackName = stripMinecraftFormatting(item.item) || `Slot ${slotIndex}`;
+      const headDatabaseHead = parseHeadDatabaseHead(item.item);
+      const fallbackName = headDatabaseHead
+        ? `HeadDatabase #${headDatabaseHead.id}`
+        : (stripMinecraftFormatting(item.item) || `Slot ${slotIndex}`);
       const nameHtml = renderGuiTooltipMinecraftText(item.nom, fallbackName);
       const loreHtml = renderGuiTooltipMinecraftText(item.lore || "");
 
@@ -2752,6 +2765,94 @@
         <div class="gui-minecraft-tooltip-name">${nameHtml}</div>
         ${loreHtml ? `<div class="gui-minecraft-tooltip-lore">${loreHtml}</div>` : ""}
       `;
+    }
+
+    function parseHeadDatabaseHead(value) {
+      const raw = String(value || "").trim();
+      const match = raw.match(/^hdb(?:[:\-_]?)(\d+)$/i);
+      if (!match) return null;
+      return {
+        id: match[1],
+        normalized: `hdb:${match[1]}`
+      };
+    }
+
+    function parseHeadDatabaseTextureCatalog(text) {
+      const map = new Map();
+
+      String(text || "").split(/\r?\n/).forEach(line => {
+        const trimmed = line.trim();
+        if (!trimmed) return;
+
+        const separatorIndex = trimmed.indexOf(":");
+        if (separatorIndex <= 0) return;
+
+        const id = trimmed.slice(0, separatorIndex).trim();
+        const textureHash = trimmed.slice(separatorIndex + 1).trim();
+        if (!id || !textureHash) return;
+
+        map.set(id, textureHash);
+      });
+
+      return map;
+    }
+
+    async function loadHeadDatabaseTextureMap() {
+      if (window.__HEADDB_TEXTURE_MAP__ instanceof Map) {
+        return window.__HEADDB_TEXTURE_MAP__;
+      }
+
+      if (!headDatabaseTextureMapPromise) {
+        headDatabaseTextureMapPromise = fetch(HEADDATABASE_REMOTE_TEXTURES_PATH, { cache: "force-cache" })
+          .then(response => {
+            if (!response.ok) {
+              throw new Error(`Impossible de charger le catalogue HeadDatabase (${response.status}).`);
+            }
+            return response.text();
+          })
+          .then(text => {
+            const map = parseHeadDatabaseTextureCatalog(text);
+            window.__HEADDB_TEXTURE_MAP__ = map;
+            return map;
+          })
+          .catch(error => {
+            headDatabaseTextureMapPromise = null;
+            console.error("[Neodium] Chargement HeadDatabase impossible", error);
+            throw error;
+          });
+      }
+
+      return headDatabaseTextureMapPromise;
+    }
+
+    async function hydrateHeadDatabasePreviewSlots(previewRoot) {
+      if (!previewRoot) return;
+
+      const placeholders = Array.from(previewRoot.querySelectorAll(".gui-slot-hdb-placeholder[data-hdb-id]"));
+      if (!placeholders.length) return;
+
+      let textureMap = null;
+      try {
+        textureMap = await loadHeadDatabaseTextureMap();
+      } catch (error) {
+        return;
+      }
+
+      placeholders.forEach(placeholder => {
+        if (!placeholder.isConnected) return;
+
+        const headId = String(placeholder.dataset.hdbId || "").trim();
+        const label = String(placeholder.dataset.hdbLabel || `HeadDatabase #${headId}`);
+        const textureHash = textureMap.get(headId);
+
+        if (!textureHash) {
+          placeholder.innerHTML = `<span>${escapeHtml(label)}</span>`;
+          return;
+        }
+
+        const renderedHeadUrl = `https://mc-heads.net/head/${encodeURIComponent(textureHash)}/64.png`;
+        placeholder.innerHTML = `<img class="gui-slot-rendered-item-texture" src="${renderedHeadUrl}" alt="${escapeHtml(label)}" title="${escapeHtml(label)}">`;
+      });
     }
 
     function normalizeMinecraftItemKey(value) {
@@ -2762,6 +2863,8 @@
     }
 
     function resolveMinecraftItemTextureUrl(itemKey) {
+      if (parseHeadDatabaseHead(itemKey)) return "";
+
       const normalizedItemKey = normalizeMinecraftItemKey(itemKey);
       if (!normalizedItemKey) return "";
 
@@ -2772,6 +2875,8 @@
     }
 
     function resolveRenderedMinecraftItemIconUrl(itemKey) {
+      if (parseHeadDatabaseHead(itemKey)) return "";
+
       const normalizedItemKey = normalizeMinecraftItemKey(itemKey);
       if (!normalizedItemKey) return "";
 
@@ -2779,6 +2884,8 @@
     }
 
     function resolvePreferredBlockInventoryUrl(itemKey) {
+      if (parseHeadDatabaseHead(itemKey)) return "";
+
       const normalizedItemKey = normalizeMinecraftItemKey(itemKey);
       if (!normalizedItemKey) return "";
 
