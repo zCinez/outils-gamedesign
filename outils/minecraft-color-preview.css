@@ -291,6 +291,10 @@ input[type="color"]:focus {
   grid-template-columns: repeat(auto-fit, minmax(164px, 1fr));
 }
 
+.palette-grid-symbols {
+  grid-template-columns: repeat(auto-fit, minmax(172px, 1fr));
+}
+
 .code-chip {
   min-height: 62px;
   display: grid;
@@ -326,6 +330,22 @@ input[type="color"]:focus {
   font-family: Consolas, "Courier New", monospace;
   font-size: 0.9rem;
   color: var(--mc-muted);
+}
+
+.code-chip--symbol {
+  grid-template-columns: 28px 1fr auto;
+}
+
+.code-chip__glyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  color: var(--mc-teal);
+  font-size: 1.15rem;
+  font-weight: 800;
+  line-height: 1;
 }
 
 .hex-builder {

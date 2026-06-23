@@ -239,7 +239,6 @@
   });
 
   window.navigateToPage = navigateToPage;
-  window.syncGlobalThemeSwitch = syncGlobalThemeSwitch;
   setupPersistentNavigation();
   markPageReady();
 })();

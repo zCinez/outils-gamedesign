@@ -7523,6 +7523,36 @@
                               "front":  "block/nether_wart_block",
                               "side":  "block/nether_wart_block",
                               "top":  "block/nether_wart_block"
-                          }
+                          },
+    "icon_back_orange":  {
+                              "front":  "item/icon_back_orange",
+                              "side":  "item/icon_back_orange",
+                              "top":  "item/icon_back_orange"
+                          },
+    "cancel":  {
+                   "front":  "item/cancel",
+                   "side":  "item/cancel",
+                   "top":  "item/cancel"
+               },
+    "icon_right_blue":  {
+                            "front":  "item/icon_right_blue",
+                            "side":  "item/icon_right_blue",
+                            "top":  "item/icon_right_blue"
+                        },
+    "icon_search":  {
+                        "front":  "item/icon_search",
+                        "side":  "item/icon_search",
+                        "top":  "item/icon_search"
+                    },
+    "icon_left_blue":  {
+                           "front":  "item/icon_left_blue",
+                           "side":  "item/icon_left_blue",
+                           "top":  "item/icon_left_blue"
+                       },
+    "icon_next_orange":  {
+                             "front":  "item/icon_next_orange",
+                             "side":  "item/icon_next_orange",
+                             "top":  "item/icon_next_orange"
+                         }
 };
 

@@ -1503,6 +1503,12 @@
     "zombie_nautilus_spawn_egg",
     "zombie_spawn_egg",
     "zombie_villager_spawn_egg",
-    "zombified_piglin_spawn_egg"
+    "zombified_piglin_spawn_egg",
+    "icon_back_orange",
+    "cancel",
+    "icon_right_blue",
+    "icon_search",
+    "icon_left_blue",
+    "icon_next_orange"
 ];
 

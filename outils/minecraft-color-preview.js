@@ -26,6 +26,17 @@ const MINECRAFT_FORMATS = [
   { code: "&r", label: "Reset" }
 ];
 
+const MINECRAFT_SYMBOLS = [
+  { symbol: "⭑", label: "Etoile" },
+  { symbol: "✦", label: "Eclat" },
+  { symbol: "┃", label: "Barre" },
+  { symbol: "✔", label: "Coche" },
+  { symbol: "✘", label: "Croix" },
+  { symbol: "➔", label: "Fleche" },
+  { symbol: "➜", label: "Fleche fine" },
+  { symbol: "➥", label: "Fleche retour" }
+];
+
 const COLOR_MAP = Object.fromEntries(MINECRAFT_COLORS.map((entry) => [entry.code[1], entry.color]));
 const OBFUSCATION_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&?";
 
@@ -35,6 +46,7 @@ const sectionOutput = document.getElementById("sectionOutput");
 const chatPreview = document.getElementById("chatPreview");
 const colorPalette = document.getElementById("colorPalette");
 const formatPalette = document.getElementById("formatPalette");
+const symbolPalette = document.getElementById("symbolPalette");
 const hexColorInput = document.getElementById("hexColorInput");
 const hexCodeInput = document.getElementById("hexCodeInput");
 
@@ -244,9 +256,23 @@ function buildCodeChip(entry, isColor) {
   return button;
 }
 
+function buildSymbolChip(entry) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "code-chip code-chip--symbol";
+  button.dataset.insert = entry.symbol;
+  button.innerHTML = `
+    <span class="code-chip__glyph">${escapeHtml(entry.symbol)}</span>
+    <span class="code-chip__label">${entry.label}</span>
+    <span class="code-chip__code">${escapeHtml(entry.symbol)}</span>
+  `;
+  return button;
+}
+
 function renderPalettes() {
   colorPalette.innerHTML = "";
   formatPalette.innerHTML = "";
+  symbolPalette.innerHTML = "";
 
   MINECRAFT_COLORS.forEach((entry) => {
     colorPalette.appendChild(buildCodeChip(entry, true));
@@ -254,6 +280,10 @@ function renderPalettes() {
 
   MINECRAFT_FORMATS.forEach((entry) => {
     formatPalette.appendChild(buildCodeChip(entry, false));
+  });
+
+  MINECRAFT_SYMBOLS.forEach((entry) => {
+    symbolPalette.appendChild(buildSymbolChip(entry));
   });
 }
 
@@ -298,6 +328,11 @@ document.addEventListener("click", (event) => {
     return;
   }
 
+  const insertChip = event.target.closest("[data-insert]");
+  if (insertChip) {
+    insertAtCursor(insertChip.dataset.insert || "");
+    return;
+  }
 });
 
 document.getElementById("copyRawButton").addEventListener("click", () => copyText(input.value, "Texte copie."));

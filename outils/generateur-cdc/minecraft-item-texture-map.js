@@ -1503,6 +1503,12 @@
     "mangrove_leaves":  "block/mangrove_leaves",
     "quartz_slab":  "block/quartz_block_side",
     "diamond_sword":  "item/diamond_sword",
-    "nether_wart_block":  "block/nether_wart_block"
+    "nether_wart_block":  "block/nether_wart_block",
+    "icon_back_orange":  "item/icon_back_orange",
+    "cancel":  "item/cancel",
+    "icon_right_blue":  "item/icon_right_blue",
+    "icon_search":  "item/icon_search",
+    "icon_left_blue":  "item/icon_left_blue",
+    "icon_next_orange":  "item/icon_next_orange"
 };
 
