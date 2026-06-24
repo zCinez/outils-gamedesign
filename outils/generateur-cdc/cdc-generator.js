@@ -31,7 +31,6 @@
     const GUI_PRESET_OVERRIDES_STORAGE_KEY = "neodium-gui-preset-overrides";
     const GUI_PRESET_HIDDEN_STORAGE_KEY = "neodium-gui-preset-hidden";
     const GUI_CUSTOM_PRESETS_STORAGE_KEY = "neodium-gui-custom-presets";
-    let guiPresetDirectoryHandle = null;
     const BUILTIN_MINECRAFT_ITEM_KEYS = Array.isArray(window.BUILTIN_MINECRAFT_ITEM_IDS)
       ? [...window.BUILTIN_MINECRAFT_ITEM_IDS].sort((a, b) => a.localeCompare(b))
       : [];
@@ -1291,14 +1290,6 @@
       }
     }
 
-    function buildGuiCustomPresetsFileContent() {
-      return `window.GUI_CUSTOM_PRESETS_FILE = ${JSON.stringify(GUI_CUSTOM_PRESETS_FILE, null, 2)};\n`;
-    }
-
-    function buildGuiPresetManifestContent() {
-      return `window.GUI_PRESETS_MANIFEST = ${JSON.stringify(GUI_PRESETS_MANIFEST, null, 2)};\n`;
-    }
-
     function resetGuiTemplateState() {
       getGuiPresetFields().forEach(id => {
         const field = document.getElementById(id);
@@ -1435,53 +1426,39 @@
     }
 
     async function saveGuiPresetToLibrary(preset, setStatus) {
-      const presetsFileName = "presets.js";
-
-      const fallbackDownload = () => {
-        registerGuiPresetInApp(preset);
-        const blob = new Blob([buildGuiCustomPresetsFileContent()], { type: "application/javascript;charset=utf-8" });
-        const url = URL.createObjectURL(blob);
-
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = presetsFileName;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-
-        setStatus(`Le preset a bien été ajouté à la bibliothèque. Le navigateur n'a pas pu écrire directement dans le dossier, donc le fichier ${presetsFileName} a aussi été téléchargé.`);
-      };
-
-      if (typeof window.showDirectoryPicker !== "function") {
-        fallbackDownload();
-        return;
-      }
-
       try {
-        if (!guiPresetDirectoryHandle) {
-          guiPresetDirectoryHandle = await window.showDirectoryPicker({
-            id: "neodium-tool-root",
-            mode: "readwrite"
-          });
-        }
-
-        const presetsDirectoryHandle = await guiPresetDirectoryHandle.getDirectoryHandle("gui-presets", { create: true });
         registerGuiPresetInApp(preset);
+        const cloudSync = window.NeodiumCloudSync;
 
-        const fileHandle = await presetsDirectoryHandle.getFileHandle(presetsFileName, { create: true });
-        const writable = await fileHandle.createWritable();
-        await writable.write(buildGuiCustomPresetsFileContent());
-        await writable.close();
-
-        setStatus(`Preset enregistré dans gui-presets/${presetsFileName} et ajouté à la bibliothèque.`);
-      } catch (error) {
-        if (error?.name === "AbortError") {
-          setStatus("Enregistrement annulé.");
+        if (!cloudSync || typeof cloudSync.getState !== "function") {
+          setStatus("Preset enregistré dans la bibliothèque du navigateur.");
           return;
         }
 
-        fallbackDownload();
+        await cloudSync.whenReady?.();
+        const state = cloudSync.getState();
+
+        if (state?.status === "ready") {
+          await cloudSync.forceSync?.();
+          const emailSuffix = state.email ? ` (${state.email})` : "";
+          setStatus(`Preset enregistré dans Cloud Neodium${emailSuffix}.`);
+          return;
+        }
+
+        if (state?.status === "syncing" || state?.status === "booting") {
+          setStatus("Preset enregistré. La synchronisation cloud est en cours.");
+          return;
+        }
+
+        if (state?.status === "signed_out") {
+          setStatus("Preset enregistré dans la bibliothèque locale. Connecte Cloud Neodium pour l'envoyer sur le cloud partagé.");
+          return;
+        }
+
+        setStatus("Preset enregistré dans la bibliothèque locale. Le cloud n'est pas encore disponible.");
+      } catch (error) {
+        console.error("[Neodium] Sauvegarde preset GUI impossible", error);
+        setStatus("Preset enregistré dans la bibliothèque locale, mais la synchronisation cloud a échoué.");
       }
     }
 
