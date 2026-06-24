@@ -1832,7 +1832,7 @@
 
       return `<div><strong>Image du GUI :</strong> Aucune image</div>`;
     }
-	
+
 	function getTemplateCraftImageHtml() {
       const input = document.getElementById("selectObtentionCraft");
       const preview = document.getElementById("previewCraftTemplate");
@@ -2498,7 +2498,18 @@
           `
           : isBlockLike
           ? `
-            <img class="gui-slot-rendered-item-texture gui-slot-block-inventory-texture" src="${inviconUrl}" alt="${escapeHtml(label)}" title="${escapeHtml(label)}" data-fallback="${localFallbackTexture}" onerror="if (this.dataset.fallback) { this.onerror = null; this.src = this.dataset.fallback; this.classList.add('is-local-fallback'); }">
+            <img
+              class="gui-slot-rendered-item-texture gui-slot-block-inventory-texture"
+              src="${inviconUrl}"
+              alt="${escapeHtml(label)}"
+              title="${escapeHtml(label)}"
+              data-item-key="${escapeHtml(item?.item || "")}"
+              data-front-texture="${escapeHtml(blockFaces?.front || "")}"
+              data-side-texture="${escapeHtml(blockFaces?.side || "")}"
+              data-top-texture="${escapeHtml(blockFaces?.top || "")}"
+              data-fallback="${localFallbackTexture}"
+              onerror="if (this.dataset.fallback) { this.onerror = null; this.src = this.dataset.fallback; this.classList.add('is-local-fallback'); }"
+            >
           `
           : renderedTextureUrl
             ? `
@@ -3477,6 +3488,61 @@
         cell.style.border = "1px solid #d7c7b0";
         cell.style.padding = "8px 10px";
         cell.style.verticalAlign = "top";
+      });
+
+      clone.querySelectorAll(".preview-gui-visual-block").forEach(block => {
+        block.style.margin = "14px 0 18px";
+      });
+
+      clone.querySelectorAll(".preview-gui-visual").forEach(wrapper => {
+        wrapper.style.marginTop = "8px";
+        wrapper.style.maxWidth = "720px";
+      });
+
+      clone.querySelectorAll(".preview-gui-visual .gui-visualizer-frame").forEach(frame => {
+        frame.style.padding = "0";
+        frame.style.background = "transparent";
+        frame.style.border = "none";
+        frame.style.boxShadow = "none";
+        frame.style.maxWidth = "720px";
+      });
+
+      clone.querySelectorAll(".preview-gui-visual .gui-visualizer-stage").forEach(stage => {
+        stage.style.position = "relative";
+        stage.style.width = "100%";
+        stage.style.maxWidth = "720px";
+      });
+
+      clone.querySelectorAll(".preview-gui-visual .gui-visualizer-image").forEach(image => {
+        image.style.display = "block";
+        image.style.width = "100%";
+        image.style.height = "auto";
+        image.style.maxWidth = "720px";
+        image.style.border = "1px solid #d7c7b0";
+        image.style.borderRadius = "12px";
+        image.style.background = "#ffffff";
+        image.style.padding = "0";
+      });
+
+      clone.querySelectorAll(".preview-gui-visual .gui-slot-layer").forEach(layer => {
+        layer.style.position = "absolute";
+        layer.style.inset = "0";
+      });
+
+      clone.querySelectorAll(".preview-gui-visual .gui-slot-overlay").forEach(slot => {
+        slot.style.position = "absolute";
+        slot.style.display = "flex";
+        slot.style.alignItems = "center";
+        slot.style.justifyContent = "center";
+        slot.style.overflow = "hidden";
+        slot.style.cursor = "default";
+      });
+
+      clone.querySelectorAll(".preview-gui-visual .gui-slot-item-texture, .preview-gui-visual .gui-slot-rendered-item-texture").forEach(image => {
+        image.style.display = "block";
+        image.style.width = "88%";
+        image.style.height = "88%";
+        image.style.objectFit = "contain";
       });
 
       return `<div>${clone.innerHTML}</div>`;
