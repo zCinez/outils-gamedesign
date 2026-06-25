@@ -519,20 +519,20 @@
     }
   </style>
   <link rel="stylesheet" href="../assets/neodium-unified.css?v=20260528b" />
-  <link rel="stylesheet" href="../assets/neodium-global-header.css?v=20260604a" />
+  <link rel="stylesheet" href="../assets/neodium-global-header.css?v=20260625b" />
   <script src="../assets/supabase-config.js"></script>
   <script src="../assets/cloud-sync.js"></script>
-  <script src="../assets/neodium-global-header.js?v=20260604a" defer></script>
+  <script src="../assets/neodium-global-header.js?v=20260625b" defer></script>
 </head>
 
 <body>
   <main class="page">
     <header class="topbar legacy-topbar">
-      <a class="brand" href="../index.html" aria-label="Retour à l'accueil">
+      <a class="brand" href="../index.html" aria-label="Retour Ã  l'accueil">
         <div class="logo">N</div>
         <div class="brand-text">
           <strong>Todo Game Design</strong>
-          <span>Neodium — Outils internes</span>
+          <span>Neodium â€” Outils internes</span>
         </div>
       </a>
 
@@ -546,11 +546,11 @@
 
     <section class="hero">
       <div class="card hero-main">
-        <span class="badge">✅ Suivi Game Design</span>
-        <h1>Organise les idées, corrections et ajouts Neodium.</h1>
+        <span class="badge">âœ… Suivi Game Design</span>
+        <h1>Organise les idÃ©es, corrections et ajouts Neodium.</h1>
         <p>
-          Cette page te sert à suivre les tâches de game design : équilibrage, CDC, bugs,
-          wiki, métiers, quêtes, événements et améliorations serveur. Les données sont sauvegardées
+          Cette page te sert Ã  suivre les tÃ¢ches de game design : Ã©quilibrage, CDC, bugs,
+          wiki, mÃ©tiers, quÃªtes, Ã©vÃ©nements et amÃ©liorations serveur. Les donnÃ©es sont sauvegardÃ©es
           par defaut en local, puis se synchronisent entre PC une fois le cloud connecte.
         </p>
       </div>
@@ -558,11 +558,11 @@
       <aside class="card stats">
         <div class="stat">
           <strong id="statTotal">0</strong>
-          <span>tâches totales</span>
+          <span>tÃ¢ches totales</span>
         </div>
         <div class="stat">
           <strong id="statTodo">0</strong>
-          <span>à faire</span>
+          <span>Ã  faire</span>
         </div>
         <div class="stat">
           <strong id="statProgress">0</strong>
@@ -570,37 +570,37 @@
         </div>
         <div class="stat">
           <strong id="statDone">0</strong>
-          <span>validées</span>
+          <span>validÃ©es</span>
         </div>
       </aside>
     </section>
 
     <section class="layout">
       <aside class="card panel">
-        <h2 id="formTitle">Ajouter une tâche</h2>
-        <p class="panel-desc">Renseigne une tâche claire, avec une priorité et un statut.</p>
+        <h2 id="formTitle">Ajouter une tÃ¢che</h2>
+        <p class="panel-desc">Renseigne une tÃ¢che claire, avec une prioritÃ© et un statut.</p>
 
         <form class="form-grid" id="taskForm">
           <input type="hidden" id="taskId" />
 
           <label>
-            Titre de la tâche
+            Titre de la tÃ¢che
             <input id="title" type="text" placeholder="Ex : Revoir la courbe XP Mineur 70-100" required />
           </label>
 
           <label>
             Description
-            <textarea id="description" placeholder="Explique le problème, l'objectif ou les détails importants."></textarea>
+            <textarea id="description" placeholder="Explique le problÃ¨me, l'objectif ou les dÃ©tails importants."></textarea>
           </label>
 
           <div class="double">
             <label>
-              Catégorie
+              CatÃ©gorie
               <select id="category">
                 <option value="CDC">CDC</option>
-                <option value="Équilibrage">Équilibrage</option>
-                <option value="Métiers">Métiers</option>
-                <option value="Quêtes">Quêtes</option>
+                <option value="Ã‰quilibrage">Ã‰quilibrage</option>
+                <option value="MÃ©tiers">MÃ©tiers</option>
+                <option value="QuÃªtes">QuÃªtes</option>
                 <option value="Events">Events</option>
                 <option value="Wiki">Wiki</option>
                 <option value="Boutique">Boutique</option>
@@ -610,7 +610,7 @@
             </label>
 
             <label>
-              Priorité
+              PrioritÃ©
               <select id="priority">
                 <option value="Critique">Critique</option>
                 <option value="Haute">Haute</option>
@@ -624,10 +624,10 @@
             <label>
               Statut
               <select id="status">
-                <option value="À faire" selected>À faire</option>
+                <option value="Ã€ faire" selected>Ã€ faire</option>
                 <option value="En cours">En cours</option>
-                <option value="À tester">À tester</option>
-                <option value="Validé">Validé</option>
+                <option value="Ã€ tester">Ã€ tester</option>
+                <option value="ValidÃ©">ValidÃ©</option>
               </select>
             </label>
 
@@ -649,35 +649,35 @@
             </label>
           </div>
 
-          <button class="btn btn-primary" type="submit" id="submitBtn">Ajouter la tâche</button>
+          <button class="btn btn-primary" type="submit" id="submitBtn">Ajouter la tÃ¢che</button>
           <button class="btn" type="button" id="cancelEditBtn" style="display:none;">Annuler la modification</button>
-          <button class="btn btn-danger" type="button" id="clearDoneBtn">Supprimer les tâches validées</button>
+          <button class="btn btn-danger" type="button" id="clearDoneBtn">Supprimer les tÃ¢ches validÃ©es</button>
         </form>
       </aside>
 
       <section class="card board">
         <div class="board-head">
           <div>
-            <h2>Liste des tâches</h2>
-            <p>Filtre, modifie et valide les tâches au fur et à mesure.</p>
+            <h2>Liste des tÃ¢ches</h2>
+            <p>Filtre, modifie et valide les tÃ¢ches au fur et Ã  mesure.</p>
           </div>
         </div>
 
         <div class="filters">
-          <input id="search" type="search" placeholder="Rechercher une tâche..." />
+          <input id="search" type="search" placeholder="Rechercher une tÃ¢che..." />
           <select id="filterStatus">
             <option value="all">Tous les statuts</option>
-            <option value="À faire">À faire</option>
+            <option value="Ã€ faire">Ã€ faire</option>
             <option value="En cours">En cours</option>
-            <option value="À tester">À tester</option>
-            <option value="Validé">Validé</option>
+            <option value="Ã€ tester">Ã€ tester</option>
+            <option value="ValidÃ©">ValidÃ©</option>
           </select>
           <select id="filterCategory">
-            <option value="all">Toutes les catégories</option>
+            <option value="all">Toutes les catÃ©gories</option>
             <option value="CDC">CDC</option>
-            <option value="Équilibrage">Équilibrage</option>
-            <option value="Métiers">Métiers</option>
-            <option value="Quêtes">Quêtes</option>
+            <option value="Ã‰quilibrage">Ã‰quilibrage</option>
+            <option value="MÃ©tiers">MÃ©tiers</option>
+            <option value="QuÃªtes">QuÃªtes</option>
             <option value="Events">Events</option>
             <option value="Wiki">Wiki</option>
             <option value="Boutique">Boutique</option>
@@ -685,9 +685,9 @@
             <option value="Autre">Autre</option>
           </select>
           <select id="sortBy">
-            <option value="createdDesc">Plus récent</option>
+            <option value="createdDesc">Plus rÃ©cent</option>
             <option value="createdAsc">Plus ancien</option>
-            <option value="priority">Priorité</option>
+            <option value="priority">PrioritÃ©</option>
             <option value="deadline">Deadline</option>
           </select>
         </div>
@@ -707,11 +707,11 @@
     const defaultTasks = [
       {
         id: crypto.randomUUID(),
-        title: "Créer les premiers CDC prioritaires",
-        description: "Lister les ajouts importants et rédiger les CDC avant développement.",
+        title: "CrÃ©er les premiers CDC prioritaires",
+        description: "Lister les ajouts importants et rÃ©diger les CDC avant dÃ©veloppement.",
         category: "CDC",
         priority: "Haute",
-        status: "À faire",
+        status: "Ã€ faire",
         deadline: "",
         owner: "Samuel",
         version: "V3",
@@ -719,9 +719,9 @@
       },
       {
         id: crypto.randomUUID(),
-        title: "Vérifier l'équilibrage des métiers",
-        description: "Comparer XP, gains, prix, valeurs et progression pour éviter les écarts trop violents.",
-        category: "Équilibrage",
+        title: "VÃ©rifier l'Ã©quilibrage des mÃ©tiers",
+        description: "Comparer XP, gains, prix, valeurs et progression pour Ã©viter les Ã©carts trop violents.",
+        category: "Ã‰quilibrage",
         priority: "Haute",
         status: "En cours",
         deadline: "",
@@ -731,11 +731,11 @@
       },
       {
         id: crypto.randomUUID(),
-        title: "Mettre à jour les pages wiki importantes",
-        description: "Priorité aux pages utiles pour les joueurs : métiers, shop, quêtes, events et objets spéciaux.",
+        title: "Mettre Ã  jour les pages wiki importantes",
+        description: "PrioritÃ© aux pages utiles pour les joueurs : mÃ©tiers, shop, quÃªtes, events et objets spÃ©ciaux.",
         category: "Wiki",
         priority: "Moyenne",
-        status: "À faire",
+        status: "Ã€ faire",
         deadline: "",
         owner: "Staff",
         version: "Beta",
@@ -873,9 +873,9 @@
 
     function renderStats() {
       statTotal.textContent = tasks.length;
-      statTodo.textContent = tasks.filter((task) => task.status === "À faire").length;
-      statProgress.textContent = tasks.filter((task) => task.status === "En cours" || task.status === "À tester").length;
-      statDone.textContent = tasks.filter((task) => task.status === "Validé").length;
+      statTodo.textContent = tasks.filter((task) => task.status === "Ã€ faire").length;
+      statProgress.textContent = tasks.filter((task) => task.status === "En cours" || task.status === "Ã€ tester").length;
+      statDone.textContent = tasks.filter((task) => task.status === "ValidÃ©").length;
     }
 
     function renderTasks() {
@@ -885,14 +885,14 @@
       if (list.length === 0) {
         tasksContainer.innerHTML = `
           <div class="empty">
-            Aucune tâche trouvée. Ajoute une tâche ou modifie tes filtres.
+            Aucune tÃ¢che trouvÃ©e. Ajoute une tÃ¢che ou modifie tes filtres.
           </div>
         `;
         return;
       }
 
       tasksContainer.innerHTML = list.map((task) => {
-        const isDone = task.status === "Validé";
+        const isDone = task.status === "ValidÃ©";
         const priorityClass = `priority-${slug(task.priority)}`;
         const statusClass = `status-${slug(task.status)}`;
 
@@ -900,7 +900,7 @@
           <article class="task ${isDone ? "done" : ""}">
             <div class="task-top">
               <div class="task-title">
-                <button class="check" type="button" title="Valider / remettre à faire" onclick="toggleDone('${task.id}')"></button>
+                <button class="check" type="button" title="Valider / remettre Ã  faire" onclick="toggleDone('${task.id}')"></button>
                 <h3>${escapeHtml(task.title)}</h3>
               </div>
 
@@ -916,9 +916,9 @@
               <span class="chip">${escapeHtml(task.category)}</span>
               <span class="chip ${priorityClass}">${escapeHtml(task.priority)}</span>
               <span class="chip ${statusClass}">${escapeHtml(task.status)}</span>
-              <span class="chip">📅 ${formatDate(task.deadline)}</span>
-              ${task.owner ? `<span class="chip">👤 ${escapeHtml(task.owner)}</span>` : ""}
-              ${task.version ? `<span class="chip">🏷️ ${escapeHtml(task.version)}</span>` : ""}
+              <span class="chip">ðŸ“… ${formatDate(task.deadline)}</span>
+              ${task.owner ? `<span class="chip">ðŸ‘¤ ${escapeHtml(task.owner)}</span>` : ""}
+              ${task.version ? `<span class="chip">ðŸ·ï¸ ${escapeHtml(task.version)}</span>` : ""}
             </div>
           </article>
         `;
@@ -929,9 +929,9 @@
       taskForm.reset();
       taskId.value = "";
       priority.value = "Moyenne";
-      status.value = "À faire";
-      formTitle.textContent = "Ajouter une tâche";
-      submitBtn.textContent = "Ajouter la tâche";
+      status.value = "Ã€ faire";
+      formTitle.textContent = "Ajouter une tÃ¢che";
+      submitBtn.textContent = "Ajouter la tÃ¢che";
       cancelEditBtn.style.display = "none";
     }
 
@@ -969,11 +969,11 @@
     cancelEditBtn.addEventListener("click", resetForm);
 
     clearDoneBtn.addEventListener("click", () => {
-      const doneCount = tasks.filter((task) => task.status === "Validé").length;
-      if (doneCount === 0) return alert("Aucune tâche validée à supprimer.");
-      if (!confirm(`Supprimer ${doneCount} tâche(s) validée(s) ?`)) return;
+      const doneCount = tasks.filter((task) => task.status === "ValidÃ©").length;
+      if (doneCount === 0) return alert("Aucune tÃ¢che validÃ©e Ã  supprimer.");
+      if (!confirm(`Supprimer ${doneCount} tÃ¢che(s) validÃ©e(s) ?`)) return;
 
-      tasks = tasks.filter((task) => task.status !== "Validé");
+      tasks = tasks.filter((task) => task.status !== "ValidÃ©");
       saveTasks();
       renderTasks();
     });
@@ -992,7 +992,7 @@
       owner.value = task.owner || "";
       version.value = task.version || "";
 
-      formTitle.textContent = "Modifier la tâche";
+      formTitle.textContent = "Modifier la tÃ¢che";
       submitBtn.textContent = "Enregistrer";
       cancelEditBtn.style.display = "inline-flex";
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -1001,7 +1001,7 @@
     window.deleteTask = function(id) {
       const task = tasks.find((item) => item.id === id);
       if (!task) return;
-      if (!confirm(`Supprimer la tâche : ${task.title} ?`)) return;
+      if (!confirm(`Supprimer la tÃ¢che : ${task.title} ?`)) return;
 
       tasks = tasks.filter((item) => item.id !== id);
       saveTasks();
@@ -1013,7 +1013,7 @@
         if (task.id !== id) return task;
         return {
           ...task,
-          status: task.status === "Validé" ? "À faire" : "Validé"
+          status: task.status === "ValidÃ©" ? "Ã€ faire" : "ValidÃ©"
         };
       });
 
@@ -1056,11 +1056,11 @@
 
         tasks = imported.map((task) => ({
           id: task.id || crypto.randomUUID(),
-          title: task.title || "Tâche sans titre",
+          title: task.title || "TÃ¢che sans titre",
           description: task.description || "",
           category: task.category || "Autre",
           priority: task.priority || "Moyenne",
-          status: task.status || "À faire",
+          status: task.status || "Ã€ faire",
           deadline: task.deadline || "",
           owner: task.owner || "",
           version: task.version || "",

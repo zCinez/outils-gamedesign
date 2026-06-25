@@ -582,20 +582,20 @@
     }
   </style>
   <link rel="stylesheet" href="../assets/neodium-unified.css?v=20260528b" />
-  <link rel="stylesheet" href="../assets/neodium-global-header.css?v=20260604a" />
+  <link rel="stylesheet" href="../assets/neodium-global-header.css?v=20260625b" />
   <script src="../assets/supabase-config.js"></script>
   <script src="../assets/cloud-sync.js"></script>
-  <script src="../assets/neodium-global-header.js?v=20260604a" defer></script>
+  <script src="../assets/neodium-global-header.js?v=20260625b" defer></script>
 </head>
 
 <body>
   <main class="page">
     <header class="topbar legacy-topbar">
-      <a class="brand" href="../index.html" aria-label="Retour à l'accueil">
+      <a class="brand" href="../index.html" aria-label="Retour Ã  l'accueil">
         <div class="logo"><img src="../outils/statgm/logo-neodium.png" alt="Logo Neodium" /></div>
         <div class="brand-text">
           <strong>Suggestions joueurs</strong>
-          <span>Neodium — Outils internes</span>
+          <span>Neodium â€” Outils internes</span>
         </div>
       </a>
 
@@ -606,12 +606,12 @@
 
     <section class="hero">
       <div class="card hero-main">
-        <span class="badge">💡 Suggestions communauté</span>
+        <span class="badge">ðŸ’¡ Suggestions communautÃ©</span>
         <h1>Classe les suggestions des joueurs proprement.</h1>
         <p>
-          Cette page te permet d’ajouter manuellement les suggestions venant de Discord,
-          puis de les classer par catégorie, priorité et statut pour suivre ce qui vaut
-          vraiment le coup d’être étudié.
+          Cette page te permet dâ€™ajouter manuellement les suggestions venant de Discord,
+          puis de les classer par catÃ©gorie, prioritÃ© et statut pour suivre ce qui vaut
+          vraiment le coup dâ€™Ãªtre Ã©tudiÃ©.
         </p>
       </div>
 
@@ -622,15 +622,15 @@
         </div>
         <div class="stat">
           <strong id="statTrier">0</strong>
-          <span>à trier</span>
+          <span>Ã  trier</span>
         </div>
         <div class="stat">
           <strong id="statAccepted">0</strong>
-          <span>acceptées / à développer</span>
+          <span>acceptÃ©es / Ã  dÃ©velopper</span>
         </div>
         <div class="stat">
           <strong id="statDone">0</strong>
-          <span>implémentées</span>
+          <span>implÃ©mentÃ©es</span>
         </div>
       </aside>
     </section>
@@ -640,7 +640,7 @@
         <div class="board-head">
           <div>
             <h2>Liste des suggestions</h2>
-            <p>Filtre, classe et garde une trace de ce qui a été proposé.</p>
+            <p>Filtre, classe et garde une trace de ce qui a Ã©tÃ© proposÃ©.</p>
           </div>
 
           <div class="board-actions">
@@ -652,31 +652,31 @@
           <input id="search" type="search" placeholder="Rechercher une suggestion..." />
           <select id="filterStatus">
             <option value="all">Tous les statuts</option>
-            <option value="À trier">À trier</option>
+            <option value="Ã€ trier">Ã€ trier</option>
             <option value="En discussion">En discussion</option>
-            <option value="Acceptée">Acceptée</option>
-            <option value="Refusée">Refusée</option>
-            <option value="À développer">À développer</option>
+            <option value="AcceptÃ©e">AcceptÃ©e</option>
+            <option value="RefusÃ©e">RefusÃ©e</option>
+            <option value="Ã€ dÃ©velopper">Ã€ dÃ©velopper</option>
             <option value="En test">En test</option>
-            <option value="Implémentée">Implémentée</option>
+            <option value="ImplÃ©mentÃ©e">ImplÃ©mentÃ©e</option>
           </select>
           <select id="filterCategory">
-            <option value="all">Toutes les catégories</option>
+            <option value="all">Toutes les catÃ©gories</option>
             <option value="Gameplay">Gameplay</option>
-            <option value="Économie">Économie</option>
-            <option value="Métiers">Métiers</option>
-            <option value="Quêtes">Quêtes</option>
+            <option value="Ã‰conomie">Ã‰conomie</option>
+            <option value="MÃ©tiers">MÃ©tiers</option>
+            <option value="QuÃªtes">QuÃªtes</option>
             <option value="Boutique">Boutique</option>
             <option value="Interface / Scoreboard">Interface / Scoreboard</option>
             <option value="Events">Events</option>
-            <option value="Qualité de vie">Qualité de vie</option>
+            <option value="QualitÃ© de vie">QualitÃ© de vie</option>
             <option value="Bug / Exploit">Bug / Exploit</option>
             <option value="Autre">Autre</option>
           </select>
           <select id="sortBy">
-            <option value="createdDesc">Plus récent</option>
+            <option value="createdDesc">Plus rÃ©cent</option>
             <option value="createdAsc">Plus ancien</option>
-            <option value="priority">Priorité</option>
+            <option value="priority">PrioritÃ©</option>
             <option value="date">Date de suggestion</option>
           </select>
         </div>
@@ -690,9 +690,9 @@
         <div class="modal-head">
           <div>
             <h2 id="formTitle">Ajouter une suggestion</h2>
-            <p class="panel-desc">Rentre ici les suggestions des joueurs à la main.</p>
+            <p class="panel-desc">Rentre ici les suggestions des joueurs Ã  la main.</p>
           </div>
-          <button class="btn modal-close" type="button" id="closeSuggestionModalBtn" aria-label="Fermer">×</button>
+          <button class="btn modal-close" type="button" id="closeSuggestionModalBtn" aria-label="Fermer">Ã—</button>
         </div>
 
         <form class="form-grid" id="suggestionForm">
@@ -705,7 +705,7 @@
 
           <label>
             Description
-            <textarea id="description" placeholder="Copie ou résume la suggestion du joueur."></textarea>
+            <textarea id="description" placeholder="Copie ou rÃ©sume la suggestion du joueur."></textarea>
           </label>
 
           <div class="double">
@@ -727,29 +727,29 @@
 
           <div class="double">
             <label>
-              Catégorie
+              CatÃ©gorie
               <select id="category">
                 <option value="Gameplay">Gameplay</option>
-                <option value="Économie">Économie</option>
-                <option value="Métiers">Métiers</option>
-                <option value="Quêtes">Quêtes</option>
+                <option value="Ã‰conomie">Ã‰conomie</option>
+                <option value="MÃ©tiers">MÃ©tiers</option>
+                <option value="QuÃªtes">QuÃªtes</option>
                 <option value="Boutique">Boutique</option>
                 <option value="Interface / Scoreboard">Interface / Scoreboard</option>
                 <option value="Events">Events</option>
-                <option value="Qualité de vie">Qualité de vie</option>
+                <option value="QualitÃ© de vie">QualitÃ© de vie</option>
                 <option value="Bug / Exploit">Bug / Exploit</option>
                 <option value="Autre">Autre</option>
               </select>
             </label>
 
             <label>
-              Priorité
+              PrioritÃ©
               <select id="priority">
                 <option value="Critique">Critique</option>
                 <option value="Haute">Haute</option>
                 <option value="Moyenne" selected>Moyenne</option>
                 <option value="Basse">Basse</option>
-                <option value="Idée future">Idée future</option>
+                <option value="IdÃ©e future">IdÃ©e future</option>
               </select>
             </label>
           </div>
@@ -758,25 +758,25 @@
             <label>
               Statut
               <select id="status">
-                <option value="À trier" selected>À trier</option>
+                <option value="Ã€ trier" selected>Ã€ trier</option>
                 <option value="En discussion">En discussion</option>
-                <option value="Acceptée">Acceptée</option>
-                <option value="Refusée">Refusée</option>
-                <option value="À développer">À développer</option>
+                <option value="AcceptÃ©e">AcceptÃ©e</option>
+                <option value="RefusÃ©e">RefusÃ©e</option>
+                <option value="Ã€ dÃ©velopper">Ã€ dÃ©velopper</option>
                 <option value="En test">En test</option>
-                <option value="Implémentée">Implémentée</option>
+                <option value="ImplÃ©mentÃ©e">ImplÃ©mentÃ©e</option>
               </select>
             </label>
 
             <label>
-              Version visée
+              Version visÃ©e
               <input id="version" type="text" placeholder="Ex : V3, Beta, Saison 1..." />
             </label>
           </div>
 
           <label>
-            Note staff / décision
-            <textarea id="staffNote" placeholder="Ex : Bonne idée mais pas prioritaire, à revoir après la bêta."></textarea>
+            Note staff / dÃ©cision
+            <textarea id="staffNote" placeholder="Ex : Bonne idÃ©e mais pas prioritaire, Ã  revoir aprÃ¨s la bÃªta."></textarea>
           </label>
 
           <button class="btn btn-primary" type="submit" id="submitBtn">Ajouter la suggestion</button>
@@ -803,37 +803,37 @@
         discordLink: "",
         category: "Interface / Scoreboard",
         priority: "Moyenne",
-        status: "À trier",
+        status: "Ã€ trier",
         version: "V3",
-        staffNote: "À analyser avec les contraintes d'espace du scoreboard.",
+        staffNote: "Ã€ analyser avec les contraintes d'espace du scoreboard.",
         createdAt: Date.now() - 3000
       },
       {
         id: crypto.randomUUID(),
-        title: "Améliorer les récompenses de quêtes secondaires",
-        description: "Suggestion pour rendre les quêtes secondaires plus intéressantes et plus rentables.",
+        title: "AmÃ©liorer les rÃ©compenses de quÃªtes secondaires",
+        description: "Suggestion pour rendre les quÃªtes secondaires plus intÃ©ressantes et plus rentables.",
         author: "JoueurDiscord2",
         suggestionDate: "",
         discordLink: "",
-        category: "Quêtes",
+        category: "QuÃªtes",
         priority: "Haute",
         status: "En discussion",
         version: "Beta",
-        staffNote: "Bonne piste, à comparer avec l'équilibrage général.",
+        staffNote: "Bonne piste, Ã  comparer avec l'Ã©quilibrage gÃ©nÃ©ral.",
         createdAt: Date.now() - 2000
       },
       {
         id: crypto.randomUUID(),
-        title: "Nouvel item pour réduire le ralentissement dans les fèves",
-        description: "Créer un item spécial pour éviter la gêne de déplacement dans certaines cultures.",
+        title: "Nouvel item pour rÃ©duire le ralentissement dans les fÃ¨ves",
+        description: "CrÃ©er un item spÃ©cial pour Ã©viter la gÃªne de dÃ©placement dans certaines cultures.",
         author: "JoueurDiscord3",
         suggestionDate: "",
         discordLink: "",
-        category: "Métiers",
+        category: "MÃ©tiers",
         priority: "Haute",
-        status: "Acceptée",
+        status: "AcceptÃ©e",
         version: "V3",
-        staffNote: "Idée cohérente avec les objets légendaires métiers.",
+        staffNote: "IdÃ©e cohÃ©rente avec les objets lÃ©gendaires mÃ©tiers.",
         createdAt: Date.now() - 1000
       }
     ];
@@ -914,13 +914,13 @@
         "Haute": 4,
         "Moyenne": 3,
         "Basse": 2,
-        "Idée future": 1
+        "IdÃ©e future": 1
       };
       return weights[value] || 0;
     }
 
     function formatDate(dateValue) {
-      if (!dateValue) return "Date non renseignée";
+      if (!dateValue) return "Date non renseignÃ©e";
       const date = new Date(dateValue + "T00:00:00");
       return date.toLocaleDateString("fr-FR", {
         day: "2-digit",
@@ -970,9 +970,9 @@
 
     function renderStats() {
       statTotal.textContent = suggestions.length;
-      statTrier.textContent = suggestions.filter((item) => item.status === "À trier").length;
-      statAccepted.textContent = suggestions.filter((item) => item.status === "Acceptée" || item.status === "À développer").length;
-      statDone.textContent = suggestions.filter((item) => item.status === "Implémentée").length;
+      statTrier.textContent = suggestions.filter((item) => item.status === "Ã€ trier").length;
+      statAccepted.textContent = suggestions.filter((item) => item.status === "AcceptÃ©e" || item.status === "Ã€ dÃ©velopper").length;
+      statDone.textContent = suggestions.filter((item) => item.status === "ImplÃ©mentÃ©e").length;
     }
 
     function renderSuggestions() {
@@ -982,7 +982,7 @@
       if (list.length === 0) {
         suggestionsContainer.innerHTML = `
           <div class="empty">
-            Aucune suggestion trouvée. Ajoute une suggestion ou modifie tes filtres.
+            Aucune suggestion trouvÃ©e. Ajoute une suggestion ou modifie tes filtres.
           </div>
         `;
         return;
@@ -1011,7 +1011,7 @@
               <span class="chip">${escapeHtml(item.category)}</span>
               <span class="chip ${priorityClass}">${escapeHtml(item.priority)}</span>
               <span class="chip ${statusClass}">${escapeHtml(item.status)}</span>
-              ${item.version ? `<span class="chip">🏷️ ${escapeHtml(item.version)}</span>` : ""}
+              ${item.version ? `<span class="chip">ðŸ·ï¸ ${escapeHtml(item.version)}</span>` : ""}
             </div>
 
             <div class="meta">
@@ -1048,7 +1048,7 @@
       suggestionForm.reset();
       suggestionId.value = "";
       priority.value = "Moyenne";
-      status.value = "À trier";
+      status.value = "Ã€ trier";
       formTitle.textContent = "Ajouter une suggestion";
       submitBtn.textContent = "Ajouter la suggestion";
       cancelEditBtn.style.display = "none";
@@ -1123,7 +1123,7 @@
       discordLink.value = item.discordLink || "";
       category.value = item.category || "Autre";
       priority.value = item.priority || "Moyenne";
-      status.value = item.status || "À trier";
+      status.value = item.status || "Ã€ trier";
       version.value = item.version || "";
       staffNote.value = item.staffNote || "";
 

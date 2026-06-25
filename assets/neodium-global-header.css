@@ -104,6 +104,10 @@
   color: #ffffff;
 }
 
+.neodium-global-header__link.is-cloud-hidden {
+  display: none;
+}
+
 .neodium-global-header-hide-legacy .legacy-topbar {
   display: none !important;
 }
