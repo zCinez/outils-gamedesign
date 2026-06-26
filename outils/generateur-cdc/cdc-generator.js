@@ -2877,7 +2877,9 @@
       const normalizedItemKey = normalizeMinecraftItemKey(itemKey);
       if (!normalizedItemKey) return "";
 
-      if (normalizedItemKey === "emerald_block") {
+      // Some blocks have unreliable wiki invicon names, so we force the
+      // rendered inventory icon to keep a consistent Minecraft-like display.
+      if (normalizedItemKey === "emerald_block" || normalizedItemKey === "lapis_ore") {
         return resolveRenderedMinecraftItemIconUrl(normalizedItemKey);
       }
 

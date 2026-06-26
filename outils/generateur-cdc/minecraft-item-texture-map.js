@@ -1000,6 +1000,7 @@
     "bamboo_stairs":  "block/bamboo_planks",
     "verdant_froglight":  "block/verdant_froglight_side",
     "piglin_spawn_egg":  "item/piglin_spawn_egg",
+    "gemme_ore_block":  "block/gemme_ore_block",
     "glass":  "block/glass",
     "pale_oak_fence_gate":  "block/pale_oak_planks",
     "warped_door":  "item/warped_door",

@@ -2,8 +2,6 @@
   const TRANSITION_DURATION_MS = 180;
   const THEME_STORAGE_KEY = "neodium-cdc-theme";
   const NAV_TAB_ROLES = ["home", "project", "editor", "settings"];
-  let navResizeObserver = null;
-
   function getCurrentPageMeta() {
     const currentPath = window.location.pathname.split("/").pop().toLowerCase();
 
@@ -31,14 +29,14 @@
     if (currentPath === "cdc-generator.html") {
       return {
         activeTab: "editor",
-        subtitle: "Editeur",
+        subtitle: "Éditeur",
       };
     }
 
     if (currentPath === "settings.html") {
       return {
         activeTab: "settings",
-        subtitle: "Parametres",
+        subtitle: "Paramètres",
       };
     }
 
@@ -68,28 +66,6 @@
         tab.removeAttribute("aria-current");
       }
     });
-  }
-
-  function setGlobalNavOffset() {
-    const navShell = document.querySelector(".global-nav-shell");
-    if (!navShell) return;
-
-    const measuredHeight = Math.ceil(navShell.getBoundingClientRect().height + 12);
-    document.documentElement.style.setProperty("--global-nav-offset", `${measuredHeight}px`);
-  }
-
-  function observeGlobalNavigation(navShell) {
-    if (!navShell) return;
-
-    setGlobalNavOffset();
-    window.requestAnimationFrame(setGlobalNavOffset);
-    window.addEventListener("resize", setGlobalNavOffset);
-
-    if ("ResizeObserver" in window) {
-      navResizeObserver?.disconnect();
-      navResizeObserver = new ResizeObserver(() => setGlobalNavOffset());
-      navResizeObserver.observe(navShell);
-    }
   }
 
   function fallbackToggleTheme() {
@@ -128,42 +104,7 @@
     }
 
     const pageMeta = getCurrentPageMeta();
-    document.body.classList.add("has-global-nav");
     syncTopTabActiveState(navElement, pageMeta.activeTab);
-
-    if (navShell.classList.contains("global-nav-shell")) {
-      const subtitle = navShell.querySelector(".global-nav-brand-subtitle");
-      if (subtitle) {
-        subtitle.textContent = pageMeta.subtitle;
-      }
-      return;
-    }
-
-    navShell.classList.add("global-nav-shell");
-
-    const inner = document.createElement("div");
-    inner.className = "global-nav-inner";
-
-    const actions = document.createElement("div");
-    actions.className = "global-nav-actions";
-
-    const brand = document.createElement("div");
-    brand.className = "global-nav-brand";
-    brand.innerHTML = `
-      <span class="global-nav-brand-mark" aria-hidden="true">
-        <img class="global-nav-brand-logo" src="./logo-neodium.png" alt="" />
-      </span>
-      <div class="global-nav-brand-copy">
-        <span class="global-nav-brand-title">Neodium CDC</span>
-        <span class="global-nav-brand-subtitle">${pageMeta.subtitle}</span>
-      </div>
-    `;
-
-    navShell.replaceChildren(inner);
-    actions.append(navElement);
-    inner.append(brand, actions);
-    document.body.prepend(navShell);
-    observeGlobalNavigation(navShell);
   }
 
   function markPageReady() {

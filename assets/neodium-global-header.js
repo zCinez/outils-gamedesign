@@ -92,8 +92,12 @@
     );
   }
 
+  function hasToolAccess(state) {
+    return hasSharedCloudAccess(state) || Boolean(state?.localAccessBypass);
+  }
+
   function updateProtectedLinks(state) {
-    const shouldHide = !hasSharedCloudAccess(state);
+    const shouldHide = !hasToolAccess(state);
     protectedLinks.forEach((link) => {
       link.classList.toggle("is-cloud-hidden", shouldHide);
       link.setAttribute("aria-hidden", shouldHide ? "true" : "false");

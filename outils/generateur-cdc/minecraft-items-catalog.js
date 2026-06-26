@@ -537,6 +537,7 @@
     "furnace_minecart",
     "ghast_spawn_egg",
     "ghast_tear",
+    "gemme_ore_block",
     "gilded_blackstone",
     "glass",
     "glass_bottle",

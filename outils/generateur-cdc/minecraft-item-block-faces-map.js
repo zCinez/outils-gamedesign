@@ -5004,6 +5004,11 @@
                              "side":  "item/piglin_spawn_egg",
                              "top":  "item/piglin_spawn_egg"
                          },
+    "gemme_ore_block":  {
+                            "front":  "block/gemme_ore_block",
+                            "side":  "block/gemme_ore_block",
+                            "top":  "block/gemme_ore_block"
+                        },
     "glass":  {
                   "front":  "block/glass",
                   "side":  "block/glass",

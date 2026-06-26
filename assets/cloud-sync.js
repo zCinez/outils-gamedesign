@@ -11,6 +11,47 @@
   const reloadStorageKey = "neodium-cloud-last-reload-user";
   const emailStorageKey = "neodium-cloud-last-email";
   const styleElementId = "neodium-cloud-sync-style";
+  const localHostname = String(window.location.hostname || "").toLowerCase();
+
+  function isPrivateIpv4Host(hostname) {
+    const parts = hostname.split(".");
+    if (parts.length !== 4) return false;
+
+    const values = parts.map((part) => Number.parseInt(part, 10));
+    if (values.some((value) => !Number.isInteger(value) || value < 0 || value > 255)) {
+      return false;
+    }
+
+    return values[0] === 10
+      || values[0] === 127
+      || values[0] === 0
+      || (values[0] === 192 && values[1] === 168)
+      || (values[0] === 169 && values[1] === 254)
+      || (values[0] === 172 && values[1] >= 16 && values[1] <= 31);
+  }
+
+  function isPrivateIpv6Host(hostname) {
+    return hostname === "::1"
+      || hostname === "[::1]"
+      || hostname.startsWith("fe80:")
+      || hostname.startsWith("[fe80:")
+      || hostname.startsWith("fc")
+      || hostname.startsWith("fd")
+      || hostname.startsWith("[fc")
+      || hostname.startsWith("[fd");
+  }
+
+  function isLikelyLocalHostname(hostname) {
+    if (!hostname) return false;
+    if (hostname === "localhost") return true;
+    if (hostname.endsWith(".local") || hostname.endsWith(".lan") || hostname.endsWith(".home")) {
+      return true;
+    }
+
+    return isPrivateIpv4Host(hostname) || isPrivateIpv6Host(hostname);
+  }
+
+  const isLocalRuntime = window.location.protocol === "file:" || isLikelyLocalHostname(localHostname);
 
   const storageProto = Object.getPrototypeOf(window.localStorage);
   const nativeSetItem = storageProto.setItem;
@@ -38,6 +79,7 @@
     message: hasConfig ? "Initialisation du cloud equipe..." : "Ajoute Supabase dans assets/supabase-config.js",
     label: "Local",
     email: "",
+    localAccessBypass: isLocalRuntime,
     syncing: false,
     pending: 0
   };
@@ -72,6 +114,7 @@
       message: state.message,
       label: state.label,
       email: state.email,
+      localAccessBypass: state.localAccessBypass,
       syncing: state.syncing,
       pending: state.pending
     };
@@ -430,10 +473,14 @@
     }
 
     if (!state.configured) {
-      meta.textContent = "Supabase n'est pas configure.";
+      meta.textContent = state.localAccessBypass
+        ? "Acces local actif. Supabase n'est pas configure."
+        : "Supabase n'est pas configure.";
       emailField.style.display = "none";
       actions.innerHTML = "";
-      hint.textContent = "Ajoute l'URL et la cle publique dans assets/supabase-config.js.";
+      hint.textContent = state.localAccessBypass
+        ? "Les outils restent accessibles en local. Ajoute Supabase si tu veux aussi la synchronisation cloud."
+        : "Ajoute l'URL et la cle publique dans assets/supabase-config.js.";
       return;
     }
 
@@ -448,11 +495,15 @@
       hint.textContent = "Les utilisateurs autorises partagent les memes donnees une fois connectes.";
     } else {
       emailField.style.display = "";
-      meta.textContent = "Pas de session cloud active";
+      meta.textContent = state.localAccessBypass
+        ? "Acces local actif sans session cloud"
+        : "Pas de session cloud active";
       actions.innerHTML = `
         <button type="button" class="neodium-cloud__button neodium-cloud__button--primary" data-action="signin"${state.syncing ? " disabled" : ""}>Recevoir un lien</button>
       `;
-      hint.textContent = "Seules les adresses autorisees dans Supabase auront acces aux donnees partagees.";
+      hint.textContent = state.localAccessBypass
+        ? "En local, les outils sont deblocables sans connexion. Connecte le cloud uniquement pour synchroniser les donnees partagees."
+        : "Seules les adresses autorisees dans Supabase auront acces aux donnees partagees.";
     }
 
     actions.querySelectorAll("[data-action]").forEach((button) => {
@@ -560,7 +611,9 @@
         syncing: false,
         label: "Local",
         email: "",
-        message: "Connexion cloud disponible."
+        message: state.localAccessBypass
+          ? "Acces local actif. Connexion cloud optionnelle."
+          : "Connexion cloud disponible."
       });
       return;
     }
@@ -708,7 +761,9 @@
       status: "signed_out",
       label: "Local",
       email: "",
-      message: "Deconnecte. Les outils restent utilisables en local."
+      message: state.localAccessBypass
+        ? "Deconnecte. Acces local conserve, cloud optionnel."
+        : "Deconnecte. Les outils restent utilisables en local."
     });
   }
 

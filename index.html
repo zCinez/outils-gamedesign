@@ -750,8 +750,8 @@
   <link rel="stylesheet" href="assets/neodium-unified.css?v=20260528b" />
   <link rel="stylesheet" href="assets/neodium-global-header.css?v=20260625b" />
   <script src="assets/supabase-config.js"></script>
-  <script src="assets/cloud-sync.js"></script>
-  <script src="assets/neodium-global-header.js?v=20260625b" defer></script>
+  <script src="assets/cloud-sync.js?v=20260626b"></script>
+  <script src="assets/neodium-global-header.js?v=20260626b" defer></script>
 </head>
 
 <body>
@@ -1114,14 +1114,24 @@
       );
     }
 
+    function hasToolAccess(state) {
+      return hasSharedCloudAccess(state) || Boolean(state?.localAccessBypass);
+    }
+
     function updateCloudGate(state) {
       const sharedAccess = hasSharedCloudAccess(state);
-      toolAccessShell.classList.toggle("is-hidden", !sharedAccess);
-      cloudGatePanel.classList.toggle("is-visible", !sharedAccess);
-      collectProtectedLinks().forEach((link) => setLinkLocked(link, !sharedAccess));
+      const toolAccess = hasToolAccess(state);
+      toolAccessShell.classList.toggle("is-hidden", !toolAccess);
+      cloudGatePanel.classList.toggle("is-visible", !toolAccess);
+      collectProtectedLinks().forEach((link) => setLinkLocked(link, !toolAccess));
 
       if (sharedAccess) {
         cloudGateState.textContent = `Cloud actif : ${state.email}`;
+        return;
+      }
+
+      if (state?.localAccessBypass) {
+        cloudGateState.textContent = "Acces local actif : connexion cloud optionnelle.";
         return;
       }
 
