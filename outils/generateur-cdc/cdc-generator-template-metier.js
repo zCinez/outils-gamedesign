@@ -8,18 +8,7 @@ function getMetierSelectedTypes() {
 }
 
 function getMetierGuiImageHtml() {
-  const input = document.getElementById("metierGuiXpImage");
-  const preview = document.getElementById("previewMetierGuiXpImage");
-
-  if (input && input.files && input.files[0] && preview && preview.src) {
-    return `
-      <div class="preview-image-block">
-        <div><strong>Image du GUI XP par item :</strong></div>
-        <img src="${preview.src}" alt="Image du GUI XP par item">
-      </div>`;
-  }
-
-  return `<div><strong>Image du GUI XP par item :</strong> Aucune image</div>`;
+  return renderSavedImagePreviewHtml("Image du GUI XP par item", "previewMetierGuiXpImage", "Image du GUI XP par item");
 }
 
 function genererTemplateMetier() {

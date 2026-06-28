@@ -57,8 +57,7 @@ function genererTemplateCommande() {
 
   if (interfaceGUI) {
     const nomGUICommande = valeur("nomGUICommande", "");
-    const imageFile = document.getElementById("imageGUICommande").files[0];
-    const imageGUI = imageFile ? imageFile.name : "Aucune image";
+    const imageGUI = getSelectedFileName("imageGUICommande");
     const tailleGUI = valeur("tailleGUICommande", "3 lignes");
     const items = recupererItemsGUICommande();
     const itemsText = renderNamedEntriesText(

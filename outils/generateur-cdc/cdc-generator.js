@@ -6,6 +6,7 @@
     let messageIndex = 0;
     let guiCommandeItemIndex = 0;
     let guiTemplateItemIndex = 0;
+    let guiTemplateLoreVariantIndex = 0;
     let eventConditionIndex = 0;
     let eventMessageIndex = 0;
     let caisseRewardIndex = 0;
@@ -31,6 +32,13 @@
     const GUI_PRESET_OVERRIDES_STORAGE_KEY = "neodium-gui-preset-overrides";
     const GUI_PRESET_HIDDEN_STORAGE_KEY = "neodium-gui-preset-hidden";
     const GUI_CUSTOM_PRESETS_STORAGE_KEY = "neodium-gui-custom-presets";
+    const PROJECT_IMAGE_FIELDS = [
+      { inputId: "imageGUICommande", previewId: "previewImageGUICommande" },
+      { inputId: "guiImage", previewId: "previewImageTemplate" },
+      { inputId: "selectObtentionCraft", previewId: "previewCraftTemplate" },
+      { inputId: "textureItemImage", previewId: "previewTextureItemTemplate" },
+      { inputId: "metierGuiXpImage", previewId: "previewMetierGuiXpImage" }
+    ];
     const BUILTIN_MINECRAFT_ITEM_KEYS = Array.isArray(window.BUILTIN_MINECRAFT_ITEM_IDS)
       ? [...window.BUILTIN_MINECRAFT_ITEM_IDS].sort((a, b) => a.localeCompare(b))
       : [];
@@ -687,7 +695,75 @@
 
     function getSelectedFileName(id, fallback = "Aucune image") {
       const input = document.getElementById(id);
-      return input?.files?.[0]?.name || fallback;
+      return input?.files?.[0]?.name || input?.dataset?.savedFileName || fallback;
+    }
+
+    function getImagePreviewSource(previewId) {
+      const preview = document.getElementById(previewId);
+      const src = preview?.getAttribute("src") || "";
+      return src.trim();
+    }
+
+    function setProjectImageState(inputId, previewId, { fileName = "", dataUrl = "" } = {}) {
+      const input = document.getElementById(inputId);
+      const preview = document.getElementById(previewId);
+
+      if (input) {
+        if (fileName) {
+          input.dataset.savedFileName = fileName;
+        } else {
+          delete input.dataset.savedFileName;
+        }
+      }
+
+      if (!preview) return;
+
+      if (dataUrl) {
+        preview.src = dataUrl;
+        preview.style.display = "block";
+        return;
+      }
+
+      preview.removeAttribute("src");
+      preview.style.display = "none";
+    }
+
+    function collectProjectImages() {
+      return PROJECT_IMAGE_FIELDS.reduce((images, { inputId, previewId }) => {
+        const dataUrl = getImagePreviewSource(previewId);
+        if (!dataUrl) {
+          return images;
+        }
+
+        images[inputId] = {
+          fileName: getSelectedFileName(inputId, ""),
+          dataUrl
+        };
+        return images;
+      }, {});
+    }
+
+    function restoreProjectImages(images = {}) {
+      PROJECT_IMAGE_FIELDS.forEach(({ inputId, previewId }) => {
+        const savedImage = images?.[inputId];
+        setProjectImageState(inputId, previewId, {
+          fileName: savedImage?.fileName || "",
+          dataUrl: savedImage?.dataUrl || ""
+        });
+      });
+    }
+
+    function renderSavedImagePreviewHtml(label, previewId, alt) {
+      const imageSource = getImagePreviewSource(previewId);
+      if (!imageSource) {
+        return `<div><strong>${escapeHtml(label)} :</strong> Aucune image</div>`;
+      }
+
+      return `
+<div class="preview-image-block">
+  <div><strong>${escapeHtml(label)} :</strong></div>
+  <img src="${escapeHtml(imageSource)}" alt="${escapeHtml(alt)}">
+</div>`;
     }
 
     function parseChancePercent(value) {
@@ -1020,7 +1096,8 @@
         template: state.template,
         projectName: state.projectName,
         fields: state.fields,
-        dynamic: state.dynamic
+        dynamic: state.dynamic,
+        images: state.images || {}
       });
     }
 
@@ -1030,6 +1107,10 @@
         return false;
       }
       if ((state.projectName || "").trim()) return true;
+
+      if (Object.values(state.images || {}).some(image => image?.dataUrl)) {
+        return true;
+      }
 
       const hasFieldValue = Object.entries(state.fields || {}).some(([id, value]) => {
         if (typeof value !== "string") return false;
@@ -1303,18 +1384,11 @@
         }
       });
 
-      const guiImageInput = document.getElementById("guiImage");
-      if (guiImageInput) {
-        guiImageInput.value = "";
-      }
-
-      const guiImagePreview = document.getElementById("previewImageTemplate");
-      if (guiImagePreview) {
-        guiImagePreview.removeAttribute("src");
-      }
+      setProjectImageState("guiImage", "previewImageTemplate");
 
       clearElement("guiItemsTemplateContainer");
       guiTemplateItemIndex = 0;
+      guiTemplateLoreVariantIndex = 0;
       updateOuvertureFields();
       updateGuiTailleField();
       updateGuiCommandeVisualization();
@@ -1721,7 +1795,9 @@
 
     function isGeneratorUiField(element) {
       if (!element?.id) return false;
-      return element.id === "projectNameInput" || element.id === "projectHistorySearch";
+      return element.id === "projectNameInput"
+        || element.id === "projectHistorySearch"
+        || element.id.startsWith("gui_template_copy_from_");
     }
 
     function handleGeneratorFieldInteraction(element, { shouldGenerate = false } = {}) {
@@ -1760,6 +1836,9 @@
         || element.id.startsWith("gui_tpl_")
       ) {
         updateGuiTemplateVisualization();
+        if (element.id.startsWith("gui_tpl_")) {
+          updateGuiTemplateItemCopySources();
+        }
       }
 
       if (!shouldGenerate || isGeneratorUiField(element)) {
@@ -1804,63 +1883,19 @@
        ========================================================= */
 
     function getCommandeGuiImageHtml() {
-      const input = document.getElementById("imageGUICommande");
-      const preview = document.getElementById("previewImageGUICommande");
-
-      if (input && input.files && input.files[0] && preview && preview.src) {
-        return `
-<div class="preview-image-block">
-  <div><strong>Image du GUI :</strong></div>
-  <img src="${preview.src}" alt="Image du GUI">
-</div>`;
-      }
-
-      return `<div><strong>Image du GUI :</strong> Aucune image</div>`;
+      return renderSavedImagePreviewHtml("Image du GUI", "previewImageGUICommande", "Image du GUI");
     }
 
     function getTemplateGuiImageHtml() {
-      const input = document.getElementById("guiImage");
-      const preview = document.getElementById("previewImageTemplate");
-
-      if (input && input.files && input.files[0] && preview && preview.src) {
-        return `
-		<div class="preview-image-block">
-		  <div><strong>Image du GUI :</strong></div>
-		  <img src="${preview.src}" alt="Image du GUI">
-		</div>`;
-      }
-
-      return `<div><strong>Image du GUI :</strong> Aucune image</div>`;
+      return renderSavedImagePreviewHtml("Image du GUI", "previewImageTemplate", "Image du GUI");
     }
 
 	function getTemplateCraftImageHtml() {
-      const input = document.getElementById("selectObtentionCraft");
-      const preview = document.getElementById("previewCraftTemplate");
-
-      if (input && input.files && input.files[0] && preview && preview.src) {
-        return `
-		<div class="preview-image-block">
-		  <div><strong>Image du Craft :</strong></div>
-		  <img src="${preview.src}" alt="Image du Craft">
-		</div>`;
-      }
-
-      return `<div><strong>Image du Craft :</strong> Aucune image</div>`;
+      return renderSavedImagePreviewHtml("Image du Craft", "previewCraftTemplate", "Image du Craft");
     }
 	
 	function getTemplateTextureItemImageHtml() {
-      const input = document.getElementById("textureItemImage");
-      const preview = document.getElementById("previewTextureItemTemplate");
-
-      if (input && input.files && input.files[0] && preview && preview.src) {
-        return `
-		<div class="preview-image-block">
-		  <div><strong>Image de la texture :</strong></div>
-		  <img src="${preview.src}" alt="Image de la texture">
-		</div>`;
-      }
-
-      return `<div><strong>Image de la texture :</strong> Aucune image</div>`;
+      return renderSavedImagePreviewHtml("Image de la texture", "previewTextureItemTemplate", "Image de la texture");
     }
 
     /* =========================================================
@@ -1964,22 +1999,25 @@
        - déclenche aussi la mise à jour du rendu final
        ========================================================= */
     function previewImage(event, previewId) {
-      const file = event.target.files[0];
-      const preview = document.getElementById(previewId);
+      const input = event.target;
+      const file = input.files[0];
 
       if (file) {
         const reader = new FileReader();
         reader.onload = function(e) {
-          preview.src = e.target.result;
-          preview.style.display = "block";
+          setProjectImageState(input.id, previewId, {
+            fileName: file.name,
+            dataUrl: e.target?.result || ""
+          });
+          invalidateCDC();
+          genererCDC(true);
         };
         reader.readAsDataURL(file);
       } else {
-        preview.src = "";
-        preview.style.display = "none";
+        setProjectImageState(input.id, previewId);
+        invalidateCDC();
+        genererCDC(true);
       }
-
-      genererCDC();
     }
 
     /* =========================================================
@@ -2602,48 +2640,274 @@
     /* =========================================================
        9. ITEMS GUI DYNAMIQUES POUR TEMPLATE GUI
        ========================================================= */
+    function getGuiTemplateItemElements() {
+      return [...document.querySelectorAll(".gui-item[data-gui-template-item-id]")];
+    }
+
+    function buildGuiTemplateItemSourceLabel(itemElement, index) {
+      const id = String(itemElement?.dataset?.guiTemplateItemId || "").trim();
+      const slotValue = document.getElementById(`gui_tpl_slot_${id}`)?.value.trim() || "";
+      const itemValue = document.getElementById(`gui_tpl_item_${id}`)?.value.trim() || "";
+      const nomValue = document.getElementById(`gui_tpl_nom_${id}`)?.value.trim() || "";
+      const cleanedNom = stripMinecraftFormatting(nomValue);
+      const descriptor = cleanedNom || itemValue || "";
+      const parts = [`Item ${index + 1}`];
+
+      if (slotValue) {
+        parts.push(`slot ${slotValue}`);
+      }
+
+      if (descriptor) {
+        parts.push(descriptor);
+      }
+
+      return parts.join(" - ");
+    }
+
+    function updateGuiTemplateCopyActionState(itemId) {
+      const sourceSelect = document.getElementById(`gui_template_copy_from_${itemId}`);
+      const copyButton = document.querySelector(`[data-gui-template-copy-button-for="${itemId}"]`);
+      if (!sourceSelect || !copyButton) return;
+      copyButton.disabled = sourceSelect.disabled || !sourceSelect.value;
+    }
+
+    function normalizeGuiTemplateLoreVariantes(loreVariantes) {
+      if (!Array.isArray(loreVariantes)) return [];
+
+      return loreVariantes
+        .map(variant => ({
+          contexte: String(variant?.contexte || variant?.etat || variant?.label || "").trim(),
+          lore: String(variant?.lore || "").trim()
+        }))
+        .filter(variant => variant.contexte || variant.lore);
+    }
+
+    function getGuiTemplateLoreVariantes(itemId) {
+      const container = document.getElementById(`gui_tpl_lore_variants_${itemId}`);
+      if (!container) return [];
+
+      return [...container.querySelectorAll("[data-gui-template-lore-variant-id]")]
+        .map(variantRow => {
+          const variantId = variantRow.dataset.guiTemplateLoreVariantId;
+          return {
+            contexte: document.getElementById(`gui_tpl_lore_variant_context_${variantId}`)?.value.trim() || "",
+            lore: document.getElementById(`gui_tpl_lore_variant_text_${variantId}`)?.value.trim() || ""
+          };
+        })
+        .filter(variant => variant.contexte || variant.lore);
+    }
+
+    function ajouterGuiTemplateLoreVariante(itemId, data = {}, { skipRefresh = false } = {}) {
+      guiTemplateLoreVariantIndex++;
+      const variantId = guiTemplateLoreVariantIndex;
+      const container = document.getElementById(`gui_tpl_lore_variants_${itemId}`);
+      if (!container) return "";
+
+      const normalizedData = normalizeGuiTemplateLoreVariantes([data])[0] || {
+        contexte: "",
+        lore: ""
+      };
+
+      const variant = document.createElement("div");
+      variant.className = "gui-item-lore-variant";
+      variant.dataset.guiTemplateLoreVariantId = variantId;
+      variant.dataset.guiTemplateLoreVariantParentId = itemId;
+      variant.innerHTML = `
+        <div class="gui-item-lore-variant-header">
+          <div class="gui-item-lore-variant-title">Variante de lore</div>
+          <button type="button" class="btn-remove" onclick="supprimerGuiTemplateLoreVariante(${variantId})">Supprimer</button>
+        </div>
+
+        <label for="gui_tpl_lore_variant_context_${variantId}">Contexte / etat</label>
+        <input type="text" id="gui_tpl_lore_variant_context_${variantId}" placeholder="Ex : Etat selectionne" value="${escapeHtml(normalizedData.contexte)}">
+
+        <label for="gui_tpl_lore_variant_text_${variantId}">Lore</label>
+        <textarea id="gui_tpl_lore_variant_text_${variantId}" placeholder="Ex : &aCet item est actuellement utilise">${escapeHtml(normalizedData.lore)}</textarea>
+      `;
+
+      container.appendChild(variant);
+
+      if (!skipRefresh) {
+        refreshAfterStructureChange();
+        updateGuiTemplateVisualization();
+      }
+
+      return String(variantId);
+    }
+
+    function remplacerGuiTemplateLoreVariantes(itemId, loreVariantes) {
+      const container = document.getElementById(`gui_tpl_lore_variants_${itemId}`);
+      if (!container) return;
+
+      container.innerHTML = "";
+      normalizeGuiTemplateLoreVariantes(loreVariantes).forEach(variant => {
+        ajouterGuiTemplateLoreVariante(itemId, variant, { skipRefresh: true });
+      });
+    }
+
+    function supprimerGuiTemplateLoreVariante(variantId) {
+      const variant = document.querySelector(`[data-gui-template-lore-variant-id="${variantId}"]`);
+      if (variant) {
+        variant.remove();
+      }
+
+      refreshAfterStructureChange();
+      updateGuiTemplateVisualization();
+    }
+
+    function updateGuiTemplateItemCopySources() {
+      const itemElements = getGuiTemplateItemElements();
+      const sourceItems = itemElements.map((itemElement, index) => ({
+        id: String(itemElement.dataset.guiTemplateItemId || ""),
+        label: buildGuiTemplateItemSourceLabel(itemElement, index)
+      }));
+
+      itemElements.forEach((itemElement, index) => {
+        const itemId = String(itemElement.dataset.guiTemplateItemId || "");
+        const title = itemElement.querySelector(".gui-item-title");
+        const sourceSelect = document.getElementById(`gui_template_copy_from_${itemId}`);
+        const copyHint = itemElement.querySelector(".gui-item-copy-hint");
+        const previousValue = sourceSelect?.value || "";
+        const availableSources = sourceItems.filter(source => source.id !== itemId);
+
+        if (title) {
+          title.textContent = `Item GUI ${index + 1}`;
+        }
+
+        if (!sourceSelect) {
+          return;
+        }
+
+        sourceSelect.innerHTML = "";
+
+        const defaultOption = document.createElement("option");
+        defaultOption.value = "";
+        defaultOption.textContent = availableSources.length
+          ? "Choisir un item source"
+          : "Aucun autre item disponible";
+        sourceSelect.appendChild(defaultOption);
+
+        availableSources.forEach(source => {
+          const option = document.createElement("option");
+          option.value = source.id;
+          option.textContent = source.label;
+          sourceSelect.appendChild(option);
+        });
+
+        sourceSelect.disabled = availableSources.length === 0;
+        sourceSelect.value = availableSources.some(source => source.id === previousValue) ? previousValue : "";
+        updateGuiTemplateCopyActionState(itemId);
+
+        if (copyHint) {
+          copyHint.textContent = availableSources.length
+            ? "Recopie Item + Nom + Lore principal + variantes sans toucher au slot."
+            : "Ajoute un autre item pour reutiliser son contenu.";
+        }
+      });
+    }
+
+    function copierVisuelDepuisItemGUITemplate(targetItemId) {
+      const sourceSelect = document.getElementById(`gui_template_copy_from_${targetItemId}`);
+      const sourceItemId = sourceSelect?.value || "";
+      if (!sourceItemId) return;
+
+      ["item", "nom", "lore"].forEach(fieldName => {
+        const sourceField = document.getElementById(`gui_tpl_${fieldName}_${sourceItemId}`);
+        const targetField = document.getElementById(`gui_tpl_${fieldName}_${targetItemId}`);
+        if (sourceField && targetField) {
+          targetField.value = sourceField.value;
+        }
+      });
+
+      remplacerGuiTemplateLoreVariantes(targetItemId, getGuiTemplateLoreVariantes(sourceItemId));
+      updateGuiTemplateItemCopySources();
+      updateGuiTemplateVisualization();
+      invalidateCDC();
+      genererCDC(true);
+
+      const focusField = document.getElementById(`gui_tpl_nom_${targetItemId}`);
+      focusField?.focus();
+    }
+
     function ajouterItemGUITemplate(data = {}) {
       guiTemplateItemIndex++;
       const container = document.getElementById("guiItemsTemplateContainer");
+      const itemId = guiTemplateItemIndex;
 
       const item = document.createElement("div");
       item.className = "gui-item";
-      item.dataset.guiTemplateItemId = guiTemplateItemIndex;
+      item.dataset.guiTemplateItemId = itemId;
 
       item.innerHTML = `
         <div class="gui-item-header">
           <div class="gui-item-title">Item GUI</div>
-          <button type="button" class="btn-remove" onclick="supprimerItemGUITemplate(${guiTemplateItemIndex})">Supprimer</button>
+          <button type="button" class="btn-remove" onclick="supprimerItemGUITemplate(${itemId})">Supprimer</button>
         </div>
 
-        <label for="gui_tpl_slot_${guiTemplateItemIndex}">Slot</label>
-        <input type="text" id="gui_tpl_slot_${guiTemplateItemIndex}" placeholder="Ex : 0" value="${escapeHtml(data.slot || "")}">
+        <div class="gui-item-copy-tools">
+          <div>
+            <label for="gui_template_copy_from_${itemId}">Recopier depuis</label>
+            <select id="gui_template_copy_from_${itemId}" onchange="updateGuiTemplateCopyActionState(${itemId})">
+              <option value="">Choisir un item source</option>
+            </select>
+          </div>
+          <button
+            type="button"
+            class="btn-small btn-secondary btn-inline"
+            data-gui-template-copy-button-for="${itemId}"
+            onclick="copierVisuelDepuisItemGUITemplate(${itemId})"
+            disabled
+          >
+            Copier Item + Nom + Lore(s)
+          </button>
+        </div>
 
-        <label for="gui_tpl_item_${guiTemplateItemIndex}">Item</label>
-        <input type="text" id="gui_tpl_item_${guiTemplateItemIndex}" list="minecraftItemOptions" placeholder="Choisir ou écrire un item Minecraft" value="${escapeHtml(data.item || "")}">
+        <div class="muted gui-item-copy-hint">Ajoute un autre item pour reutiliser son contenu.</div>
 
-        <label for="gui_tpl_nom_${guiTemplateItemIndex}">Nom</label>
-        <input type="text" id="gui_tpl_nom_${guiTemplateItemIndex}" placeholder="Ex : &6Banque" value="${escapeHtml(data.nom || "")}">
+        <label for="gui_tpl_slot_${itemId}">Slot</label>
+        <input type="text" id="gui_tpl_slot_${itemId}" placeholder="Ex : 0" value="${escapeHtml(data.slot || "")}">
 
-        <label for="gui_tpl_lore_${guiTemplateItemIndex}">Lore</label>
-        <textarea id="gui_tpl_lore_${guiTemplateItemIndex}" placeholder="Ex : &7Clique pour ouvrir">${escapeHtml(data.lore || "")}</textarea>
+        <label for="gui_tpl_item_${itemId}">Item</label>
+        <input type="text" id="gui_tpl_item_${itemId}" list="minecraftItemOptions" placeholder="Choisir ou écrire un item Minecraft" value="${escapeHtml(data.item || "")}">
 
-        <label for="gui_tpl_fonction_${guiTemplateItemIndex}">Fonction</label>
-        <input type="text" id="gui_tpl_fonction_${guiTemplateItemIndex}" placeholder="Ex : afficher les ressources" value="${escapeHtml(data.fonction || "")}">
+        <label for="gui_tpl_nom_${itemId}">Nom</label>
+        <input type="text" id="gui_tpl_nom_${itemId}" placeholder="Ex : &6Banque" value="${escapeHtml(data.nom || "")}">
 
-        <label for="gui_tpl_action_${guiTemplateItemIndex}">Action au clic</label>
-        <input type="text" id="gui_tpl_action_${guiTemplateItemIndex}" placeholder="Ex : ouvrir_sous_menu" value="${escapeHtml(data.action || "")}">
+        <label for="gui_tpl_lore_${itemId}">Lore</label>
+        <textarea id="gui_tpl_lore_${itemId}" placeholder="Ex : &7Clique pour ouvrir">${escapeHtml(data.lore || "")}</textarea>
+
+        <div class="gui-item-lore-variants">
+          <div class="gui-item-lore-variants-header">
+            <div>
+              <div class="gui-item-lore-variants-title">Variantes de lore</div>
+              <div class="muted">Ex : Etat normal, Etat selectionne, indisponible...</div>
+            </div>
+            <button type="button" class="btn-small" onclick="ajouterGuiTemplateLoreVariante(${itemId})">+ Ajouter un lore alternatif</button>
+          </div>
+          <div id="gui_tpl_lore_variants_${itemId}" class="gui-item-lore-variants-list"></div>
+        </div>
+
+        <label for="gui_tpl_fonction_${itemId}">Fonction</label>
+        <input type="text" id="gui_tpl_fonction_${itemId}" placeholder="Ex : afficher les ressources" value="${escapeHtml(data.fonction || "")}">
+
+        <label for="gui_tpl_action_${itemId}">Action au clic</label>
+        <input type="text" id="gui_tpl_action_${itemId}" placeholder="Ex : ouvrir_sous_menu" value="${escapeHtml(data.action || "")}">
       `;
 
       container.appendChild(item);
+      normalizeGuiTemplateLoreVariantes(data.loreVariantes || data.loreVariants).forEach(variant => {
+        ajouterGuiTemplateLoreVariante(itemId, variant, { skipRefresh: true });
+      });
+      updateGuiTemplateItemCopySources();
       refreshAfterStructureChange();
       updateGuiTemplateVisualization();
-      return guiTemplateItemIndex;
+      return itemId;
     }
 
     function supprimerItemGUITemplate(id) {
       const item = document.querySelector(`[data-gui-template-item-id="${id}"]`);
       if (item) item.remove();
+      updateGuiTemplateItemCopySources();
       refreshAfterStructureChange();
       updateGuiTemplateVisualization();
     }
@@ -2660,11 +2924,12 @@
           item: document.getElementById(`gui_tpl_item_${id}`)?.value.trim() || "",
           nom: document.getElementById(`gui_tpl_nom_${id}`)?.value.trim() || "",
           lore: document.getElementById(`gui_tpl_lore_${id}`)?.value.trim() || "",
+          loreVariantes: getGuiTemplateLoreVariantes(id),
           fonction: document.getElementById(`gui_tpl_fonction_${id}`)?.value.trim() || "",
           action: document.getElementById(`gui_tpl_action_${id}`)?.value.trim() || ""
         };
 
-        if (data.slot || data.item || data.nom || data.lore || data.fonction || data.action) {
+        if (data.slot || data.item || data.nom || data.lore || data.loreVariantes.length || data.fonction || data.action) {
           result.push(data);
         }
       });
@@ -3816,6 +4081,7 @@
         template: document.getElementById("template")?.value || "commande",
         theme: document.body.dataset.theme || "light",
         fields,
+        images: collectProjectImages(),
         dynamic: {
           messages: recupererMessages(),
           guiCommandeItems: recupererItemsGUICommande(),
@@ -3921,10 +4187,7 @@
         input.value = "";
       });
 
-      document.querySelectorAll(".image-preview").forEach(img => {
-        img.src = "";
-        img.style.display = "none";
-      });
+      restoreProjectImages();
 
       document.querySelectorAll("input[type='checkbox']").forEach(input => {
         input.checked = false;
@@ -3958,6 +4221,7 @@
       messageIndex = 0;
       guiCommandeItemIndex = 0;
       guiTemplateItemIndex = 0;
+      guiTemplateLoreVariantIndex = 0;
       eventConditionIndex = 0;
       eventMessageIndex = 0;
       metierItemIndex = 0;
@@ -4054,6 +4318,8 @@
         }
       });
 
+      restoreProjectImages(state.images || {});
+
       Object.entries(state.checks || {}).forEach(([id, value]) => {
         const field = document.getElementById(id);
         if (field && field.type === "checkbox") {
@@ -4069,7 +4335,8 @@
         template: state.template || "commande",
         projectName: state.projectName || "",
         fields: state.fields || {},
-        dynamic: state.dynamic || {}
+        dynamic: state.dynamic || {},
+        images: state.images || {}
       });
 
       updateCommandeInterfaceFields();
