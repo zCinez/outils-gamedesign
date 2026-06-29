@@ -170,7 +170,7 @@ const SETTINGS_TEMPLATE_CATALOG = [
         mode: "Conditionnel",
         description: "Le bloc qui change selon la méthode d'acquisition choisie.",
         items: [
-          "Craft : image + recette",
+          "Craft visuel + recette",
           "Récompense",
           "Boutique : catégorie + prix + condition",
           "Shop : catégorie + prix + devise + condition",
@@ -370,6 +370,7 @@ const SETTINGS_TEMPLATE_CATALOG = [
         items: [
           "Nom du rank",
           "Prix du rank",
+          "Lien de l'image",
           "Prérequis",
           "Liste dynamique de récompenses",
           "Structure d'une récompense : texte libre"

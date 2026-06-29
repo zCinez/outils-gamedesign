@@ -6,6 +6,10 @@ function formatRankUpRequirements(requirements) {
   return requirements || "Aucun";
 }
 
+function formatRankUpImageLink(imageLink) {
+  return imageLink || "Aucun";
+}
+
 function formatRankUpRewardsText(rewards) {
   if (!rewards.length) {
     return "- Aucune récompense";
@@ -34,6 +38,7 @@ function genererTemplateRankUp() {
 
 ( Coût -> $ ) ${formatRankUpPrice(rankUp.price)}
 (Requis : ${formatRankUpRequirements(rankUp.requirements)})
+Lien de l'image : ${formatRankUpImageLink(rankUp.imageLink)}
 ${formatRankUpRewardsText(rankUp.rewards)}`;
   }).join("\n\n\n");
 }
@@ -56,6 +61,9 @@ function genererPreviewRankUpHtml() {
         </div>
         <div style="font-size: 22px; font-weight: 700; color: #d49cff; margin-bottom: 14px;">
           (Requis : ${escapeHtml(formatRankUpRequirements(rankUp.requirements))})
+        </div>
+        <div style="font-size: 18px; margin-bottom: 14px;">
+          <strong>Lien de l'image :</strong> ${escapeHtml(formatRankUpImageLink(rankUp.imageLink))}
         </div>
         <div style="font-size: 21px; line-height: 1.55;">
           ${formatRankUpRewardsHtml(rankUp.rewards)}
@@ -93,6 +101,9 @@ function ajouterRankUp(data = {}) {
 
     <label for="rankUpRequirements_${rankUpIndex}">Prérequis</label>
     <textarea id="rankUpRequirements_${rankUpIndex}" placeholder="Ex : Tous les métiers niveau 5">${escapeHtml(data.requirements || "")}</textarea>
+
+    <label for="rankUpImageLink_${rankUpIndex}">Lien de l'image</label>
+    <input type="text" id="rankUpImageLink_${rankUpIndex}" placeholder="Ex : https://drive.google.com/file/d/.../view?usp=drive_link" value="${escapeHtml(data.imageLink || data.imageUrl || "")}" />
 
     <div class="dynamic-block">
       <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
@@ -161,10 +172,11 @@ function recupererRankUps() {
       name: document.getElementById(`rankUpName_${id}`)?.value.trim() || "",
       price: document.getElementById(`rankUpPrice_${id}`)?.value.trim() || "",
       requirements: document.getElementById(`rankUpRequirements_${id}`)?.value.trim() || "",
+      imageLink: document.getElementById(`rankUpImageLink_${id}`)?.value.trim() || "",
       rewards
     };
 
-    if (data.name || data.price || data.requirements || data.rewards.length > 0) {
+    if (data.name || data.price || data.requirements || data.imageLink || data.rewards.length > 0) {
       result.push(data);
     }
   });

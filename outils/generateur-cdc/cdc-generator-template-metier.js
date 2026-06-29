@@ -11,6 +11,68 @@ function getMetierGuiImageHtml() {
   return renderSavedImagePreviewHtml("Image du GUI XP par item", "previewMetierGuiXpImage", "Image du GUI XP par item");
 }
 
+function renderMetierGuiItemText(item, index) {
+  const loreVariantesText = renderGuiSharedLoreVariantesText(getGuiSharedLoreVariantesFromItem(item));
+
+  let text = `Item ${index + 1} :
+- Item : ${item.item || "Aucun"}
+- Nom : ${item.nom || "Aucun"}
+- Lore : ${item.lore || "Aucun"}`;
+
+  if (loreVariantesText) {
+    text += `\n${loreVariantesText}`;
+  }
+
+  return text;
+}
+
+function renderMetierGuiGroupedItemText(group) {
+  const itemSummary = getGuiSharedItemSummary(group.entries);
+  const loreVariantesText = renderGuiSharedLoreVariantesText(group.loreVariantes);
+
+  let text = `${formatGuiSharedItemRefs(group.entries)} :
+- ${itemSummary.label} : ${itemSummary.value}
+- Nom : ${group.nom || "Aucun"}
+- Lore : ${group.lore || "Aucun"}`;
+
+  if (loreVariantesText) {
+    text += `\n${loreVariantesText}`;
+  }
+
+  return text;
+}
+
+function renderMetierGuiItemHtml(item, index) {
+  const loreVariantesHtml = renderGuiSharedLoreVariantesHtml(getGuiSharedLoreVariantesFromItem(item));
+
+  let html = `<br><strong>Item ${index + 1} :</strong><br>
+      - Item : ${escapeHtml(item.item || "Aucun")}<br>
+      - Nom : ${nl2brSafe(item.nom || "Aucun")}<br>
+      - Lore : ${nl2brSafe(item.lore || "Aucun")}<br>`;
+
+  if (loreVariantesHtml) {
+    html += loreVariantesHtml;
+  }
+
+  return html;
+}
+
+function renderMetierGuiGroupedItemHtml(group) {
+  const itemSummary = getGuiSharedItemSummary(group.entries);
+  const loreVariantesHtml = renderGuiSharedLoreVariantesHtml(group.loreVariantes);
+
+  let html = `<br><strong>${escapeHtml(formatGuiSharedItemRefs(group.entries))} :</strong><br>
+      - ${escapeHtml(itemSummary.label)} : ${escapeHtml(itemSummary.value)}<br>
+      - Nom : ${nl2brSafe(group.nom || "Aucun")}<br>
+      - Lore : ${nl2brSafe(group.lore || "Aucun")}<br>`;
+
+  if (loreVariantesHtml) {
+    html += loreVariantesHtml;
+  }
+
+  return html;
+}
+
 function genererTemplateMetier() {
   const types = getMetierSelectedTypes();
   const presentation = valeur("metierPresentation");
@@ -26,6 +88,7 @@ function genererTemplateMetier() {
   const xpMessageAutreContent = valeur("metierXpMessageAutreContent", "");
   const levelMessageChatContent = valeur("metierLevelMessageChatContent", "");
   const guiItems = recupererMetierGuiItems();
+  const groupedGuiItems = buildGuiSharedGroupedEntries(guiItems);
   const guiTexture = valeur("metierGuiTexture");
   const specificite = valeur("metierSpecificite");
 
@@ -46,11 +109,10 @@ function genererTemplateMetier() {
   const guiItemsText = guiItems.length === 0
     ? "Aucun item"
     : renderNamedEntriesText(
-        guiItems,
-        (item, index) => `Item ${index + 1} :
-- Item : ${item.item || "Aucun"}
-- Nom : ${item.nom || "Aucun"}
-- Lore : ${item.lore || "Aucun"}`,
+        groupedGuiItems,
+        (entry) => entry.type === "group"
+          ? renderMetierGuiGroupedItemText(entry)
+          : renderMetierGuiItemText(entry.item, entry.index),
         "Aucun item"
       );
 
@@ -112,6 +174,7 @@ function genererPreviewMetierHtml() {
   const xpMessageAutreContent = valeur("metierXpMessageAutreContent", "");
   const levelMessageChatContent = valeur("metierLevelMessageChatContent", "");
   const guiItems = recupererMetierGuiItems();
+  const groupedGuiItems = buildGuiSharedGroupedEntries(guiItems);
   const guiTexture = valeur("metierGuiTexture");
   const specificite = valeur("metierSpecificite");
 
@@ -195,11 +258,10 @@ function genererPreviewMetierHtml() {
   const guiItemsHtml = guiItems.length === 0
     ? `Aucun item`
     : renderNamedEntriesHtml(
-        guiItems,
-        (item, index) => `<br><strong>Item ${index + 1} :</strong><br>
-      - Item : ${escapeHtml(item.item || "Aucun")}<br>
-      - Nom : ${nl2brSafe(item.nom || "Aucun")}<br>
-      - Lore : ${nl2brSafe(item.lore || "Aucun")}<br>`,
+        groupedGuiItems,
+        (entry) => entry.type === "group"
+          ? renderMetierGuiGroupedItemHtml(entry)
+          : renderMetierGuiItemHtml(entry.item, entry.index),
         "Aucun item"
       );
 

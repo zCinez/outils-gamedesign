@@ -1,3 +1,116 @@
+function renderGuiCommandeItemText(item, index) {
+  const loreVariantesText = renderGuiSharedLoreVariantesText(getGuiSharedLoreVariantesFromItem(item));
+
+  let text = `Item ${index + 1} :
+- Slot : ${item.slot || "Aucun"}
+- Item : ${item.item || "Aucun"}
+- Nom : ${item.nom || "Aucun"}
+- Lore : ${item.lore || "Aucun"}`;
+
+  if (loreVariantesText) {
+    text += `\n${loreVariantesText}`;
+  }
+
+  text += `
+- Fonction : ${item.fonction || "Aucune"}
+- Action au clic : ${item.action || "Aucune"}`;
+
+  return text;
+}
+
+function renderGuiCommandeGroupedItemText(group) {
+  const sharedFunction = getGuiSharedValue(group.entries, "fonction", "Aucune");
+  const sharedAction = getGuiSharedValue(group.entries, "action", "Aucune");
+  const slots = formatGuiSharedSlots(group.entries);
+  const itemSummary = getGuiSharedItemSummary(group.entries);
+  const loreVariantesText = renderGuiSharedLoreVariantesText(group.loreVariantes);
+
+  let text = `${formatGuiSharedItemRefs(group.entries)} :
+- Slots : ${slots}
+- ${itemSummary.label} : ${itemSummary.value}
+- Nom : ${group.nom || "Aucun"}
+- Lore : ${group.lore || "Aucun"}`;
+
+  if (loreVariantesText) {
+    text += `\n${loreVariantesText}`;
+  }
+
+  if (sharedFunction) {
+    text += `\n- Fonction : ${sharedFunction}`;
+  } else {
+    text += `\n- Fonctions par item :\n${group.entries
+      .map(({ item, index }) => `  - Item ${index + 1} : ${item.fonction || "Aucune"}`)
+      .join("\n")}`;
+  }
+
+  if (sharedAction) {
+    text += `\n- Action au clic : ${sharedAction}`;
+  } else {
+    text += `\n- Actions au clic par item :\n${group.entries
+      .map(({ item, index }) => `  - Item ${index + 1} : ${item.action || "Aucune"}`)
+      .join("\n")}`;
+  }
+
+  return text;
+}
+
+function renderGuiCommandeItemHtml(item, index) {
+  const loreVariantesHtml = renderGuiSharedLoreVariantesHtml(getGuiSharedLoreVariantesFromItem(item));
+
+  let html = `
+<br><strong>Item ${index + 1} :</strong><br>
+- Slot : ${escapeHtml(item.slot || "Aucun")}<br>
+- Item : ${escapeHtml(item.item || "Aucun")}<br>
+- Nom : ${escapeHtml(item.nom || "Aucun")}<br>
+- Lore : ${nl2brSafe(item.lore || "Aucun")}<br>`;
+
+  if (loreVariantesHtml) {
+    html += loreVariantesHtml;
+  }
+
+  html += `- Fonction : ${escapeHtml(item.fonction || "Aucune")}<br>
+- Action au clic : ${escapeHtml(item.action || "Aucune")}<br>`;
+
+  return html;
+}
+
+function renderGuiCommandeGroupedItemHtml(group) {
+  const sharedFunction = getGuiSharedValue(group.entries, "fonction", "Aucune");
+  const sharedAction = getGuiSharedValue(group.entries, "action", "Aucune");
+  const slots = formatGuiSharedSlots(group.entries);
+  const itemSummary = getGuiSharedItemSummary(group.entries);
+  const loreVariantesHtml = renderGuiSharedLoreVariantesHtml(group.loreVariantes);
+
+  let html = `
+<br><strong>${escapeHtml(formatGuiSharedItemRefs(group.entries))} :</strong><br>
+- Slots : ${escapeHtml(slots)}<br>
+- ${escapeHtml(itemSummary.label)} : ${escapeHtml(itemSummary.value)}<br>
+- Nom : ${escapeHtml(group.nom || "Aucun")}<br>
+- Lore : ${nl2brSafe(group.lore || "Aucun")}<br>`;
+
+  if (loreVariantesHtml) {
+    html += loreVariantesHtml;
+  }
+
+  if (sharedFunction) {
+    html += `- Fonction : ${escapeHtml(sharedFunction)}<br>`;
+  } else {
+    html += `- Fonctions par item :<br>${group.entries
+      .map(({ item, index }) => `&nbsp;&nbsp;- Item ${index + 1} : ${escapeHtml(item.fonction || "Aucune")}<br>`)
+      .join("")}`;
+  }
+
+  if (sharedAction) {
+    html += `- Action au clic : ${escapeHtml(sharedAction)}<br>`;
+  } else {
+    html += `- Actions au clic par item :<br>${group.entries
+      .map(({ item, index }) => `&nbsp;&nbsp;- Item ${index + 1} : ${escapeHtml(item.action || "Aucune")}<br>`)
+      .join("")}`;
+  }
+
+  return html;
+}
+
 function genererTemplateCommande() {
   const nomCommande = valeur("nomCommande");
   const commandePrincipale = valeur("commandePrincipale");
@@ -60,15 +173,12 @@ function genererTemplateCommande() {
     const imageGUI = getSelectedFileName("imageGUICommande");
     const tailleGUI = valeur("tailleGUICommande", "3 lignes");
     const items = recupererItemsGUICommande();
+    const groupedItems = buildGuiSharedGroupedEntries(items);
     const itemsText = renderNamedEntriesText(
-      items,
-      (it, index) => `Item ${index + 1} :
-- Slot : ${it.slot || "Aucun"}
-- Item : ${it.item || "Aucun"}
-- Nom : ${it.nom || "Aucun"}
-- Lore : ${it.lore || "Aucun"}
-- Fonction : ${it.fonction || "Aucune"}
-- Action au clic : ${it.action || "Aucune"}`,
+      groupedItems,
+      (entry) => entry.type === "group"
+        ? renderGuiCommandeGroupedItemText(entry)
+        : renderGuiCommandeItemText(entry.item, entry.index),
       "Aucun item"
     );
 
@@ -207,6 +317,7 @@ function genererPreviewCommandeHtml() {
     const tailleGUI = valeur("tailleGUICommande", "3 lignes");
     const textureGUI = valeur("textureGUICommande", "");
     const items = recupererItemsGUICommande();
+    const groupedItems = buildGuiSharedGroupedEntries(items);
     html += `<br><div><strong>4.2 GUI</strong></div>`;
     html += `<div><strong>Nom du GUI :</strong> ${escapeHtml(nomGUICommande || "Aucun")}</div>`;
     html += `<div><strong>Taille :</strong> ${escapeHtml(tailleGUI)}</div>`;
@@ -214,15 +325,10 @@ function genererPreviewCommandeHtml() {
     html += `<div><strong>Lien de la texture :</strong> ${escapeHtml(textureGUI)}</div><br>`;
     html += `<div><strong>Contenu du GUI :</strong><br>${
       renderNamedEntriesHtml(
-        items,
-        (it, index) => `
-<br><strong>Item ${index + 1} :</strong><br>
-- Slot : ${escapeHtml(it.slot || "Aucun")}<br>
-- Item : ${escapeHtml(it.item || "Aucun")}<br>
-- Nom : ${escapeHtml(it.nom || "Aucun")}<br>
-- Lore : ${nl2brSafe(it.lore || "Aucun")}<br>
-- Fonction : ${escapeHtml(it.fonction || "Aucune")}<br>
-- Action au clic : ${escapeHtml(it.action || "Aucune")}<br>`,
+        groupedItems,
+        (entry) => entry.type === "group"
+          ? renderGuiCommandeGroupedItemHtml(entry)
+          : renderGuiCommandeItemHtml(entry.item, entry.index),
         "Aucun item"
       )
     }</div>`;

@@ -2017,6 +2017,60 @@ body[data-theme="dark"] .project-history-delete {
       display: none !important;
     }
 
+    .craft-builder-panel {
+      margin-bottom: 14px;
+    }
+
+    .craft-visual-editor {
+      max-width: 560px;
+    }
+
+    .craft-visualizer-frame {
+      max-width: 560px;
+    }
+
+    .craft-visualizer-stage {
+      max-width: 560px;
+    }
+
+    .craft-slot-overlay {
+      border-radius: 8px;
+      background: rgba(93, 52, 24, 0.18);
+      border-color: rgba(120, 62, 26, 0.28);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 244, 231, 0.12),
+        0 2px 6px rgba(0, 0, 0, 0.08);
+    }
+
+    .craft-slot-overlay:hover {
+      background: rgba(222, 160, 84, 0.26);
+      border-color: rgba(176, 106, 49, 0.45);
+    }
+
+    .craft-slot-overlay.is-result {
+      background: rgba(111, 46, 26, 0.24);
+      border-color: rgba(157, 88, 55, 0.42);
+    }
+
+    .craft-slot-overlay.is-static {
+      cursor: default;
+    }
+
+    .craft-slot-overlay.is-static:hover {
+      transform: none;
+      background: rgba(93, 52, 24, 0.18);
+      border-color: rgba(120, 62, 26, 0.28);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 244, 231, 0.12),
+        0 2px 6px rgba(0, 0, 0, 0.08);
+    }
+
+    .craft-slot-overlay span {
+      font-size: clamp(10px, 0.95vw, 14px);
+      color: rgba(255, 245, 231, 0.92);
+      text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
+    }
+
     /* =========================================================
        8. APERÇU FINAL
        - ici on affiche un rendu HTML

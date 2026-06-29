@@ -5,8 +5,10 @@
     let dernierTexteGenere = "";
     let messageIndex = 0;
     let guiCommandeItemIndex = 0;
+    let guiCommandeLoreVariantIndex = 0;
     let guiTemplateItemIndex = 0;
     let guiTemplateLoreVariantIndex = 0;
+    let itemCustomCraftIngredientIndex = 0;
     let eventConditionIndex = 0;
     let eventMessageIndex = 0;
     let caisseRewardIndex = 0;
@@ -14,6 +16,7 @@
     let metierItemIndex = 0;
     let metierLevelRewardIndex = 0;
     let metierGuiItemIndex = 0;
+    let metierGuiLoreVariantIndex = 0;
     let rankUpIndex = 0;
     let rankUpRewardIndex = 0;
     let mobSpawnIndex = 0;
@@ -35,7 +38,6 @@
     const PROJECT_IMAGE_FIELDS = [
       { inputId: "imageGUICommande", previewId: "previewImageGUICommande" },
       { inputId: "guiImage", previewId: "previewImageTemplate" },
-      { inputId: "selectObtentionCraft", previewId: "previewCraftTemplate" },
       { inputId: "textureItemImage", previewId: "previewTextureItemTemplate" },
       { inputId: "metierGuiXpImage", previewId: "previewMetierGuiXpImage" }
     ];
@@ -1611,6 +1613,7 @@
 
       clearElement("guiItemsCommandeContainer");
       guiCommandeItemIndex = 0;
+      guiCommandeLoreVariantIndex = 0;
       items.forEach(item => ajouterItemGUICommande(item));
 
       refreshAfterStructureChange();
@@ -1797,6 +1800,8 @@
       if (!element?.id) return false;
       return element.id === "projectNameInput"
         || element.id === "projectHistorySearch"
+        || element.id.startsWith("gui_commande_copy_from_")
+        || element.id.startsWith("metier_gui_copy_from_")
         || element.id.startsWith("gui_template_copy_from_");
     }
 
@@ -1827,6 +1832,9 @@
         || element.id.startsWith("gui_cmd_")
       ) {
         updateGuiCommandeVisualization();
+        if (element.id.startsWith("gui_cmd_")) {
+          updateGuiCommandeItemCopySources();
+        }
       }
 
       if (
@@ -1839,6 +1847,20 @@
         if (element.id.startsWith("gui_tpl_")) {
           updateGuiTemplateItemCopySources();
         }
+      }
+
+      if (element.id.startsWith("metier_gui_")) {
+        updateMetierGuiItemCopySources();
+      }
+
+      if (
+        element.id === "obtentionCraft"
+        || element.id === "itemMc"
+        || element.id === "nameItem"
+        || element.id === "loreItem"
+        || element.id.startsWith("item_custom_craft_")
+      ) {
+        updateItemCustomCraftVisualization();
       }
 
       if (!shouldGenerate || isGeneratorUiField(element)) {
@@ -1983,6 +2005,7 @@
         ["obtentionEvent", "obtentionEventField"],
         ["obtentionAutre", "obtentionAutreField"]
       ]);
+      updateItemCustomCraftVisualization();
     }
 
     function utilisationChoiseItemFields() {
@@ -2339,48 +2362,274 @@
     /* =========================================================
        8. ITEMS GUI DYNAMIQUES POUR TEMPLATE COMMANDE
        ========================================================= */
+    function normalizeGuiEditorLoreVariantes(loreVariantes) {
+      if (!Array.isArray(loreVariantes)) return [];
+
+      return loreVariantes
+        .map(variant => ({
+          contexte: String(variant?.contexte || variant?.etat || variant?.label || "").trim(),
+          lore: String(variant?.lore || "").trim()
+        }))
+        .filter(variant => variant.contexte || variant.lore);
+    }
+
+    function getGuiCommandeItemElements() {
+      return [...document.querySelectorAll(".gui-item[data-gui-commande-item-id]")];
+    }
+
+    function buildGuiCommandeItemSourceLabel(itemElement, index) {
+      const id = String(itemElement?.dataset?.guiCommandeItemId || "").trim();
+      const slotValue = document.getElementById(`gui_cmd_slot_${id}`)?.value.trim() || "";
+      const itemValue = document.getElementById(`gui_cmd_item_${id}`)?.value.trim() || "";
+      const nomValue = document.getElementById(`gui_cmd_nom_${id}`)?.value.trim() || "";
+      const cleanedNom = stripMinecraftFormatting(nomValue);
+      const descriptor = cleanedNom || itemValue || "";
+      const parts = [`Item ${index + 1}`];
+
+      if (slotValue) {
+        parts.push(`slot ${slotValue}`);
+      }
+
+      if (descriptor) {
+        parts.push(descriptor);
+      }
+
+      return parts.join(" - ");
+    }
+
+    function updateGuiCommandeCopyActionState(itemId) {
+      const sourceSelect = document.getElementById(`gui_commande_copy_from_${itemId}`);
+      const copyButton = document.querySelector(`[data-gui-commande-copy-button-for="${itemId}"]`);
+      if (!sourceSelect || !copyButton) return;
+      copyButton.disabled = sourceSelect.disabled || !sourceSelect.value;
+    }
+
+    function getGuiCommandeLoreVariantes(itemId) {
+      const container = document.getElementById(`gui_cmd_lore_variants_${itemId}`);
+      if (!container) return [];
+
+      return [...container.querySelectorAll("[data-gui-commande-lore-variant-id]")]
+        .map(variantRow => {
+          const variantId = variantRow.dataset.guiCommandeLoreVariantId;
+          return {
+            contexte: document.getElementById(`gui_cmd_lore_variant_context_${variantId}`)?.value.trim() || "",
+            lore: document.getElementById(`gui_cmd_lore_variant_text_${variantId}`)?.value.trim() || ""
+          };
+        })
+        .filter(variant => variant.contexte || variant.lore);
+    }
+
+    function ajouterGuiCommandeLoreVariante(itemId, data = {}, { skipRefresh = false } = {}) {
+      guiCommandeLoreVariantIndex++;
+      const variantId = guiCommandeLoreVariantIndex;
+      const container = document.getElementById(`gui_cmd_lore_variants_${itemId}`);
+      if (!container) return "";
+
+      const normalizedData = normalizeGuiEditorLoreVariantes([data])[0] || {
+        contexte: "",
+        lore: ""
+      };
+
+      const variant = document.createElement("div");
+      variant.className = "gui-item-lore-variant";
+      variant.dataset.guiCommandeLoreVariantId = variantId;
+      variant.dataset.guiCommandeLoreVariantParentId = itemId;
+      variant.innerHTML = `
+        <div class="gui-item-lore-variant-header">
+          <div class="gui-item-lore-variant-title">Variante de lore</div>
+          <button type="button" class="btn-remove" onclick="supprimerGuiCommandeLoreVariante(${variantId})">Supprimer</button>
+        </div>
+
+        <label for="gui_cmd_lore_variant_context_${variantId}">Contexte / etat</label>
+        <input type="text" id="gui_cmd_lore_variant_context_${variantId}" placeholder="Ex : Etat selectionne" value="${escapeHtml(normalizedData.contexte)}">
+
+        <label for="gui_cmd_lore_variant_text_${variantId}">Lore</label>
+        <textarea id="gui_cmd_lore_variant_text_${variantId}" placeholder="Ex : &aCet item est actuellement utilise">${escapeHtml(normalizedData.lore)}</textarea>
+      `;
+
+      container.appendChild(variant);
+
+      if (!skipRefresh) {
+        refreshAfterStructureChange();
+        updateGuiCommandeVisualization();
+      }
+
+      return String(variantId);
+    }
+
+    function remplacerGuiCommandeLoreVariantes(itemId, loreVariantes) {
+      const container = document.getElementById(`gui_cmd_lore_variants_${itemId}`);
+      if (!container) return;
+
+      container.innerHTML = "";
+      normalizeGuiEditorLoreVariantes(loreVariantes).forEach(variant => {
+        ajouterGuiCommandeLoreVariante(itemId, variant, { skipRefresh: true });
+      });
+    }
+
+    function supprimerGuiCommandeLoreVariante(variantId) {
+      const variant = document.querySelector(`[data-gui-commande-lore-variant-id="${variantId}"]`);
+      if (variant) {
+        variant.remove();
+      }
+
+      refreshAfterStructureChange();
+      updateGuiCommandeVisualization();
+    }
+
+    function updateGuiCommandeItemCopySources() {
+      const itemElements = getGuiCommandeItemElements();
+      const sourceItems = itemElements.map((itemElement, index) => ({
+        id: String(itemElement.dataset.guiCommandeItemId || ""),
+        label: buildGuiCommandeItemSourceLabel(itemElement, index)
+      }));
+
+      itemElements.forEach((itemElement, index) => {
+        const itemId = String(itemElement.dataset.guiCommandeItemId || "");
+        const title = itemElement.querySelector(".gui-item-title");
+        const sourceSelect = document.getElementById(`gui_commande_copy_from_${itemId}`);
+        const copyHint = itemElement.querySelector(".gui-item-copy-hint");
+        const previousValue = sourceSelect?.value || "";
+        const availableSources = sourceItems.filter(source => source.id !== itemId);
+
+        if (title) {
+          title.textContent = `Item GUI ${index + 1}`;
+        }
+
+        if (!sourceSelect) {
+          return;
+        }
+
+        sourceSelect.innerHTML = "";
+
+        const defaultOption = document.createElement("option");
+        defaultOption.value = "";
+        defaultOption.textContent = availableSources.length
+          ? "Choisir un item source"
+          : "Aucun autre item disponible";
+        sourceSelect.appendChild(defaultOption);
+
+        availableSources.forEach(source => {
+          const option = document.createElement("option");
+          option.value = source.id;
+          option.textContent = source.label;
+          sourceSelect.appendChild(option);
+        });
+
+        sourceSelect.disabled = availableSources.length === 0;
+        sourceSelect.value = availableSources.some(source => source.id === previousValue) ? previousValue : "";
+        updateGuiCommandeCopyActionState(itemId);
+
+        if (copyHint) {
+          copyHint.textContent = availableSources.length
+            ? "Recopie Item + Nom + Lore principal + variantes sans toucher au slot."
+            : "Ajoute un autre item pour reutiliser son contenu.";
+        }
+      });
+    }
+
+    function copierVisuelDepuisItemGUICommande(targetItemId) {
+      const sourceSelect = document.getElementById(`gui_commande_copy_from_${targetItemId}`);
+      const sourceItemId = sourceSelect?.value || "";
+      if (!sourceItemId) return;
+
+      ["item", "nom", "lore"].forEach(fieldName => {
+        const sourceField = document.getElementById(`gui_cmd_${fieldName}_${sourceItemId}`);
+        const targetField = document.getElementById(`gui_cmd_${fieldName}_${targetItemId}`);
+        if (sourceField && targetField) {
+          targetField.value = sourceField.value;
+        }
+      });
+
+      remplacerGuiCommandeLoreVariantes(targetItemId, getGuiCommandeLoreVariantes(sourceItemId));
+      updateGuiCommandeItemCopySources();
+      updateGuiCommandeVisualization();
+      invalidateCDC();
+      genererCDC(true);
+
+      const focusField = document.getElementById(`gui_cmd_nom_${targetItemId}`);
+      focusField?.focus();
+    }
+
     function ajouterItemGUICommande(data = {}) {
       guiCommandeItemIndex++;
       const container = document.getElementById("guiItemsCommandeContainer");
+      const itemId = guiCommandeItemIndex;
 
       const item = document.createElement("div");
       item.className = "gui-item";
-      item.dataset.guiCommandeItemId = guiCommandeItemIndex;
+      item.dataset.guiCommandeItemId = itemId;
 
       item.innerHTML = `
         <div class="gui-item-header">
           <div class="gui-item-title">Item GUI</div>
-          <button type="button" class="btn-remove" onclick="supprimerItemGUICommande(${guiCommandeItemIndex})">Supprimer</button>
+          <button type="button" class="btn-remove" onclick="supprimerItemGUICommande(${itemId})">Supprimer</button>
         </div>
 
-        <label for="gui_cmd_slot_${guiCommandeItemIndex}">Slot</label>
-        <input type="text" id="gui_cmd_slot_${guiCommandeItemIndex}" placeholder="Ex : 0" value="${escapeHtml(data.slot || "")}">
+        <div class="gui-item-copy-tools">
+          <div>
+            <label for="gui_commande_copy_from_${itemId}">Recopier depuis</label>
+            <select id="gui_commande_copy_from_${itemId}" onchange="updateGuiCommandeCopyActionState(${itemId})">
+              <option value="">Choisir un item source</option>
+            </select>
+          </div>
+          <button
+            type="button"
+            class="btn-small btn-secondary btn-inline"
+            data-gui-commande-copy-button-for="${itemId}"
+            onclick="copierVisuelDepuisItemGUICommande(${itemId})"
+            disabled
+          >
+            Copier Item + Nom + Lore(s)
+          </button>
+        </div>
 
-        <label for="gui_cmd_item_${guiCommandeItemIndex}">Item</label>
-        <input type="text" id="gui_cmd_item_${guiCommandeItemIndex}" list="minecraftItemOptions" placeholder="Choisir ou écrire un item Minecraft" value="${escapeHtml(data.item || "")}">
+        <div class="muted gui-item-copy-hint">Ajoute un autre item pour reutiliser son contenu.</div>
 
-        <label for="gui_cmd_nom_${guiCommandeItemIndex}">Nom</label>
-        <input type="text" id="gui_cmd_nom_${guiCommandeItemIndex}" placeholder="Ex : &aBanque" value="${escapeHtml(data.nom || "")}">
+        <label for="gui_cmd_slot_${itemId}">Slot</label>
+        <input type="text" id="gui_cmd_slot_${itemId}" placeholder="Ex : 0" value="${escapeHtml(data.slot || "")}">
 
-        <label for="gui_cmd_lore_${guiCommandeItemIndex}">Lore</label>
-        <textarea id="gui_cmd_lore_${guiCommandeItemIndex}" placeholder="Ex : &7Clique pour ouvrir">${escapeHtml(data.lore || "")}</textarea>
+        <label for="gui_cmd_item_${itemId}">Item</label>
+        <input type="text" id="gui_cmd_item_${itemId}" list="minecraftItemOptions" placeholder="Choisir ou écrire un item Minecraft" value="${escapeHtml(data.item || "")}">
 
-        <label for="gui_cmd_fonction_${guiCommandeItemIndex}">Fonction</label>
-        <input type="text" id="gui_cmd_fonction_${guiCommandeItemIndex}" placeholder="Ex : ouvrir banque" value="${escapeHtml(data.fonction || "")}">
+        <label for="gui_cmd_nom_${itemId}">Nom</label>
+        <input type="text" id="gui_cmd_nom_${itemId}" placeholder="Ex : &aBanque" value="${escapeHtml(data.nom || "")}">
 
-        <label for="gui_cmd_action_${guiCommandeItemIndex}">Action au clic</label>
-        <input type="text" id="gui_cmd_action_${guiCommandeItemIndex}" placeholder="Ex : open_bank" value="${escapeHtml(data.action || "")}">
+        <label for="gui_cmd_lore_${itemId}">Lore</label>
+        <textarea id="gui_cmd_lore_${itemId}" placeholder="Ex : &7Clique pour ouvrir">${escapeHtml(data.lore || "")}</textarea>
+
+        <div class="gui-item-lore-variants">
+          <div class="gui-item-lore-variants-header">
+            <div>
+              <div class="gui-item-lore-variants-title">Variantes de lore</div>
+              <div class="muted">Ex : Etat normal, Etat selectionne, indisponible...</div>
+            </div>
+            <button type="button" class="btn-small" onclick="ajouterGuiCommandeLoreVariante(${itemId})">+ Ajouter un lore alternatif</button>
+          </div>
+          <div id="gui_cmd_lore_variants_${itemId}" class="gui-item-lore-variants-list"></div>
+        </div>
+
+        <label for="gui_cmd_fonction_${itemId}">Fonction</label>
+        <input type="text" id="gui_cmd_fonction_${itemId}" placeholder="Ex : ouvrir banque" value="${escapeHtml(data.fonction || "")}">
+
+        <label for="gui_cmd_action_${itemId}">Action au clic</label>
+        <input type="text" id="gui_cmd_action_${itemId}" placeholder="Ex : open_bank" value="${escapeHtml(data.action || "")}">
       `;
 
       container.appendChild(item);
+      normalizeGuiEditorLoreVariantes(data.loreVariantes || data.loreVariants).forEach(variant => {
+        ajouterGuiCommandeLoreVariante(itemId, variant, { skipRefresh: true });
+      });
+      updateGuiCommandeItemCopySources();
       refreshAfterStructureChange();
       updateGuiCommandeVisualization();
-      return guiCommandeItemIndex;
+      return itemId;
     }
 
     function supprimerItemGUICommande(id) {
       const item = document.querySelector(`[data-gui-commande-item-id="${id}"]`);
       if (item) item.remove();
+      updateGuiCommandeItemCopySources();
       refreshAfterStructureChange();
       updateGuiCommandeVisualization();
     }
@@ -2397,11 +2646,12 @@
           item: document.getElementById(`gui_cmd_item_${id}`)?.value.trim() || "",
           nom: document.getElementById(`gui_cmd_nom_${id}`)?.value.trim() || "",
           lore: document.getElementById(`gui_cmd_lore_${id}`)?.value.trim() || "",
+          loreVariantes: getGuiCommandeLoreVariantes(id),
           fonction: document.getElementById(`gui_cmd_fonction_${id}`)?.value.trim() || "",
           action: document.getElementById(`gui_cmd_action_${id}`)?.value.trim() || ""
         };
 
-        if (data.slot || data.item || data.nom || data.lore || data.fonction || data.action) {
+        if (data.slot || data.item || data.nom || data.lore || data.loreVariantes.length || data.fonction || data.action) {
           result.push(data);
         }
       });
@@ -3457,44 +3707,244 @@
       return result;
     }
 
+    function getMetierGuiItemElements() {
+      return [...document.querySelectorAll("[data-metier-gui-item-id]")];
+    }
+
+    function buildMetierGuiItemSourceLabel(itemElement, index) {
+      const id = String(itemElement?.dataset?.metierGuiItemId || "").trim();
+      const itemValue = document.getElementById(`metier_gui_item_${id}`)?.value.trim() || "";
+      const nomValue = document.getElementById(`metier_gui_nom_${id}`)?.value.trim() || "";
+      const cleanedNom = stripMinecraftFormatting(nomValue);
+      return [`Item ${index + 1}`, cleanedNom || itemValue || ""].filter(Boolean).join(" - ");
+    }
+
+    function updateMetierGuiCopyActionState(itemId) {
+      const sourceSelect = document.getElementById(`metier_gui_copy_from_${itemId}`);
+      const copyButton = document.querySelector(`[data-metier-gui-copy-button-for="${itemId}"]`);
+      if (!sourceSelect || !copyButton) return;
+      copyButton.disabled = sourceSelect.disabled || !sourceSelect.value;
+    }
+
+    function getMetierGuiLoreVariantes(itemId) {
+      const container = document.getElementById(`metier_gui_lore_variants_${itemId}`);
+      if (!container) return [];
+
+      return [...container.querySelectorAll("[data-metier-gui-lore-variant-id]")]
+        .map(variantRow => {
+          const variantId = variantRow.dataset.metierGuiLoreVariantId;
+          return {
+            contexte: document.getElementById(`metier_gui_lore_variant_context_${variantId}`)?.value.trim() || "",
+            lore: document.getElementById(`metier_gui_lore_variant_text_${variantId}`)?.value.trim() || ""
+          };
+        })
+        .filter(variant => variant.contexte || variant.lore);
+    }
+
+    function ajouterMetierGuiLoreVariante(itemId, data = {}, { skipRefresh = false } = {}) {
+      metierGuiLoreVariantIndex++;
+      const variantId = metierGuiLoreVariantIndex;
+      const container = document.getElementById(`metier_gui_lore_variants_${itemId}`);
+      if (!container) return "";
+
+      const normalizedData = normalizeGuiEditorLoreVariantes([data])[0] || {
+        contexte: "",
+        lore: ""
+      };
+
+      const variant = document.createElement("div");
+      variant.className = "gui-item-lore-variant";
+      variant.dataset.metierGuiLoreVariantId = variantId;
+      variant.dataset.metierGuiLoreVariantParentId = itemId;
+      variant.innerHTML = `
+        <div class="gui-item-lore-variant-header">
+          <div class="gui-item-lore-variant-title">Variante de lore</div>
+          <button type="button" class="btn-remove" onclick="supprimerMetierGuiLoreVariante(${variantId})">Supprimer</button>
+        </div>
+
+        <label for="metier_gui_lore_variant_context_${variantId}">Contexte / etat</label>
+        <input type="text" id="metier_gui_lore_variant_context_${variantId}" placeholder="Ex : Etat selectionne" value="${escapeHtml(normalizedData.contexte)}">
+
+        <label for="metier_gui_lore_variant_text_${variantId}">Lore</label>
+        <textarea id="metier_gui_lore_variant_text_${variantId}" placeholder="Ex : &aCe metier est actuellement selectionne">${escapeHtml(normalizedData.lore)}</textarea>
+      `;
+
+      container.appendChild(variant);
+
+      if (!skipRefresh) {
+        refreshAfterStructureChange();
+      }
+
+      return String(variantId);
+    }
+
+    function remplacerMetierGuiLoreVariantes(itemId, loreVariantes) {
+      const container = document.getElementById(`metier_gui_lore_variants_${itemId}`);
+      if (!container) return;
+
+      container.innerHTML = "";
+      normalizeGuiEditorLoreVariantes(loreVariantes).forEach(variant => {
+        ajouterMetierGuiLoreVariante(itemId, variant, { skipRefresh: true });
+      });
+    }
+
+    function supprimerMetierGuiLoreVariante(variantId) {
+      const variant = document.querySelector(`[data-metier-gui-lore-variant-id="${variantId}"]`);
+      if (variant) {
+        variant.remove();
+      }
+
+      refreshAfterStructureChange();
+    }
+
+    function updateMetierGuiItemCopySources() {
+      const itemElements = getMetierGuiItemElements();
+      const sourceItems = itemElements.map((itemElement, index) => ({
+        id: String(itemElement.dataset.metierGuiItemId || ""),
+        label: buildMetierGuiItemSourceLabel(itemElement, index)
+      }));
+
+      itemElements.forEach((itemElement, index) => {
+        const itemId = String(itemElement.dataset.metierGuiItemId || "");
+        const title = itemElement.querySelector(".gui-item-title");
+        const sourceSelect = document.getElementById(`metier_gui_copy_from_${itemId}`);
+        const copyHint = itemElement.querySelector(".gui-item-copy-hint");
+        const previousValue = sourceSelect?.value || "";
+        const availableSources = sourceItems.filter(source => source.id !== itemId);
+
+        if (title) {
+          title.textContent = `Item du GUI ${index + 1}`;
+        }
+
+        if (!sourceSelect) {
+          return;
+        }
+
+        sourceSelect.innerHTML = "";
+
+        const defaultOption = document.createElement("option");
+        defaultOption.value = "";
+        defaultOption.textContent = availableSources.length
+          ? "Choisir un item source"
+          : "Aucun autre item disponible";
+        sourceSelect.appendChild(defaultOption);
+
+        availableSources.forEach(source => {
+          const option = document.createElement("option");
+          option.value = source.id;
+          option.textContent = source.label;
+          sourceSelect.appendChild(option);
+        });
+
+        sourceSelect.disabled = availableSources.length === 0;
+        sourceSelect.value = availableSources.some(source => source.id === previousValue) ? previousValue : "";
+        updateMetierGuiCopyActionState(itemId);
+
+        if (copyHint) {
+          copyHint.textContent = availableSources.length
+            ? "Recopie Item + Nom + Lore principal + variantes."
+            : "Ajoute un autre item pour reutiliser son contenu.";
+        }
+      });
+    }
+
+    function copierVisuelDepuisMetierGuiItem(targetItemId) {
+      const sourceSelect = document.getElementById(`metier_gui_copy_from_${targetItemId}`);
+      const sourceItemId = sourceSelect?.value || "";
+      if (!sourceItemId) return;
+
+      ["item", "nom", "lore"].forEach(fieldName => {
+        const sourceField = document.getElementById(`metier_gui_${fieldName}_${sourceItemId}`);
+        const targetField = document.getElementById(`metier_gui_${fieldName}_${targetItemId}`);
+        if (sourceField && targetField) {
+          targetField.value = sourceField.value;
+        }
+      });
+
+      remplacerMetierGuiLoreVariantes(targetItemId, getMetierGuiLoreVariantes(sourceItemId));
+      updateMetierGuiItemCopySources();
+      invalidateCDC();
+      genererCDC(true);
+
+      const focusField = document.getElementById(`metier_gui_nom_${targetItemId}`);
+      focusField?.focus();
+    }
+
     function ajouterMetierGuiItem(data = {}) {
       metierGuiItemIndex++;
       const container = document.getElementById("metierGuiItemsContainer");
       if (!container) return;
+      const itemId = metierGuiItemIndex;
 
       const item = document.createElement("div");
       item.className = "gui-item";
-      item.dataset.metierGuiItemId = metierGuiItemIndex;
+      item.dataset.metierGuiItemId = itemId;
 
       item.innerHTML = `
         <div class="gui-item-header">
           <div class="gui-item-title">Item du GUI</div>
-          <button type="button" class="btn-remove" onclick="supprimerMetierGuiItem(${metierGuiItemIndex})">Supprimer</button>
+          <button type="button" class="btn-remove" onclick="supprimerMetierGuiItem(${itemId})">Supprimer</button>
         </div>
+
+        <div class="gui-item-copy-tools">
+          <div>
+            <label for="metier_gui_copy_from_${itemId}">Recopier depuis</label>
+            <select id="metier_gui_copy_from_${itemId}" onchange="updateMetierGuiCopyActionState(${itemId})">
+              <option value="">Choisir un item source</option>
+            </select>
+          </div>
+          <button
+            type="button"
+            class="btn-small btn-secondary btn-inline"
+            data-metier-gui-copy-button-for="${itemId}"
+            onclick="copierVisuelDepuisMetierGuiItem(${itemId})"
+            disabled
+          >
+            Copier Item + Nom + Lore(s)
+          </button>
+        </div>
+
+        <div class="muted gui-item-copy-hint">Ajoute un autre item pour reutiliser son contenu.</div>
 
         <div class="grid-2">
           <div>
-            <label for="metier_gui_item_${metierGuiItemIndex}">Item</label>
-            <input type="text" id="metier_gui_item_${metierGuiItemIndex}" placeholder="Ex : BLAZE_ROD" value="${escapeHtml(data.item || "")}">
+            <label for="metier_gui_item_${itemId}">Item</label>
+            <input type="text" id="metier_gui_item_${itemId}" placeholder="Ex : BLAZE_ROD" value="${escapeHtml(data.item || "")}">
           </div>
 
           <div>
-            <label for="metier_gui_nom_${metierGuiItemIndex}">Nom</label>
-            <input type="text" id="metier_gui_nom_${metierGuiItemIndex}" placeholder="Ex : &6Métier Mineur" value="${escapeHtml(data.nom || "")}">
+            <label for="metier_gui_nom_${itemId}">Nom</label>
+            <input type="text" id="metier_gui_nom_${itemId}" placeholder="Ex : &6Métier Mineur" value="${escapeHtml(data.nom || "")}">
           </div>
         </div>
 
-        <label for="metier_gui_lore_${metierGuiItemIndex}">Lore</label>
-        <textarea id="metier_gui_lore_${metierGuiItemIndex}" placeholder="Ex : &7Affiche la progression du métier et les récompenses à venir.">${escapeHtml(data.lore || "")}</textarea>
+        <label for="metier_gui_lore_${itemId}">Lore</label>
+        <textarea id="metier_gui_lore_${itemId}" placeholder="Ex : &7Affiche la progression du métier et les récompenses à venir.">${escapeHtml(data.lore || "")}</textarea>
+
+        <div class="gui-item-lore-variants">
+          <div class="gui-item-lore-variants-header">
+            <div>
+              <div class="gui-item-lore-variants-title">Variantes de lore</div>
+              <div class="muted">Ex : Etat normal, Etat selectionne, max atteint...</div>
+            </div>
+            <button type="button" class="btn-small" onclick="ajouterMetierGuiLoreVariante(${itemId})">+ Ajouter un lore alternatif</button>
+          </div>
+          <div id="metier_gui_lore_variants_${itemId}" class="gui-item-lore-variants-list"></div>
+        </div>
       `;
 
       container.appendChild(item);
+      normalizeGuiEditorLoreVariantes(data.loreVariantes || data.loreVariants).forEach(variant => {
+        ajouterMetierGuiLoreVariante(itemId, variant, { skipRefresh: true });
+      });
+      updateMetierGuiItemCopySources();
       refreshAfterStructureChange();
     }
 
     function supprimerMetierGuiItem(id) {
       const item = document.querySelector(`[data-metier-gui-item-id="${id}"]`);
       if (item) item.remove();
+      updateMetierGuiItemCopySources();
       refreshAfterStructureChange();
     }
 
@@ -3507,10 +3957,11 @@
         const data = {
           item: document.getElementById(`metier_gui_item_${id}`)?.value.trim() || "",
           nom: document.getElementById(`metier_gui_nom_${id}`)?.value.trim() || "",
-          lore: document.getElementById(`metier_gui_lore_${id}`)?.value.trim() || ""
+          lore: document.getElementById(`metier_gui_lore_${id}`)?.value.trim() || "",
+          loreVariantes: getMetierGuiLoreVariantes(id)
         };
 
-        if (data.item || data.nom || data.lore) {
+        if (data.item || data.nom || data.lore || data.loreVariantes.length) {
           result.push(data);
         }
       });
@@ -4086,6 +4537,7 @@
           messages: recupererMessages(),
           guiCommandeItems: recupererItemsGUICommande(),
           guiTemplateItems: recupererItemsGUITemplate(),
+          itemCustomCraftIngredients: recupererItemCustomCraftIngredients(),
           eventConditions: recupererConditionsEvent(),
           eventMessages: recupererMessagesEvent(),
           metierItems: recupererMetierItems(),
@@ -4216,17 +4668,20 @@
         ["metierXpMessageAutre", false]
       ].forEach(([id, checked]) => setChecked(id, checked));
 
-      ["messagesContainer", "guiItemsCommandeContainer", "guiItemsTemplateContainer", "eventConditionsContainer", "eventMessagesContainer", "metierItemsContainer", "metierLevelRewardsContainer", "metierGuiItemsContainer", "rankUpContainer", "mobSpawnsContainer", "mobDropsContainer", "libreSectionsContainer", "caisseRewardsContainer", "soundDesignEntriesContainer"].forEach(clearElement);
+      ["messagesContainer", "guiItemsCommandeContainer", "guiItemsTemplateContainer", "itemCustomCraftIngredientsContainer", "eventConditionsContainer", "eventMessagesContainer", "metierItemsContainer", "metierLevelRewardsContainer", "metierGuiItemsContainer", "rankUpContainer", "mobSpawnsContainer", "mobDropsContainer", "libreSectionsContainer", "caisseRewardsContainer", "soundDesignEntriesContainer"].forEach(clearElement);
 
       messageIndex = 0;
       guiCommandeItemIndex = 0;
+      guiCommandeLoreVariantIndex = 0;
       guiTemplateItemIndex = 0;
       guiTemplateLoreVariantIndex = 0;
+      itemCustomCraftIngredientIndex = 0;
       eventConditionIndex = 0;
       eventMessageIndex = 0;
       metierItemIndex = 0;
       metierLevelRewardIndex = 0;
       metierGuiItemIndex = 0;
+      metierGuiLoreVariantIndex = 0;
       rankUpIndex = 0;
       rankUpRewardIndex = 0;
       mobSpawnIndex = 0;
@@ -4256,6 +4711,7 @@
       updateTypeItemFields();
       updateGuiTailleField();
       choiceObtentionFields();
+      updateItemCustomCraftVisualization();
       utilisationChoiseItemFields();
       startEventFields();
       updateEventInterfaceFields();
@@ -4295,6 +4751,7 @@
       (dynamic.messages || []).forEach(message => ajouterMessage(message.titre || "", message.contenu || ""));
       (dynamic.guiCommandeItems || []).forEach(item => ajouterItemGUICommande(item));
       (dynamic.guiTemplateItems || []).forEach(item => ajouterItemGUITemplate(item));
+      (dynamic.itemCustomCraftIngredients || []).forEach(item => ajouterItemCustomCraftIngredient(item));
       (dynamic.eventConditions || []).forEach(condition => ajouterConditionEvent(condition.condition || ""));
       (dynamic.eventMessages || []).forEach(message => ajouterMessageEvent(message.titre || "", message.contenu || ""));
       (dynamic.metierItems || []).forEach(item => ajouterMetierItemRow(item));
@@ -4344,6 +4801,7 @@
       updateTypeItemFields();
       updateGuiTailleField();
       choiceObtentionFields();
+      updateItemCustomCraftVisualization();
       utilisationChoiseItemFields();
       startEventFields();
       updateEventInterfaceFields();
@@ -4483,6 +4941,7 @@
     updateTypeItemFields();
     updateGuiTailleField();
     choiceObtentionFields();
+    updateItemCustomCraftVisualization();
     utilisationChoiseItemFields();
     startEventFields();
     updateEventInterfaceFields();
