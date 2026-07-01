@@ -58,7 +58,7 @@ function renderGuiSharedLoreVariantesText(loreVariantes) {
   return `- Variantes de lore :
 ${normalizedVariantes.map((variant, index) => {
     const label = variant.contexte || `Variante ${index + 1}`;
-    const loreLines = String(variant.lore || "Aucun").split(/\r?\n/).map((line) => `    ${line}`).join("\n");
+    const loreLines = getFormattedLoreLines(variant.lore, "Aucun").map((line) => `    ${line}`).join("\n");
     return `  - ${label} :
 ${loreLines}`;
   }).join("\n")}`;
@@ -70,7 +70,10 @@ function renderGuiSharedLoreVariantesHtml(loreVariantes) {
 
   return `- Variantes de lore :<br>${normalizedVariantes.map((variant, index) => {
     const label = variant.contexte || `Variante ${index + 1}`;
-    return `&nbsp;&nbsp;- ${escapeHtml(label)} :<br>&nbsp;&nbsp;&nbsp;&nbsp;${nl2brSafe(variant.lore || "Aucun")}<br>`;
+    const loreLines = getFormattedLoreLines(variant.lore, "Aucun")
+      .map((line) => escapeHtml(line))
+      .join("<br>&nbsp;&nbsp;&nbsp;&nbsp;");
+    return `&nbsp;&nbsp;- ${escapeHtml(label)} :<br>&nbsp;&nbsp;&nbsp;&nbsp;${loreLines}<br>`;
   }).join("")}`;
 }
 

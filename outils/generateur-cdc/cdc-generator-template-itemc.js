@@ -454,6 +454,7 @@ function genererTemplateItemC() {
   const typeOutil = document.getElementById("typeOutil").checked;
   const typeObjet = document.getElementById("typeObjet").checked;
   const typeConsommable = document.getElementById("typeConsommable").checked;
+  const typeArmure = document.getElementById("typeArmure").checked;
   const typeCle = document.getElementById("typeCle").checked;
   const typeAutre = document.getElementById("typeAutre").checked;
 
@@ -482,7 +483,7 @@ function genererTemplateItemC() {
   const selectObtentionAutre = valeur("selectObtentionAutre");
   const linkTexture = valeur("linkTexture");
   const nameItem = valeur("nameItem");
-  const loreItem = valeur("loreItem");
+  const loreItem = valeur("loreItem", "");
   const durabiliteItem = valeur("durabiliteItem");
   const effectDescription = valeur("effectDescription");
 
@@ -502,12 +503,13 @@ function genererTemplateItemC() {
   if (typeObjet) itemTexte += `☑ Objet\n`;
   if (typeConsommable) itemTexte += `☑ Consommable\n`;
   if (typeCle) itemTexte += `☑ Clé\n`;
+  if (typeArmure) itemTexte += `☑ Armure\n`;
   if (typeAutre) {
     itemTexte += `☑ Autre\n`;
     detailsItem += `Autre : ${selectTypeAutre}\n`;
   }
 
-  if (!typeArme && !typeOutil && !typeObjet && !typeConsommable && !typeCle && !typeAutre) {
+  if (!typeArme && !typeOutil && !typeObjet && !typeConsommable && !typeArmure && !typeCle && !typeAutre) {
     itemTexte = "Aucune";
     detailsItem = "";
   } else {
@@ -609,7 +611,7 @@ Texture de l'item : ${textureItemImage}
 Lien de la texture : ${linkTexture}
 Nom affiché : ${nameItem}
 Lore :
-${loreItem}
+${renderLoreText(loreItem, "Aucun")}
 
 4. Caractéristiques
 
@@ -632,6 +634,7 @@ function genererPreviewItemCHtml() {
   const typeOutil = document.getElementById("typeOutil").checked;
   const typeObjet = document.getElementById("typeObjet").checked;
   const typeConsommable = document.getElementById("typeConsommable").checked;
+  const typeArmure = document.getElementById("typeArmure").checked;
   const typeCle = document.getElementById("typeCle").checked;
   const typeAutre = document.getElementById("typeAutre").checked;
 
@@ -660,7 +663,7 @@ function genererPreviewItemCHtml() {
   const selectObtentionAutre = valeur("selectObtentionAutre");
   const linkTexture = valeur("linkTexture");
   const nameItem = valeur("nameItem");
-  const loreItem = valeur("loreItem");
+  const loreItem = valeur("loreItem", "");
   const durabiliteItem = valeur("durabiliteItem");
   const effectDescription = valeur("effectDescription");
 
@@ -686,7 +689,9 @@ function genererPreviewItemCHtml() {
   if (typeCle) html += `☑ Clé<br>`;
   if (typeAutre) html += `☑ Autre<br>`;
 
-  if (!typeArme && !typeOutil && !typeObjet && !typeConsommable && !typeCle && !typeAutre) {
+  if (typeArmure) html += `☑ Armure<br>`;
+
+  if (!typeArme && !typeOutil && !typeObjet && !typeConsommable && !typeArmure && !typeCle && !typeAutre) {
     html += `Aucune<br>`;
   }
 
@@ -766,7 +771,7 @@ function genererPreviewItemCHtml() {
 
       <div><strong>Nom affiché :</strong> ${escapeHtml(nameItem)}</div><br>
 
-      <div><strong>Lore :</strong><br>${nl2brSafe(loreItem)}</div><br>
+      <div><strong>Lore :</strong><br>${renderLoreHtml(loreItem, "Aucun")}</div><br>
       <br><div><strong>4. Caractéristiques</strong></div><br>
       <div><strong>Durabilité :</strong> ${escapeHtml(durabiliteItem)}</div><br>
       <div><strong>Description de l'effet :</strong><br>${nl2brSafe(effectDescription)}</div><br>

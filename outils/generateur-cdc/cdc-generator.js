@@ -353,6 +353,28 @@
       return escapeHtml(String(text)).replace(/\n/g, "<br>");
     }
 
+    function getFormattedLoreLines(text, fallback = "Aucun") {
+      const rawText = String(text ?? "");
+      if (!rawText.trim()) {
+        return [fallback];
+      }
+
+      return rawText.split(/\r?\n/).map((line) => {
+        const cleanedLine = cleanQuotedText(String(line ?? "").trim());
+        return `"${cleanedLine || " "}"`;
+      });
+    }
+
+    function renderLoreText(text, fallback = "Aucun") {
+      return getFormattedLoreLines(text, fallback).join("\n");
+    }
+
+    function renderLoreHtml(text, fallback = "Aucun") {
+      return getFormattedLoreLines(text, fallback)
+        .map((line) => escapeHtml(line))
+        .join("<br>");
+    }
+
     const MINECRAFT_LEGACY_COLORS = {
       "0": "#000000",
       "1": "#0000aa",

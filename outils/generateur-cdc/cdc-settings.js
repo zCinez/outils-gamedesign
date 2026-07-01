@@ -160,7 +160,7 @@ const SETTINGS_TEMPLATE_CATALOG = [
         items: [
           "Nom de l'item",
           "Item Minecraft de référence",
-          "Type d'item",
+          "Type d'item (inclut Armure)",
           "Type autre",
           "Rôle de l'item"
         ]

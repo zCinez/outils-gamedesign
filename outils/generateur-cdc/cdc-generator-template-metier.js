@@ -17,7 +17,8 @@ function renderMetierGuiItemText(item, index) {
   let text = `Item ${index + 1} :
 - Item : ${item.item || "Aucun"}
 - Nom : ${item.nom || "Aucun"}
-- Lore : ${item.lore || "Aucun"}`;
+- Lore :
+${renderLoreText(item.lore, "Aucun")}`;
 
   if (loreVariantesText) {
     text += `\n${loreVariantesText}`;
@@ -33,7 +34,8 @@ function renderMetierGuiGroupedItemText(group) {
   let text = `${formatGuiSharedItemRefs(group.entries)} :
 - ${itemSummary.label} : ${itemSummary.value}
 - Nom : ${group.nom || "Aucun"}
-- Lore : ${group.lore || "Aucun"}`;
+- Lore :
+${renderLoreText(group.lore, "Aucun")}`;
 
   if (loreVariantesText) {
     text += `\n${loreVariantesText}`;
@@ -48,7 +50,7 @@ function renderMetierGuiItemHtml(item, index) {
   let html = `<br><strong>Item ${index + 1} :</strong><br>
       - Item : ${escapeHtml(item.item || "Aucun")}<br>
       - Nom : ${nl2brSafe(item.nom || "Aucun")}<br>
-      - Lore : ${nl2brSafe(item.lore || "Aucun")}<br>`;
+      - Lore :<br>${renderLoreHtml(item.lore, "Aucun")}<br>`;
 
   if (loreVariantesHtml) {
     html += loreVariantesHtml;
@@ -64,7 +66,7 @@ function renderMetierGuiGroupedItemHtml(group) {
   let html = `<br><strong>${escapeHtml(formatGuiSharedItemRefs(group.entries))} :</strong><br>
       - ${escapeHtml(itemSummary.label)} : ${escapeHtml(itemSummary.value)}<br>
       - Nom : ${nl2brSafe(group.nom || "Aucun")}<br>
-      - Lore : ${nl2brSafe(group.lore || "Aucun")}<br>`;
+      - Lore :<br>${renderLoreHtml(group.lore, "Aucun")}<br>`;
 
   if (loreVariantesHtml) {
     html += loreVariantesHtml;

@@ -5,7 +5,8 @@ function renderGuiCommandeItemText(item, index) {
 - Slot : ${item.slot || "Aucun"}
 - Item : ${item.item || "Aucun"}
 - Nom : ${item.nom || "Aucun"}
-- Lore : ${item.lore || "Aucun"}`;
+- Lore :
+${renderLoreText(item.lore, "Aucun")}`;
 
   if (loreVariantesText) {
     text += `\n${loreVariantesText}`;
@@ -29,7 +30,8 @@ function renderGuiCommandeGroupedItemText(group) {
 - Slots : ${slots}
 - ${itemSummary.label} : ${itemSummary.value}
 - Nom : ${group.nom || "Aucun"}
-- Lore : ${group.lore || "Aucun"}`;
+- Lore :
+${renderLoreText(group.lore, "Aucun")}`;
 
   if (loreVariantesText) {
     text += `\n${loreVariantesText}`;
@@ -62,7 +64,7 @@ function renderGuiCommandeItemHtml(item, index) {
 - Slot : ${escapeHtml(item.slot || "Aucun")}<br>
 - Item : ${escapeHtml(item.item || "Aucun")}<br>
 - Nom : ${escapeHtml(item.nom || "Aucun")}<br>
-- Lore : ${nl2brSafe(item.lore || "Aucun")}<br>`;
+- Lore :<br>${renderLoreHtml(item.lore, "Aucun")}<br>`;
 
   if (loreVariantesHtml) {
     html += loreVariantesHtml;
@@ -86,7 +88,7 @@ function renderGuiCommandeGroupedItemHtml(group) {
 - Slots : ${escapeHtml(slots)}<br>
 - ${escapeHtml(itemSummary.label)} : ${escapeHtml(itemSummary.value)}<br>
 - Nom : ${escapeHtml(group.nom || "Aucun")}<br>
-- Lore : ${nl2brSafe(group.lore || "Aucun")}<br>`;
+- Lore :<br>${renderLoreHtml(group.lore, "Aucun")}<br>`;
 
   if (loreVariantesHtml) {
     html += loreVariantesHtml;
