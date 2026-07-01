@@ -87,6 +87,11 @@ function formatHomeTimestamp(value) {
   });
 }
 
+function getHomeTimestampRank(value) {
+  const timestamp = Date.parse(String(value || ""));
+  return Number.isNaN(timestamp) ? 0 : timestamp;
+}
+
 function escapeHomeHtml(value) {
   return String(value ?? "")
     .replaceAll("&", "&amp;")
@@ -141,11 +146,61 @@ function getProjectLastUpdate(projectId) {
   return entries[0]?.updatedAt || entries[0]?.createdAt || "";
 }
 
+function getHomeProjectActivityTimestamp(project) {
+  return getProjectLastUpdate(project.id) || project.updatedAt || project.createdAt || "";
+}
+
+function getHomeTemplateLabel(template) {
+  const labels = {
+    commande: "Commande",
+    gui: "GUI",
+    itemC: "Item Custom",
+    event: "Event",
+    metier: "MÃ©tier",
+    rankUp: "Rank-up",
+    mobs: "Mobs",
+    libre: "Libre",
+    caisse: "Caisse",
+    soundDesign: "Sound Design"
+  };
+
+  return labels[template] || "CDC";
+}
+
+function getLatestHomeProject() {
+  return getHomeProjects()
+    .map(project => ({
+      ...project,
+      activityAt: getHomeProjectActivityTimestamp(project)
+    }))
+    .sort((a, b) => getHomeTimestampRank(b.activityAt) - getHomeTimestampRank(a.activityAt))[0] || null;
+}
+
+function getLatestHomeCdc() {
+  return [...getHomeHistory()]
+    .sort((a, b) => getHomeTimestampRank(b.updatedAt || b.createdAt) - getHomeTimestampRank(a.updatedAt || a.createdAt))[0] || null;
+}
+
 function openWorkspaceProject(projectId) {
   localStorage.setItem(HOME_ACTIVE_PROJECT_STORAGE_KEY, projectId);
   updateHomeTopTabs();
   window.navigateToPage?.(`./cdc-library.html?projectId=${encodeURIComponent(projectId)}`)
     || (window.location.href = `./cdc-library.html?projectId=${encodeURIComponent(projectId)}`);
+}
+
+function openHomeHistoryCdc(cdcId, projectId = "") {
+  if (!cdcId) return;
+
+  if (projectId) {
+    localStorage.setItem(HOME_ACTIVE_PROJECT_STORAGE_KEY, projectId);
+  }
+
+  updateHomeTopTabs();
+  const targetUrl = projectId
+    ? `./cdc-generator.html?projectId=${encodeURIComponent(projectId)}&cdcId=${encodeURIComponent(cdcId)}`
+    : `./cdc-generator.html?cdcId=${encodeURIComponent(cdcId)}`;
+
+  window.navigateToPage?.(targetUrl) || (window.location.href = targetUrl);
 }
 
 function renameWorkspaceProject(projectId) {
@@ -178,6 +233,7 @@ function renameWorkspaceProject(projectId) {
 
   void window.syncCdcProjectsDirectoryFromStorage?.();
   renderHomeProjects();
+  renderHomeRecentActivity();
 }
 
 function deleteWorkspaceProject(projectId) {
@@ -205,6 +261,7 @@ function deleteWorkspaceProject(projectId) {
   void window.syncCdcProjectsDirectoryFromStorage?.();
   updateHomeTopTabs();
   renderHomeProjects();
+  renderHomeRecentActivity();
 }
 
 function createWorkspaceProject() {
@@ -379,6 +436,75 @@ function renderHomeGuiPresets() {
   `).join("");
 }
 
+function renderHomeRecentActivity() {
+  const list = document.getElementById("homeRecentActivityList");
+  if (!list) return;
+
+  const latestProject = getLatestHomeProject();
+  const latestCdc = getLatestHomeCdc();
+
+  const projectCard = latestProject
+    ? `
+      <div class="library-item home-project-card home-summary-card" onclick="openWorkspaceProject('${latestProject.id}')">
+        <div class="library-item-top">
+          <div>
+            <p class="library-item-title">${escapeHomeHtml(latestProject.name || "Projet sans nom")}</p>
+            <div class="library-item-date">DerniÃ¨re activitÃ© : ${escapeHomeHtml(formatHomeTimestamp(latestProject.activityAt))}</div>
+            <div class="library-item-date">CDC liÃ©s : ${getProjectCdcCount(latestProject.id)}</div>
+          </div>
+          <span class="project-history-template">Projet</span>
+        </div>
+        <div class="home-project-actions">
+          <button type="button" class="project-history-open" onclick="event.stopPropagation(); openWorkspaceProject('${latestProject.id}')">Ouvrir le projet</button>
+        </div>
+      </div>
+    `
+    : `
+      <div class="library-item home-project-card home-summary-card">
+        <div class="library-item-top">
+          <div>
+            <p class="library-item-title">Aucun projet modifiÃ©</p>
+            <div class="library-item-date">CrÃ©e ou modifie un projet pour le retrouver ici.</div>
+          </div>
+          <span class="project-history-template">Projet</span>
+        </div>
+      </div>
+    `;
+
+  const cdcTemplateLabel = latestCdc?.templateLabel || getHomeTemplateLabel(latestCdc?.template);
+  const cdcProjectLabel = latestCdc?.projectLabel || "Aucun projet";
+  const cdcCard = latestCdc
+    ? `
+      <div class="library-item home-project-card home-summary-card" onclick="openHomeHistoryCdc('${latestCdc.id}', '${latestCdc.projectId || ""}')">
+        <div class="library-item-top">
+          <div>
+            <p class="library-item-title">${escapeHomeHtml(latestCdc.projectName || "CDC sans nom")}</p>
+            <div class="library-item-date">Projet : ${escapeHomeHtml(cdcProjectLabel)}</div>
+            <div class="library-item-date">ModifiÃ© le : ${escapeHomeHtml(formatHomeTimestamp(latestCdc.updatedAt || latestCdc.createdAt))}</div>
+          </div>
+          <span class="project-history-template">${escapeHomeHtml(cdcTemplateLabel)}</span>
+        </div>
+        <div class="home-project-actions">
+          <button type="button" class="project-history-open" onclick="event.stopPropagation(); openHomeHistoryCdc('${latestCdc.id}', '${latestCdc.projectId || ""}')">Ouvrir le CDC</button>
+          ${latestCdc.projectId ? `<button type="button" class="project-history-edit" onclick="event.stopPropagation(); openWorkspaceProject('${latestCdc.projectId}')">Voir le projet</button>` : ""}
+        </div>
+      </div>
+    `
+    : `
+      <div class="library-item home-project-card home-summary-card">
+        <div class="library-item-top">
+          <div>
+            <p class="library-item-title">Aucun CDC modifiÃ©</p>
+            <div class="library-item-date">Le dernier CDC enregistrÃ© apparaÃ®tra ici automatiquement.</div>
+          </div>
+          <span class="project-history-template">CDC</span>
+        </div>
+      </div>
+    `;
+
+  list.innerHTML = `${projectCard}${cdcCard}`;
+}
+
 function renameGuiPreset(presetId) {
   const preset = getGuiPresetRows().find(entry => entry.id === presetId);
   if (!preset) {
@@ -432,11 +558,13 @@ initHomeTheme();
 updateHomeTopTabs();
 renderHomeProjects();
 renderHomeGuiPresets();
+renderHomeRecentActivity();
 initHomeEvents();
 
 void window.hydrateCdcProjectsFromFiles?.().then(result => {
   if (result?.ok && result.hydrated) {
     updateHomeTopTabs();
     renderHomeProjects();
+    renderHomeRecentActivity();
   }
 });

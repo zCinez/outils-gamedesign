@@ -1,0 +1,1 @@
+window.ITEM_CUSTOM_CUSTOM_PRESETS_FILE = [];

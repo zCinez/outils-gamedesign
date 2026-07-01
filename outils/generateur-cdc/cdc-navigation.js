@@ -1,7 +1,7 @@
 (function () {
   const TRANSITION_DURATION_MS = 180;
   const THEME_STORAGE_KEY = "neodium-cdc-theme";
-  const NAV_TAB_ROLES = ["home", "project", "editor", "settings"];
+  const NAV_TAB_ROLES = ["home", "project", "editor", "presets", "settings"];
   function getCurrentPageMeta() {
     const currentPath = window.location.pathname.split("/").pop().toLowerCase();
 
@@ -30,6 +30,13 @@
       return {
         activeTab: "editor",
         subtitle: "Éditeur",
+      };
+    }
+
+    if (currentPath === "gui-presets.html") {
+      return {
+        activeTab: "presets",
+        subtitle: "Presets",
       };
     }
 

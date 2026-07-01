@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Neodium - Presets</title>
+  <link rel="stylesheet" href="./cdc-generator.css?v=20260629c" />
+  <link rel="stylesheet" href="../../assets/neodium-unified.css?v=20260528b" />
+  <link rel="stylesheet" href="../../assets/neodium-global-header.css?v=20260625b" />
+  <script src="../../assets/supabase-config.js"></script>
+  <script src="../../assets/cloud-sync.js?v=20260626b"></script>
+  <script src="../../assets/neodium-global-header.js?v=20260626b" defer></script>
+</head>
+<body class="home-page gui-presets-page page-nav">
+  <div class="home-shell">
+    <div class="top-tabs-shell">
+      <nav class="top-tabs" aria-label="Navigation principale">
+        <a class="top-tab" href="./index.html">Accueil</a>
+        <a id="guiPresetsTopTabProject" class="top-tab" href="./projects.html">Projet</a>
+        <a id="guiPresetsTopTabEditor" class="top-tab" href="./cdc-generator.html">Éditeur</a>
+        <a class="top-tab is-active" href="./gui-presets.html">Presets</a>
+        <a class="top-tab" href="./settings.html">Paramètres</a>
+      </nav>
+    </div>
+
+    <div class="home-topbar">
+      <div class="template-badge">Bibliotheque Presets</div>
+    </div>
+
+    <section class="card home-action-card home-create-card" style="margin-bottom:24px;">
+      <h1>Presets</h1>
+      <p class="muted">
+        Retrouve ici les presets GUI et Item Custom de l'outil. Tu peux les ouvrir directement dans l'editeur, les renommer ou les retirer de la bibliotheque visible.
+      </p>
+
+      <div class="project-draft-meta" style="margin-top:18px;">
+        <span class="project-history-template">Projet actif</span>
+        <span id="guiPresetsActiveProjectStatus" class="project-status-pill">Aucun projet actif</span>
+      </div>
+
+      <p id="guiPresetsProjectHint" class="muted" style="margin:12px 0 0;">
+        Les presets s'ouvriront dans un brouillon si aucun projet n'est selectionne.
+      </p>
+    </section>
+
+    <section class="card home-projects-card" id="guiPresetsSection">
+      <div class="sidebar-section-header">
+        <div>
+          <h2 style="margin:0;">GUI</h2>
+          <p class="muted home-section-copy">Cherche rapidement un preset GUI et ouvre-le dans l'editeur.</p>
+        </div>
+        <span id="guiPresetsCount" class="sidebar-count-badge">0</span>
+      </div>
+
+      <div class="home-projects-toolbar">
+        <input type="text" id="guiPresetSearch" placeholder="Rechercher un preset..." oninput="renderGuiPresetsLibrary()" />
+        <select id="guiPresetSort" onchange="renderGuiPresetsLibrary()">
+          <option value="name">Nom</option>
+          <option value="size">Taille</option>
+          <option value="items">Nombre d'items</option>
+        </select>
+      </div>
+
+      <div id="guiPresetsList" class="home-projects-list" style="margin-top:18px;"></div>
+    </section>
+
+    <section class="card home-projects-card" id="itemCustomPresetsSection" style="margin-top:24px;">
+      <div class="sidebar-section-header">
+        <div>
+          <h2 style="margin:0;">Item Custom</h2>
+          <p class="muted home-section-copy">Retrouve les presets d'items custom et rouvre-les en un clic.</p>
+        </div>
+        <span id="itemCustomPresetsCount" class="sidebar-count-badge">0</span>
+      </div>
+
+      <div class="home-projects-toolbar">
+        <input type="text" id="itemCustomPresetSearch" placeholder="Rechercher un preset item custom..." oninput="renderItemCustomPresetsLibrary()" />
+        <select id="itemCustomPresetSort" onchange="renderItemCustomPresetsLibrary()">
+          <option value="name">Nom</option>
+          <option value="item">Item Minecraft</option>
+          <option value="type">Type</option>
+        </select>
+      </div>
+
+      <div id="itemCustomPresetsList" class="home-projects-list" style="margin-top:18px;"></div>
+    </section>
+  </div>
+
+  <script src="./gui-presets/manifest.js" defer></script>
+  <script src="./gui-presets/presets.js" defer></script>
+  <script src="./item-custom-presets/manifest.js" defer></script>
+  <script src="./item-custom-presets/presets.js" defer></script>
+  <script src="./cdc-projects/manifest.js" defer></script>
+  <script src="./cdc-navigation.js?v=20260701b" defer></script>
+  <script src="./cdc-project-storage.js" defer></script>
+  <script src="./cdc-gui-presets.js?v=20260701b" defer></script>
+</body>
+</html>

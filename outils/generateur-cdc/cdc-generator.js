@@ -27,14 +27,21 @@
     const PROJECT_HISTORY_STORAGE_KEY = "neodium-cdc-project-history";
     const PROJECTS_STORAGE_KEY = "neodium-cdc-projects";
     const ACTIVE_PROJECT_STORAGE_KEY = "neodium-cdc-active-project";
+    const REQUESTED_GUI_PRESET_SESSION_KEY = "neodium-cdc-requested-gui-preset";
+    const REQUESTED_ITEM_CUSTOM_PRESET_SESSION_KEY = "neodium-cdc-requested-item-custom-preset";
     const LOCAL_MINECRAFT_SOUNDS_BASE_PATH = "./minecraft-sounds";
     const LOCAL_MINECRAFT_ITEM_TEXTURES_BASE_PATH = "./minecraft-item-textures";
     const HEADDATABASE_REMOTE_TEXTURES_PATH = "./headdb-remote-textures.txt?v=20260623a";
     const GUI_PRESETS_MANIFEST = Array.isArray(window.GUI_PRESETS_MANIFEST) ? window.GUI_PRESETS_MANIFEST : [];
     const GUI_CUSTOM_PRESETS_FILE = Array.isArray(window.GUI_CUSTOM_PRESETS_FILE) ? window.GUI_CUSTOM_PRESETS_FILE : [];
+    const ITEM_CUSTOM_PRESETS_MANIFEST = Array.isArray(window.ITEM_CUSTOM_PRESETS_MANIFEST) ? window.ITEM_CUSTOM_PRESETS_MANIFEST : [];
+    const ITEM_CUSTOM_CUSTOM_PRESETS_FILE = Array.isArray(window.ITEM_CUSTOM_CUSTOM_PRESETS_FILE) ? window.ITEM_CUSTOM_CUSTOM_PRESETS_FILE : [];
     const GUI_PRESET_OVERRIDES_STORAGE_KEY = "neodium-gui-preset-overrides";
     const GUI_PRESET_HIDDEN_STORAGE_KEY = "neodium-gui-preset-hidden";
     const GUI_CUSTOM_PRESETS_STORAGE_KEY = "neodium-gui-custom-presets";
+    const ITEM_CUSTOM_PRESET_OVERRIDES_STORAGE_KEY = "neodium-item-custom-preset-overrides";
+    const ITEM_CUSTOM_PRESET_HIDDEN_STORAGE_KEY = "neodium-item-custom-preset-hidden";
+    const ITEM_CUSTOM_PRESETS_STORAGE_KEY = "neodium-item-custom-presets";
     const PROJECT_IMAGE_FIELDS = [
       { inputId: "imageGUICommande", previewId: "previewImageGUICommande" },
       { inputId: "guiImage", previewId: "previewImageTemplate" },
@@ -241,9 +248,14 @@
     let activeWorkspaceProjectId = "";
     let activeWorkspaceProjectName = "";
     let requestedHistoryProjectId = "";
+    let requestedGuiPresetId = "";
+    let requestedItemCustomPresetId = "";
     let isCDCDirty = true;
     let scheduledCDCGenerationId = null;
+    const LOCAL_AUTOSAVE_IDLE_DELAY = 5000;
+    const LOCAL_AUTOSAVE_MAX_DELAY = 30000;
     let autosaveTimeoutId = null;
+    let autosaveStartedAt = 0;
     let lastAutosavedSnapshot = "";
     let defaultProjectSnapshot = "";
     const TEMPLATE_CONFIG = {
@@ -878,17 +890,28 @@
         ],
         guiCommandeItems: [],
         guiTemplateItems: [],
+        itemCustomCraftIngredients: [],
         eventConditions: [],
         eventMessages: [],
         metierItems: [],
         metierLevelRewards: [],
         metierGuiItems: [],
+        rankUps: [],
         mobSpawns: [],
         mobDrops: [],
         libreSections: [],
         caisseRewards: [],
         soundDesignEntries: []
       };
+    }
+
+    function getDefaultProjectSnapshotState() {
+      try {
+        const parsed = JSON.parse(defaultProjectSnapshot || "{}");
+        return parsed && typeof parsed === "object" ? parsed : {};
+      } catch (error) {
+        return {};
+      }
     }
 
     function getLocalProjectHistory() {
@@ -915,10 +938,28 @@
       return getWorkspaceProjects().find(project => project.id === projectId) || null;
     }
 
+    function resolveRequestedGuiPresetContext() {
+      try {
+        requestedGuiPresetId = window.sessionStorage.getItem(REQUESTED_GUI_PRESET_SESSION_KEY) || "";
+      } catch (error) {
+        requestedGuiPresetId = "";
+      }
+    }
+
+    function resolveRequestedItemCustomPresetContext() {
+      try {
+        requestedItemCustomPresetId = window.sessionStorage.getItem(REQUESTED_ITEM_CUSTOM_PRESET_SESSION_KEY) || "";
+      } catch (error) {
+        requestedItemCustomPresetId = "";
+      }
+    }
+
     function resolveWorkspaceProjectContext() {
       const url = new URL(window.location.href);
       const projectIdFromUrl = url.searchParams.get("projectId");
       requestedHistoryProjectId = url.searchParams.get("cdcId") || "";
+      resolveRequestedGuiPresetContext();
+      resolveRequestedItemCustomPresetContext();
       const storedProjectId = localStorage.getItem(ACTIVE_PROJECT_STORAGE_KEY);
       const resolvedProjectId = projectIdFromUrl || storedProjectId || "";
       const project = resolvedProjectId ? getWorkspaceProjectById(resolvedProjectId) : null;
@@ -1117,8 +1158,10 @@
 
     function buildProjectSnapshot(state) {
       return JSON.stringify({
+        projectId: state.projectId || "",
         template: state.template,
         projectName: state.projectName,
+        theme: state.theme || "light",
         fields: state.fields,
         dynamic: state.dynamic,
         images: state.images || {}
@@ -1127,33 +1170,105 @@
 
     function hasMeaningfulProjectContent(state) {
       if (!state) return false;
-      if (!currentProjectId && buildProjectSnapshot(state) === defaultProjectSnapshot) {
+      const snapshot = buildProjectSnapshot(state);
+      if (!currentProjectId && snapshot === defaultProjectSnapshot) {
         return false;
       }
-      if ((state.projectName || "").trim()) return true;
+      if (getProjectNameInputValue()) return true;
 
       if (Object.values(state.images || {}).some(image => image?.dataUrl)) {
         return true;
       }
 
+      const defaultSnapshotState = getDefaultProjectSnapshotState();
+      const defaultFields = defaultSnapshotState.fields || {};
       const hasFieldValue = Object.entries(state.fields || {}).some(([id, value]) => {
-        if (typeof value !== "string") return false;
-        const field = document.getElementById(id);
-        if (field?.tagName === "SELECT") return false;
-        return value.trim() !== "";
+        if (typeof value === "string") {
+          return value.trim() !== "" || defaultFields[id] !== value;
+        }
+        return defaultFields[id] !== value;
       });
 
       if (hasFieldValue) return true;
 
-      return JSON.stringify(state.dynamic || {}) !== JSON.stringify(getDefaultDynamicState());
+      const defaultDynamic = defaultSnapshotState.dynamic || getDefaultDynamicState();
+      if (JSON.stringify(state.dynamic || {}) !== JSON.stringify(defaultDynamic)) {
+        return true;
+      }
+
+      return Boolean(currentProjectId);
+    }
+
+    async function getCloudAutosaveState() {
+      const cloudSync = window.NeodiumCloudSync;
+      if (!cloudSync || typeof cloudSync.getState !== "function") {
+        return null;
+      }
+
+      try {
+        await cloudSync.whenReady?.();
+      } catch (error) {
+        return null;
+      }
+
+      return cloudSync.getState?.() || null;
+    }
+
+    function isCloudAutosaveAvailable(state) {
+      return state?.status === "ready" || state?.status === "syncing";
+    }
+
+    async function performLocalAutosave() {
+      const cloudState = await getCloudAutosaveState();
+      if (!isCloudAutosaveAvailable(cloudState)) {
+        return false;
+      }
+
+      const state = collectProjectState();
+      if (!hasMeaningfulProjectContent(state)) {
+        return false;
+      }
+
+      const snapshot = buildProjectSnapshot(state);
+      if (snapshot === lastAutosavedSnapshot) {
+        return false;
+      }
+
+      saveCurrentProjectToHistory(false, state, {
+        syncDirectory: false,
+        ensureAutoGuiPreset: false,
+        ensureAutoItemCustomPreset: false
+      });
+      return true;
     }
 
     function scheduleLocalAutosave() {
-      return;
+      const now = Date.now();
+      if (!autosaveStartedAt) {
+        autosaveStartedAt = now;
+      }
+
+      const elapsed = now - autosaveStartedAt;
+      const remainingBeforeForcedSave = Math.max(0, LOCAL_AUTOSAVE_MAX_DELAY - elapsed);
+      const delay = Math.min(LOCAL_AUTOSAVE_IDLE_DELAY, remainingBeforeForcedSave);
+
+      if (autosaveTimeoutId) {
+        clearTimeout(autosaveTimeoutId);
+      }
+
+      autosaveTimeoutId = window.setTimeout(() => {
+        autosaveTimeoutId = null;
+        autosaveStartedAt = 0;
+        void performLocalAutosave();
+      }, delay);
     }
 
     function cancelLocalAutosave() {
-      return;
+      if (autosaveTimeoutId) {
+        clearTimeout(autosaveTimeoutId);
+        autosaveTimeoutId = null;
+      }
+      autosaveStartedAt = 0;
     }
 
     function populateMinecraftSoundSelect(soundKeys) {
@@ -1211,6 +1326,13 @@
 
     function setGuiCommandePresetStatus(message) {
       const status = document.getElementById("guiCommandePresetStatus");
+      if (status) {
+        status.textContent = message;
+      }
+    }
+
+    function setItemCustomPresetStatus(message) {
+      const status = document.getElementById("itemCustomPresetStatus");
       if (status) {
         status.textContent = message;
       }
@@ -1464,6 +1586,7 @@
         option.value = "";
         option.textContent = "Aucun preset disponible";
         select.appendChild(option);
+        updateAllGuiItemCustomPresetSelectors();
         return;
       }
 
@@ -1665,6 +1788,658 @@
       void saveGuiPresetToLibrary(preset, setGuiCommandePresetStatus);
     }
 
+    function getAutoGuiPresetName(projectName) {
+      const resolvedProjectName = String(projectName || "").trim() || "Sans nom";
+      return `GUI ${resolvedProjectName}`;
+    }
+
+    function hasSelectedGuiPreset(selectId) {
+      const select = document.getElementById(selectId);
+      return Boolean(select && select.value !== "");
+    }
+
+    function buildAutoGuiPresetForSavedProject(state, projectName) {
+      const autoName = getAutoGuiPresetName(projectName);
+
+      if (state?.template === "gui") {
+        const preset = collectGuiPresetState();
+        return {
+          ...preset,
+          id: slugifyGuiPresetName(autoName),
+          name: autoName
+        };
+      }
+
+      if (state?.template === "commande") {
+        const preset = collectGuiCommandePresetState();
+        return {
+          ...preset,
+          id: slugifyGuiPresetName(autoName),
+          name: autoName
+        };
+      }
+
+      return null;
+    }
+
+    async function ensureGuiPresetForSavedProject(state, projectName) {
+      if (!state || (state.template !== "gui" && state.template !== "commande")) {
+        return false;
+      }
+
+      const isCommandeGui = state.template === "commande";
+      const selectId = isCommandeGui ? "guiCommandePresetSelect" : "guiPresetSelect";
+      if (hasSelectedGuiPreset(selectId)) {
+        return false;
+      }
+
+      const autoPreset = buildAutoGuiPresetForSavedProject(state, projectName);
+      if (!autoPreset) {
+        return false;
+      }
+
+      const presetNameField = document.getElementById(isCommandeGui ? "guiCommandePresetName" : "guiPresetName");
+      if (presetNameField) {
+        presetNameField.value = autoPreset.name;
+      }
+
+      const setStatus = isCommandeGui ? setGuiCommandePresetStatus : setGuiPresetStatus;
+      await saveGuiPresetToLibrary(autoPreset, message => {
+        setStatus(`Preset GUI auto : ${message}`);
+      });
+
+      return true;
+    }
+
+    function getAutoItemCustomPresetName(projectName) {
+      const resolvedProjectName = String(projectName || "").trim() || "Sans nom";
+      return `Item Custom ${resolvedProjectName}`;
+    }
+
+    function buildAutoItemCustomPresetForSavedProject(state, projectName) {
+      if (state?.template !== "itemC") {
+        return null;
+      }
+
+      const autoName = getAutoItemCustomPresetName(projectName);
+      const preset = collectItemCustomPresetState();
+      return {
+        ...preset,
+        id: getItemCustomPresetStorageId({ name: autoName }),
+        name: autoName
+      };
+    }
+
+    function getItemCustomPresetOverrides() {
+      try {
+        const raw = localStorage.getItem(ITEM_CUSTOM_PRESET_OVERRIDES_STORAGE_KEY);
+        const parsed = JSON.parse(raw || "{}");
+        return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+      } catch (error) {
+        return {};
+      }
+    }
+
+    function getItemCustomPresetHiddenIds() {
+      try {
+        const raw = localStorage.getItem(ITEM_CUSTOM_PRESET_HIDDEN_STORAGE_KEY);
+        const parsed = JSON.parse(raw || "[]");
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (error) {
+        return [];
+      }
+    }
+
+    function getCustomItemCustomPresets() {
+      try {
+        const raw = localStorage.getItem(ITEM_CUSTOM_PRESETS_STORAGE_KEY);
+        const parsed = JSON.parse(raw || "[]");
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (error) {
+        return [];
+      }
+    }
+
+    function saveCustomItemCustomPresets(presets) {
+      localStorage.setItem(ITEM_CUSTOM_PRESETS_STORAGE_KEY, JSON.stringify(presets));
+    }
+
+    function getItemCustomPresetStorageId(preset, index) {
+      return preset?.id || `item-custom-preset-${slugifyGuiPresetName(preset?.name || `preset-${index + 1}`)}`;
+    }
+
+    function getAvailableItemCustomPresets() {
+      const overrides = getItemCustomPresetOverrides();
+      const hiddenIds = new Set(getItemCustomPresetHiddenIds());
+      const mergedPresets = new Map();
+
+      ITEM_CUSTOM_PRESETS_MANIFEST.forEach((preset, index) => {
+        const id = getItemCustomPresetStorageId(preset, index);
+        mergedPresets.set(id, { ...preset, id });
+      });
+
+      ITEM_CUSTOM_CUSTOM_PRESETS_FILE.forEach((preset, index) => {
+        const id = getItemCustomPresetStorageId(preset, index);
+        mergedPresets.set(id, { ...preset, id });
+      });
+
+      getCustomItemCustomPresets().forEach((preset, index) => {
+        const id = getItemCustomPresetStorageId(preset, index);
+        mergedPresets.set(id, { ...preset, id });
+      });
+
+      return [...mergedPresets.values()].map((preset, index) => {
+        const id = getItemCustomPresetStorageId(preset, index);
+        if (hiddenIds.has(id)) {
+          return null;
+        }
+
+        const override = overrides[id] || {};
+        return {
+          ...preset,
+          id,
+          name: override.name || preset?.name || `Preset ${index + 1}`
+        };
+      }).filter(Boolean);
+    }
+
+    function getItemCustomPresetFields() {
+      return [
+        "nomItem",
+        "itemMc",
+        "typeArme",
+        "typeOutil",
+        "typeObjet",
+        "typeConsommable",
+        "typeCle",
+        "typeArmure",
+        "typeAutre",
+        "selectTypeAutre",
+        "itemRole",
+        "obtentionCraft",
+        "obtentionRecompense",
+        "obtentionBoutique",
+        "obtentionShop",
+        "obtentionEvent",
+        "obtentionAutre",
+        "craftRecipeItemCustom",
+        "selectObtentionRecompense",
+        "selectObtentionBoutiqueCategory",
+        "selectObtentionBoutiquePrice",
+        "selectObtentionBoutiqueCondition",
+        "selectObtentionShopCategory",
+        "selectObtentionShopPrice",
+        "selectObtentionShopCurrency",
+        "selectObtentionShopCondition",
+        "selectObtentionEventName",
+        "selectObtentionEventMethod",
+        "selectObtentionEventCondition",
+        "selectObtentionAutre",
+        "linkTexture",
+        "nameItem",
+        "loreItem",
+        "durabiliteItem",
+        "effectDescription",
+        "utilisationClickDroit",
+        "utilisationClickGauche",
+        "utilisationPassif",
+        "selectClicDroit",
+        "selectClicGauche",
+        "selectPassif"
+      ];
+    }
+
+    function collectItemCustomPresetState() {
+      const fields = {};
+
+      getItemCustomPresetFields().forEach(id => {
+        const field = document.getElementById(id);
+        if (!field) return;
+        fields[id] = field.type === "checkbox" ? field.checked : field.value;
+      });
+
+      const resolvedName = document.getElementById("itemCustomPresetName")?.value.trim()
+        || document.getElementById("nomItem")?.value.trim()
+        || document.getElementById("nameItem")?.value.trim()
+        || "Item custom sans nom";
+
+      return {
+        version: 1,
+        type: "item-custom-preset",
+        id: getItemCustomPresetStorageId({ name: resolvedName }),
+        name: resolvedName,
+        template: "itemC",
+        fields,
+        dynamic: {
+          itemCustomCraftIngredients: recupererItemCustomCraftIngredients()
+        },
+        images: {
+          textureItemImage: {
+            fileName: getSelectedFileName("textureItemImage", ""),
+            dataUrl: getImagePreviewSource("previewTextureItemTemplate")
+          }
+        }
+      };
+    }
+
+    function upsertCustomItemCustomPreset(preset) {
+      if (!preset || typeof preset !== "object") return;
+      const presetId = preset.id || getItemCustomPresetStorageId(preset);
+      const presets = getCustomItemCustomPresets();
+      const nextPreset = { ...preset, id: presetId };
+      const existingIndex = presets.findIndex(entry => {
+        const entryId = entry?.id || getItemCustomPresetStorageId(entry);
+        return entryId === presetId;
+      });
+
+      if (existingIndex >= 0) {
+        presets.splice(existingIndex, 1, nextPreset);
+      } else {
+        presets.push(nextPreset);
+      }
+
+      saveCustomItemCustomPresets(presets);
+    }
+
+    function upsertItemCustomPresetFileEntry(preset) {
+      if (!preset || typeof preset !== "object") return;
+      const presetId = preset.id || getItemCustomPresetStorageId(preset);
+      const nextPreset = { ...preset, id: presetId };
+      const existingIndex = ITEM_CUSTOM_CUSTOM_PRESETS_FILE.findIndex(entry => {
+        const entryId = entry?.id || getItemCustomPresetStorageId(entry);
+        return entryId === presetId;
+      });
+
+      if (existingIndex >= 0) {
+        ITEM_CUSTOM_CUSTOM_PRESETS_FILE.splice(existingIndex, 1, nextPreset);
+      } else {
+        ITEM_CUSTOM_CUSTOM_PRESETS_FILE.push(nextPreset);
+      }
+    }
+
+    function resetItemCustomPresetState() {
+      getItemCustomPresetFields().forEach(id => {
+        const field = document.getElementById(id);
+        if (!field) return;
+
+        if (field.type === "checkbox") {
+          field.checked = false;
+        } else {
+          field.value = "";
+        }
+      });
+
+      setProjectImageState("textureItemImage", "previewTextureItemTemplate");
+      clearElement("itemCustomCraftIngredientsContainer");
+      itemCustomCraftIngredientIndex = 0;
+      updateTypeItemFields();
+      choiceObtentionFields();
+      utilisationChoiseItemFields();
+      updateItemCustomCraftVisualization();
+    }
+
+    function applyItemCustomPreset(preset) {
+      if (!preset || typeof preset !== "object") return;
+
+      const templateSelect = document.getElementById("template");
+      if (templateSelect) {
+        templateSelect.value = "itemC";
+      }
+      switchTemplate();
+      resetItemCustomPresetState();
+
+      Object.entries(preset.fields || {}).forEach(([id, value]) => {
+        const field = document.getElementById(id);
+        if (!field) return;
+        if (field.type === "checkbox") {
+          field.checked = Boolean(value);
+        } else {
+          field.value = value ?? "";
+        }
+      });
+
+      (preset.dynamic?.itemCustomCraftIngredients || []).forEach(item => ajouterItemCustomCraftIngredient(item));
+      setProjectImageState("textureItemImage", "previewTextureItemTemplate", preset.images?.textureItemImage || {});
+
+      const presetNameField = document.getElementById("itemCustomPresetName");
+      if (presetNameField) {
+        presetNameField.value = preset.name || "";
+      }
+
+      updateTypeItemFields();
+      choiceObtentionFields();
+      utilisationChoiseItemFields();
+      updateItemCustomCraftVisualization();
+      refreshAfterStructureChange();
+      setItemCustomPresetStatus(`Preset chargé : ${preset.name || "Sans nom"}`);
+    }
+
+    function populateItemCustomPresetLibrary() {
+      const select = document.getElementById("itemCustomPresetSelect");
+      if (!select) return;
+
+      const presets = getAvailableItemCustomPresets();
+      select.innerHTML = "";
+
+      if (!presets.length) {
+        const option = document.createElement("option");
+        option.value = "";
+        option.textContent = "Aucun preset disponible";
+        select.appendChild(option);
+        return;
+      }
+
+      const defaultOption = document.createElement("option");
+      defaultOption.value = "";
+      defaultOption.textContent = "Choisir un preset...";
+      select.appendChild(defaultOption);
+
+      presets.forEach((preset, index) => {
+        const option = document.createElement("option");
+        option.value = String(index);
+        option.textContent = preset.name || `Preset ${index + 1}`;
+        select.appendChild(option);
+      });
+
+      updateAllGuiItemCustomPresetSelectors();
+    }
+
+    function selectItemCustomPresetInLibrary(presetId) {
+      const presets = getAvailableItemCustomPresets();
+      const savedIndex = presets.findIndex(entry => (entry.id || "") === presetId);
+      if (savedIndex < 0) return;
+
+      const select = document.getElementById("itemCustomPresetSelect");
+      if (select) {
+        select.value = String(savedIndex);
+      }
+    }
+
+    function registerItemCustomPresetInApp(preset) {
+      upsertCustomItemCustomPreset({
+        ...preset
+      });
+      upsertItemCustomPresetFileEntry({
+        ...preset
+      });
+
+      const hiddenIds = getItemCustomPresetHiddenIds().filter(id => id !== preset.id);
+      localStorage.setItem(ITEM_CUSTOM_PRESET_HIDDEN_STORAGE_KEY, JSON.stringify(hiddenIds));
+
+      const overrides = getItemCustomPresetOverrides();
+      if (overrides[preset.id]) {
+        delete overrides[preset.id];
+        localStorage.setItem(ITEM_CUSTOM_PRESET_OVERRIDES_STORAGE_KEY, JSON.stringify(overrides));
+      }
+
+      populateItemCustomPresetLibrary();
+      selectItemCustomPresetInLibrary(preset.id);
+    }
+
+    async function saveItemCustomPresetToLibrary(preset, setStatus) {
+      try {
+        registerItemCustomPresetInApp(preset);
+        const cloudSync = window.NeodiumCloudSync;
+
+        if (!cloudSync || typeof cloudSync.getState !== "function") {
+          setStatus("Preset enregistré dans la bibliothèque du navigateur.");
+          return;
+        }
+
+        await cloudSync.whenReady?.();
+        const state = cloudSync.getState();
+
+        if (state?.status === "ready") {
+          await cloudSync.forceSync?.();
+          const emailSuffix = state.email ? ` (${state.email})` : "";
+          setStatus(`Preset enregistré dans Cloud Neodium${emailSuffix}.`);
+          return;
+        }
+
+        if (state?.status === "syncing" || state?.status === "booting") {
+          setStatus("Preset enregistré. La synchronisation cloud est en cours.");
+          return;
+        }
+
+        if (state?.status === "signed_out") {
+          setStatus("Preset enregistré dans la bibliothèque locale. Connecte Cloud Neodium pour l'envoyer sur le cloud partagé.");
+          return;
+        }
+
+        setStatus("Preset enregistré dans la bibliothèque locale. Le cloud n'est pas encore disponible.");
+      } catch (error) {
+        console.error("[Neodium] Sauvegarde preset Item Custom impossible", error);
+        setStatus("Preset enregistré dans la bibliothèque locale, mais la synchronisation cloud a échoué.");
+      }
+    }
+
+    function chargerItemCustomPresetSelection() {
+      const select = document.getElementById("itemCustomPresetSelect");
+      const presets = getAvailableItemCustomPresets();
+      if (!select || select.value === "") {
+        setItemCustomPresetStatus("Sélectionne un preset Item Custom à charger.");
+        return;
+      }
+
+      const preset = presets[Number.parseInt(select.value, 10)];
+      if (!preset) {
+        setItemCustomPresetStatus("Preset introuvable dans la bibliothèque.");
+        return;
+      }
+
+      applyItemCustomPreset(preset);
+    }
+
+    function exportCurrentItemCustomAsPreset() {
+      const preset = collectItemCustomPresetState();
+      void saveItemCustomPresetToLibrary(preset, setItemCustomPresetStatus);
+    }
+
+    async function ensureItemCustomPresetForSavedProject(state, projectName) {
+      if (!state || state.template !== "itemC") {
+        return false;
+      }
+
+      if (hasSelectedGuiPreset("itemCustomPresetSelect")) {
+        return false;
+      }
+
+      const autoPreset = buildAutoItemCustomPresetForSavedProject(state, projectName);
+      if (!autoPreset) {
+        return false;
+      }
+
+      const presetNameField = document.getElementById("itemCustomPresetName");
+      if (presetNameField) {
+        presetNameField.value = autoPreset.name;
+      }
+
+      await saveItemCustomPresetToLibrary(autoPreset, message => {
+        setItemCustomPresetStatus(`Preset Item Custom auto : ${message}`);
+      });
+
+      return true;
+    }
+
+    function getGuiItemCustomPresetDisplayName(preset) {
+      const fields = preset?.fields || {};
+      return String(fields.nameItem || fields.nomItem || "").trim();
+    }
+
+    function resolveDirectImageUrl(value) {
+      const raw = String(value || "").trim();
+      if (!raw) return "";
+
+      const drivePatterns = [
+        /drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/i,
+        /drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/i,
+        /drive\.google\.com\/uc\?(?:[^#]*&)?id=([a-zA-Z0-9_-]+)/i,
+        /docs\.google\.com\/uc\?(?:[^#]*&)?id=([a-zA-Z0-9_-]+)/i
+      ];
+
+      for (const pattern of drivePatterns) {
+        const match = raw.match(pattern);
+        if (match?.[1]) {
+          return `https://drive.google.com/uc?export=view&id=${match[1]}`;
+        }
+      }
+
+      return raw;
+    }
+
+    function getItemCustomPresetById(presetId) {
+      const normalizedPresetId = String(presetId || "").trim();
+      if (!normalizedPresetId) return null;
+
+      return getAvailableItemCustomPresets().find(entry => String(entry.id || "").trim() === normalizedPresetId) || null;
+    }
+
+    function resolveItemCustomPresetTextureSource(preset) {
+      const uploadedTexture = String(preset?.images?.textureItemImage?.dataUrl || "").trim();
+      if (uploadedTexture) {
+        return uploadedTexture;
+      }
+
+      return resolveDirectImageUrl(preset?.fields?.linkTexture || "");
+    }
+
+    function getGuiItemCustomPresetLabel(preset, index) {
+      const itemMc = String(preset?.fields?.itemMc || "").trim();
+      const displayName = stripMinecraftFormatting(getGuiItemCustomPresetDisplayName(preset));
+      const parts = [preset?.name || `Preset ${index + 1}`];
+
+      if (itemMc) {
+        parts.push(itemMc);
+      }
+
+      if (displayName) {
+        parts.push(displayName);
+      }
+
+      return parts.join(" - ");
+    }
+
+    function buildGuiItemCustomPresetOptionsMarkup(selectedPresetId = "") {
+      const presets = getAvailableItemCustomPresets();
+      const normalizedSelectedId = String(selectedPresetId || "").trim();
+      const defaultLabel = presets.length
+        ? "Choisir un preset Item Custom"
+        : "Aucun preset Item Custom disponible";
+      const options = [`<option value="">${escapeHtml(defaultLabel)}</option>`];
+
+      presets.forEach((preset, index) => {
+        const presetId = String(preset.id || "").trim();
+        const selected = presetId && presetId === normalizedSelectedId ? " selected" : "";
+        options.push(`<option value="${escapeHtml(presetId)}"${selected}>${escapeHtml(getGuiItemCustomPresetLabel(preset, index))}</option>`);
+      });
+
+      return options.join("");
+    }
+
+    function updateGuiItemCustomPresetSelectElement(selectId, selectedPresetId = "") {
+      const select = document.getElementById(selectId);
+      if (!select) return;
+
+      const resolvedSelectedId = String(
+        selectedPresetId
+        || select.dataset.appliedPresetId
+        || select.value
+        || ""
+      ).trim();
+
+      select.innerHTML = buildGuiItemCustomPresetOptionsMarkup(resolvedSelectedId);
+
+      const availablePresetIds = new Set(getAvailableItemCustomPresets().map(preset => String(preset.id || "").trim()).filter(Boolean));
+      const finalSelectedId = availablePresetIds.has(resolvedSelectedId) ? resolvedSelectedId : "";
+      select.value = finalSelectedId;
+      select.dataset.appliedPresetId = finalSelectedId;
+    }
+
+    function updateAllGuiItemCustomPresetSelectors() {
+      document.querySelectorAll(`
+        select[id^="gui_commande_item_custom_preset_"],
+        select[id^="gui_template_item_custom_preset_"],
+        select[id^="metier_gui_item_custom_preset_"],
+        select[id^="item_custom_craft_preset_"]
+      `).forEach(select => {
+        updateGuiItemCustomPresetSelectElement(select.id);
+      });
+    }
+
+    function getItemCustomPresetVisualData(presetId) {
+      const preset = getItemCustomPresetById(presetId);
+      if (!preset) return null;
+
+      const fields = preset.fields || {};
+      return {
+        id: preset.id,
+        item: String(fields.itemMc || "").trim(),
+        nom: String(fields.nameItem || fields.nomItem || "").trim(),
+        lore: String(fields.loreItem || "").trim(),
+        textureSource: resolveItemCustomPresetTextureSource(preset),
+        loreVariantes: []
+      };
+    }
+
+    function getGuiItemCustomPresetVisualData(presetId) {
+      return getItemCustomPresetVisualData(presetId);
+    }
+
+    function resolveGuiItemCustomTextureSource(item) {
+      const presetId = String(item?.itemCustomPresetId || "").trim();
+      if (!presetId) return "";
+
+      return String(getItemCustomPresetVisualData(presetId)?.textureSource || "").trim();
+    }
+
+    function applyItemCustomPresetToGuiFields({
+      presetId,
+      selectId,
+      itemFieldId,
+      nomFieldId,
+      loreFieldId,
+      replaceLoreVariantes,
+      afterApply,
+      focusFieldId
+    }) {
+      const presetData = getItemCustomPresetVisualData(presetId);
+      if (!presetData) {
+        return false;
+      }
+
+      const itemField = document.getElementById(itemFieldId);
+      const nomField = document.getElementById(nomFieldId);
+      const loreField = document.getElementById(loreFieldId);
+      const select = document.getElementById(selectId);
+
+      if (itemField) {
+        itemField.value = presetData.item;
+      }
+
+      if (nomField) {
+        nomField.value = presetData.nom;
+      }
+
+      if (loreField) {
+        loreField.value = presetData.lore;
+      }
+
+      if (typeof replaceLoreVariantes === "function") {
+        replaceLoreVariantes(presetData.loreVariantes);
+      }
+
+      if (select) {
+        select.value = presetData.id || "";
+        select.dataset.appliedPresetId = presetData.id || "";
+      }
+
+      afterApply?.();
+
+      const focusField = document.getElementById(focusFieldId);
+      focusField?.focus();
+      return true;
+    }
+
     async function loadMinecraftSoundCatalog() {
       if (minecraftSoundCatalogPromise) {
         return minecraftSoundCatalogPromise;
@@ -1822,12 +2597,43 @@
       if (!element?.id) return false;
       return element.id === "projectNameInput"
         || element.id === "projectHistorySearch"
+        || element.id === "projectHistorySort"
+        || element.id === "workspaceProjectSelect"
+        || element.id === "guiPresetSelect"
+        || element.id === "guiPresetName"
+        || element.id === "guiCommandePresetSelect"
+        || element.id === "guiCommandePresetName"
+        || element.id === "itemCustomPresetSelect"
+        || element.id === "itemCustomPresetName"
         || element.id.startsWith("gui_commande_copy_from_")
         || element.id.startsWith("metier_gui_copy_from_")
-        || element.id.startsWith("gui_template_copy_from_");
+        || element.id.startsWith("gui_template_copy_from_")
+        || element.id.startsWith("gui_commande_item_custom_preset_")
+        || element.id.startsWith("metier_gui_item_custom_preset_")
+        || element.id.startsWith("gui_template_item_custom_preset_")
+        || element.id.startsWith("item_custom_craft_preset_");
     }
 
-    function handleGeneratorFieldInteraction(element, { shouldGenerate = false } = {}) {
+    function shouldAutosaveGeneratorField(element) {
+      if (!element?.id) return false;
+      return element.id !== "projectHistorySearch"
+        && element.id !== "projectHistorySort"
+        && element.id !== "guiPresetSelect"
+        && element.id !== "guiPresetName"
+        && element.id !== "guiCommandePresetSelect"
+        && element.id !== "guiCommandePresetName"
+        && element.id !== "itemCustomPresetSelect"
+        && element.id !== "itemCustomPresetName"
+        && !element.id.startsWith("gui_commande_copy_from_")
+        && !element.id.startsWith("metier_gui_copy_from_")
+        && !element.id.startsWith("gui_template_copy_from_")
+        && !element.id.startsWith("gui_commande_item_custom_preset_")
+        && !element.id.startsWith("metier_gui_item_custom_preset_")
+        && !element.id.startsWith("gui_template_item_custom_preset_")
+        && !element.id.startsWith("item_custom_craft_preset_");
+    }
+
+    function handleGeneratorFieldInteraction(element, { shouldGenerate = false, shouldAutosave = false } = {}) {
       if (!element) return;
       if (element.closest?.("#minecraftInlinePreview")) return;
 
@@ -1837,6 +2643,9 @@
 
       if (element.id === "template") {
         hideMinecraftInlinePreview();
+        if (shouldAutosave && shouldAutosaveGeneratorField(element)) {
+          scheduleLocalAutosave();
+        }
         return;
       }
 
@@ -1880,9 +2689,15 @@
         || element.id === "itemMc"
         || element.id === "nameItem"
         || element.id === "loreItem"
+        || element.id === "linkTexture"
+        || element.id === "textureItemImage"
         || element.id.startsWith("item_custom_craft_")
       ) {
         updateItemCustomCraftVisualization();
+      }
+
+      if (shouldAutosave && shouldAutosaveGeneratorField(element)) {
+        scheduleLocalAutosave();
       }
 
       if (!shouldGenerate || isGeneratorUiField(element)) {
@@ -1900,6 +2715,7 @@
     function refreshAfterStructureChange() {
       invalidateCDC();
       genererCDC(true);
+      scheduleLocalAutosave();
     }
 
     function applyTheme(theme) {
@@ -1913,6 +2729,7 @@
       const nextTheme = document.body.dataset.theme === "dark" ? "light" : "dark";
       applyTheme(nextTheme);
       localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
+      scheduleLocalAutosave();
     }
 
     function initTheme() {
@@ -2054,14 +2871,22 @@
             fileName: file.name,
             dataUrl: e.target?.result || ""
           });
+          if (input.id === "textureItemImage") {
+            updateItemCustomCraftVisualization();
+          }
           invalidateCDC();
           genererCDC(true);
+          scheduleLocalAutosave();
         };
         reader.readAsDataURL(file);
       } else {
         setProjectImageState(input.id, previewId);
+        if (input.id === "textureItemImage") {
+          updateItemCustomCraftVisualization();
+        }
         invalidateCDC();
         genererCDC(true);
+        scheduleLocalAutosave();
       }
     }
 
@@ -2564,6 +3389,13 @@
       });
 
       remplacerGuiCommandeLoreVariantes(targetItemId, getGuiCommandeLoreVariantes(sourceItemId));
+      const sourcePresetSelect = document.getElementById(`gui_commande_item_custom_preset_${sourceItemId}`);
+      const targetPresetSelect = document.getElementById(`gui_commande_item_custom_preset_${targetItemId}`);
+      if (sourcePresetSelect && targetPresetSelect) {
+        const appliedPresetId = sourcePresetSelect.dataset.appliedPresetId || "";
+        targetPresetSelect.dataset.appliedPresetId = appliedPresetId;
+        targetPresetSelect.value = appliedPresetId;
+      }
       updateGuiCommandeItemCopySources();
       updateGuiCommandeVisualization();
       invalidateCDC();
@@ -2571,6 +3403,29 @@
 
       const focusField = document.getElementById(`gui_cmd_nom_${targetItemId}`);
       focusField?.focus();
+    }
+
+    function appliquerItemCustomPresetSurGuiCommandeItem(itemId) {
+      const selectId = `gui_commande_item_custom_preset_${itemId}`;
+      const presetId = document.getElementById(selectId)?.value || "";
+      if (!presetId) {
+        return;
+      }
+
+      applyItemCustomPresetToGuiFields({
+        presetId,
+        selectId,
+        itemFieldId: `gui_cmd_item_${itemId}`,
+        nomFieldId: `gui_cmd_nom_${itemId}`,
+        loreFieldId: `gui_cmd_lore_${itemId}`,
+        replaceLoreVariantes: loreVariantes => remplacerGuiCommandeLoreVariantes(itemId, loreVariantes),
+        afterApply: () => {
+          updateGuiCommandeItemCopySources();
+          refreshAfterStructureChange();
+          updateGuiCommandeVisualization();
+        },
+        focusFieldId: `gui_cmd_nom_${itemId}`
+      });
     }
 
     function ajouterItemGUICommande(data = {}) {
@@ -2587,6 +3442,24 @@
           <div class="gui-item-title">Item GUI</div>
           <button type="button" class="btn-remove" onclick="supprimerItemGUICommande(${itemId})">Supprimer</button>
         </div>
+
+        <div class="gui-item-copy-tools">
+          <div>
+            <label for="gui_commande_item_custom_preset_${itemId}">Preset Item Custom</label>
+            <select id="gui_commande_item_custom_preset_${itemId}" data-applied-preset-id="${escapeHtml(data.itemCustomPresetId || "")}">
+              ${buildGuiItemCustomPresetOptionsMarkup(data.itemCustomPresetId || "")}
+            </select>
+          </div>
+          <button
+            type="button"
+            class="btn-small btn-secondary btn-inline"
+            onclick="appliquerItemCustomPresetSurGuiCommandeItem(${itemId})"
+          >
+            Utiliser le preset
+          </button>
+        </div>
+
+        <div class="muted gui-item-copy-hint">Remplit automatiquement l'item Minecraft, le nom et le lore depuis un preset Item Custom.</div>
 
         <div class="gui-item-copy-tools">
           <div>
@@ -2669,6 +3542,7 @@
           nom: document.getElementById(`gui_cmd_nom_${id}`)?.value.trim() || "",
           lore: document.getElementById(`gui_cmd_lore_${id}`)?.value.trim() || "",
           loreVariantes: getGuiCommandeLoreVariantes(id),
+          itemCustomPresetId: document.getElementById(`gui_commande_item_custom_preset_${id}`)?.dataset.appliedPresetId || "",
           fonction: document.getElementById(`gui_cmd_fonction_${id}`)?.value.trim() || "",
           action: document.getElementById(`gui_cmd_action_${id}`)?.value.trim() || ""
         };
@@ -2790,17 +3664,29 @@
           ? (stripMinecraftFormatting(item.nom) || (headDatabaseHead ? `HeadDatabase #${headDatabaseHead.id}` : stripMinecraftFormatting(item.item)) || `Slot ${index}`)
           : String(index);
         const blockFaces = item ? getMinecraftItemBlockFaces(item.item) : null;
+        const customTextureUrl = item ? resolveGuiItemCustomTextureSource(item) : "";
         const textureUrl = item ? resolveMinecraftItemTextureUrl(item.item) : "";
         const renderedTextureUrl = item ? resolveRenderedMinecraftItemIconUrl(item.item) : "";
         const inviconUrl = item ? resolvePreferredBlockInventoryUrl(item.item) : "";
-        const localFallbackTexture = textureUrl || (blockFaces?.front || "");
+        const localFallbackTexture = renderedTextureUrl || inviconUrl || textureUrl || (blockFaces?.front || "");
         const isBlockLike = !!blockFaces && (
           (blockFaces.front && blockFaces.front.includes("/block/")) ||
           (blockFaces.side && blockFaces.side.includes("/block/")) ||
           (blockFaces.top && blockFaces.top.includes("/block/"))
         );
         const slotTooltipHtml = item ? buildGuiSlotTooltipHtml(item, index) : "";
-        const slotContent = headDatabaseHead
+        const slotContent = customTextureUrl
+          ? `
+            <img
+              class="gui-slot-rendered-item-texture gui-slot-custom-item-texture"
+              src="${escapeHtml(customTextureUrl)}"
+              alt="${escapeHtml(label)}"
+              title="${escapeHtml(label)}"
+              data-fallback="${escapeHtml(localFallbackTexture)}"
+              onerror="if (this.dataset.fallback) { this.onerror = null; this.src = this.dataset.fallback; this.classList.add('is-local-fallback'); }"
+            >
+          `
+          : headDatabaseHead
           ? `
             <div class="gui-slot-hdb-placeholder" data-hdb-id="${escapeHtml(headDatabaseHead.id)}" data-hdb-label="${escapeHtml(label)}">
               <span>HDB</span>
@@ -3092,6 +3978,13 @@
       });
 
       remplacerGuiTemplateLoreVariantes(targetItemId, getGuiTemplateLoreVariantes(sourceItemId));
+      const sourcePresetSelect = document.getElementById(`gui_template_item_custom_preset_${sourceItemId}`);
+      const targetPresetSelect = document.getElementById(`gui_template_item_custom_preset_${targetItemId}`);
+      if (sourcePresetSelect && targetPresetSelect) {
+        const appliedPresetId = sourcePresetSelect.dataset.appliedPresetId || "";
+        targetPresetSelect.dataset.appliedPresetId = appliedPresetId;
+        targetPresetSelect.value = appliedPresetId;
+      }
       updateGuiTemplateItemCopySources();
       updateGuiTemplateVisualization();
       invalidateCDC();
@@ -3099,6 +3992,29 @@
 
       const focusField = document.getElementById(`gui_tpl_nom_${targetItemId}`);
       focusField?.focus();
+    }
+
+    function appliquerItemCustomPresetSurGuiTemplateItem(itemId) {
+      const selectId = `gui_template_item_custom_preset_${itemId}`;
+      const presetId = document.getElementById(selectId)?.value || "";
+      if (!presetId) {
+        return;
+      }
+
+      applyItemCustomPresetToGuiFields({
+        presetId,
+        selectId,
+        itemFieldId: `gui_tpl_item_${itemId}`,
+        nomFieldId: `gui_tpl_nom_${itemId}`,
+        loreFieldId: `gui_tpl_lore_${itemId}`,
+        replaceLoreVariantes: loreVariantes => remplacerGuiTemplateLoreVariantes(itemId, loreVariantes),
+        afterApply: () => {
+          updateGuiTemplateItemCopySources();
+          refreshAfterStructureChange();
+          updateGuiTemplateVisualization();
+        },
+        focusFieldId: `gui_tpl_nom_${itemId}`
+      });
     }
 
     function ajouterItemGUITemplate(data = {}) {
@@ -3115,6 +4031,24 @@
           <div class="gui-item-title">Item GUI</div>
           <button type="button" class="btn-remove" onclick="supprimerItemGUITemplate(${itemId})">Supprimer</button>
         </div>
+
+        <div class="gui-item-copy-tools">
+          <div>
+            <label for="gui_template_item_custom_preset_${itemId}">Preset Item Custom</label>
+            <select id="gui_template_item_custom_preset_${itemId}" data-applied-preset-id="${escapeHtml(data.itemCustomPresetId || "")}">
+              ${buildGuiItemCustomPresetOptionsMarkup(data.itemCustomPresetId || "")}
+            </select>
+          </div>
+          <button
+            type="button"
+            class="btn-small btn-secondary btn-inline"
+            onclick="appliquerItemCustomPresetSurGuiTemplateItem(${itemId})"
+          >
+            Utiliser le preset
+          </button>
+        </div>
+
+        <div class="muted gui-item-copy-hint">Remplit automatiquement l'item Minecraft, le nom et le lore depuis un preset Item Custom.</div>
 
         <div class="gui-item-copy-tools">
           <div>
@@ -3197,6 +4131,7 @@
           nom: document.getElementById(`gui_tpl_nom_${id}`)?.value.trim() || "",
           lore: document.getElementById(`gui_tpl_lore_${id}`)?.value.trim() || "",
           loreVariantes: getGuiTemplateLoreVariantes(id),
+          itemCustomPresetId: document.getElementById(`gui_template_item_custom_preset_${id}`)?.dataset.appliedPresetId || "",
           fonction: document.getElementById(`gui_tpl_fonction_${id}`)?.value.trim() || "",
           action: document.getElementById(`gui_tpl_action_${id}`)?.value.trim() || ""
         };
@@ -3884,12 +4819,41 @@
       });
 
       remplacerMetierGuiLoreVariantes(targetItemId, getMetierGuiLoreVariantes(sourceItemId));
+      const sourcePresetSelect = document.getElementById(`metier_gui_item_custom_preset_${sourceItemId}`);
+      const targetPresetSelect = document.getElementById(`metier_gui_item_custom_preset_${targetItemId}`);
+      if (sourcePresetSelect && targetPresetSelect) {
+        const appliedPresetId = sourcePresetSelect.dataset.appliedPresetId || "";
+        targetPresetSelect.dataset.appliedPresetId = appliedPresetId;
+        targetPresetSelect.value = appliedPresetId;
+      }
       updateMetierGuiItemCopySources();
       invalidateCDC();
       genererCDC(true);
 
       const focusField = document.getElementById(`metier_gui_nom_${targetItemId}`);
       focusField?.focus();
+    }
+
+    function appliquerItemCustomPresetSurMetierGuiItem(itemId) {
+      const selectId = `metier_gui_item_custom_preset_${itemId}`;
+      const presetId = document.getElementById(selectId)?.value || "";
+      if (!presetId) {
+        return;
+      }
+
+      applyItemCustomPresetToGuiFields({
+        presetId,
+        selectId,
+        itemFieldId: `metier_gui_item_${itemId}`,
+        nomFieldId: `metier_gui_nom_${itemId}`,
+        loreFieldId: `metier_gui_lore_${itemId}`,
+        replaceLoreVariantes: loreVariantes => remplacerMetierGuiLoreVariantes(itemId, loreVariantes),
+        afterApply: () => {
+          updateMetierGuiItemCopySources();
+          refreshAfterStructureChange();
+        },
+        focusFieldId: `metier_gui_nom_${itemId}`
+      });
     }
 
     function ajouterMetierGuiItem(data = {}) {
@@ -3907,6 +4871,24 @@
           <div class="gui-item-title">Item du GUI</div>
           <button type="button" class="btn-remove" onclick="supprimerMetierGuiItem(${itemId})">Supprimer</button>
         </div>
+
+        <div class="gui-item-copy-tools">
+          <div>
+            <label for="metier_gui_item_custom_preset_${itemId}">Preset Item Custom</label>
+            <select id="metier_gui_item_custom_preset_${itemId}" data-applied-preset-id="${escapeHtml(data.itemCustomPresetId || "")}">
+              ${buildGuiItemCustomPresetOptionsMarkup(data.itemCustomPresetId || "")}
+            </select>
+          </div>
+          <button
+            type="button"
+            class="btn-small btn-secondary btn-inline"
+            onclick="appliquerItemCustomPresetSurMetierGuiItem(${itemId})"
+          >
+            Utiliser le preset
+          </button>
+        </div>
+
+        <div class="muted gui-item-copy-hint">Remplit automatiquement l'item Minecraft, le nom et le lore depuis un preset Item Custom.</div>
 
         <div class="gui-item-copy-tools">
           <div>
@@ -3980,6 +4962,7 @@
           item: document.getElementById(`metier_gui_item_${id}`)?.value.trim() || "",
           nom: document.getElementById(`metier_gui_nom_${id}`)?.value.trim() || "",
           lore: document.getElementById(`metier_gui_lore_${id}`)?.value.trim() || "",
+          itemCustomPresetId: document.getElementById(`metier_gui_item_custom_preset_${id}`)?.dataset.appliedPresetId || "",
           loreVariantes: getMetierGuiLoreVariantes(id)
         };
 
@@ -4538,10 +5521,30 @@
 
     function collectProjectState() {
       const fields = {};
-      const excludedFieldIds = new Set(["projectNameInput", "projectHistorySearch", "template"]);
+      const excludedFieldIds = new Set([
+        "projectNameInput",
+        "projectHistorySearch",
+        "projectHistorySort",
+        "workspaceProjectSelect",
+        "template",
+        "guiPresetSelect",
+        "guiPresetName",
+        "guiCommandePresetSelect",
+        "guiCommandePresetName",
+        "itemCustomPresetSelect",
+        "itemCustomPresetName"
+      ]);
 
       document.querySelectorAll("input[type='text'], textarea, select, input[type='checkbox']").forEach(field => {
-        if (!field.id || field.type === "file" || excludedFieldIds.has(field.id)) return;
+        if (
+          !field.id
+          || field.type === "file"
+          || excludedFieldIds.has(field.id)
+          || field.id.startsWith("gui_commande_item_custom_preset_")
+          || field.id.startsWith("metier_gui_item_custom_preset_")
+          || field.id.startsWith("gui_template_item_custom_preset_")
+          || field.id.startsWith("item_custom_craft_preset_")
+        ) return;
         fields[field.id] = field.type === "checkbox" ? field.checked : field.value;
       });
 
@@ -4575,7 +5578,15 @@
       };
     }
 
-    function saveCurrentProjectToHistory(showFeedback = true, providedState = null) {
+    function saveCurrentProjectToHistory(
+      showFeedback = true,
+      providedState = null,
+      {
+        syncDirectory = true,
+        ensureAutoGuiPreset = true,
+        ensureAutoItemCustomPreset = true
+      } = {}
+    ) {
       const state = providedState || collectProjectState();
       const renderedContent = getCurrentRenderedContent();
       const now = new Date().toISOString();
@@ -4600,6 +5611,8 @@
       const nextHistory = [entry, ...history.filter(project => project.id !== projectId)].slice(0, 50);
       saveLocalProjectHistory(nextHistory);
       lastAutosavedSnapshot = buildProjectSnapshot(entry);
+      cancelLocalAutosave();
+      syncWorkspaceProjectInUrl();
 
       const projectNameInput = document.getElementById("projectNameInput");
       if (projectNameInput && !projectNameInput.value.trim()) {
@@ -4607,7 +5620,17 @@
       }
 
       renderProjectHistory();
-      void window.syncCdcProjectsDirectoryIfConnected?.();
+      if (syncDirectory) {
+        void window.syncCdcProjectsDirectoryIfConnected?.();
+      }
+
+      if (ensureAutoGuiPreset) {
+        void ensureGuiPresetForSavedProject(entry, entry.projectName);
+      }
+
+      if (ensureAutoItemCustomPreset) {
+        void ensureItemCustomPresetForSavedProject(entry, entry.projectName);
+      }
 
       if (showFeedback) {
         alert("Projet enregistré dans l'historique local.");
@@ -4851,6 +5874,58 @@
       return true;
     }
 
+    function clearRequestedGuiPreset() {
+      requestedGuiPresetId = "";
+      try {
+        window.sessionStorage.removeItem(REQUESTED_GUI_PRESET_SESSION_KEY);
+      } catch (error) {
+        // Ignore session storage access issues and keep the editor usable.
+      }
+    }
+
+    function loadRequestedGuiPresetIfAny() {
+      if (!requestedGuiPresetId || requestedHistoryProjectId) return false;
+
+      const preset = getAvailableGuiPresets().find(entry => entry.id === requestedGuiPresetId);
+      if (!preset) {
+        clearRequestedGuiPreset();
+        return false;
+      }
+
+      clearRequestedGuiPreset();
+      applyGuiPreset(preset);
+      selectGuiPresetInLibraries(preset.id || "");
+      cancelLocalAutosave();
+      defaultProjectSnapshot = buildProjectSnapshot(collectProjectState());
+      return true;
+    }
+
+    function clearRequestedItemCustomPreset() {
+      requestedItemCustomPresetId = "";
+      try {
+        window.sessionStorage.removeItem(REQUESTED_ITEM_CUSTOM_PRESET_SESSION_KEY);
+      } catch (error) {
+        // Ignore session storage access issues and keep the editor usable.
+      }
+    }
+
+    function loadRequestedItemCustomPresetIfAny() {
+      if (!requestedItemCustomPresetId || requestedHistoryProjectId) return false;
+
+      const preset = getAvailableItemCustomPresets().find(entry => entry.id === requestedItemCustomPresetId);
+      if (!preset) {
+        clearRequestedItemCustomPreset();
+        return false;
+      }
+
+      clearRequestedItemCustomPreset();
+      applyItemCustomPreset(preset);
+      selectItemCustomPresetInLibrary(preset.id || "");
+      cancelLocalAutosave();
+      defaultProjectSnapshot = buildProjectSnapshot(collectProjectState());
+      return true;
+    }
+
     function openHistoryProject(projectId) {
       const project = getLocalProjectHistory().find(entry => entry.id === projectId);
       if (!project) {
@@ -4926,13 +6001,13 @@
 
     document.addEventListener("input", (event) => {
       if (event.target.closest("input, textarea, select")) {
-        handleGeneratorFieldInteraction(event.target, { shouldGenerate: true });
+        handleGeneratorFieldInteraction(event.target, { shouldGenerate: true, shouldAutosave: true });
       }
     });
 
     document.addEventListener("change", (event) => {
       if (event.target.closest("input, textarea, select")) {
-        handleGeneratorFieldInteraction(event.target, { shouldGenerate: true });
+        handleGeneratorFieldInteraction(event.target, { shouldGenerate: true, shouldAutosave: true });
       }
     });
 
@@ -4942,6 +6017,16 @@
 
     document.addEventListener("click", (event) => {
       handleGeneratorFieldInteraction(event.target);
+    });
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "hidden") {
+        void performLocalAutosave();
+      }
+    });
+
+    window.addEventListener("pagehide", () => {
+      void performLocalAutosave();
     });
 
     document.getElementById("loadProjectInput")?.addEventListener("change", chargerProjetDepuisFichier);
@@ -4958,6 +6043,7 @@
     populateMinecraftItemOptions();
     populateGuiPresetLibrary();
     populateGuiCommandePresetLibrary();
+    populateItemCustomPresetLibrary();
     updateCommandeInterfaceFields();
     updateOuvertureFields();
     updateTypeItemFields();
@@ -4977,15 +6063,26 @@
     ajouterSoundDesignEntry();
     switchTemplate();
     defaultProjectSnapshot = buildProjectSnapshot(collectProjectState());
-    loadRequestedHistoryProjectIfAny();
+    if (!loadRequestedHistoryProjectIfAny()) {
+      if (!loadRequestedGuiPresetIfAny()) {
+        loadRequestedItemCustomPresetIfAny();
+      }
+    }
 
     void window.hydrateCdcProjectsFromFiles?.().then(result => {
       if (result?.ok && result.hydrated) {
         resolveWorkspaceProjectContext();
         populateWorkspaceProjectSelect();
         updateWorkspaceProjectUi();
+        populateGuiPresetLibrary();
+        populateGuiCommandePresetLibrary();
         renderProjectHistory();
-        loadRequestedHistoryProjectIfAny();
+        populateItemCustomPresetLibrary();
+        if (!loadRequestedHistoryProjectIfAny()) {
+          if (!loadRequestedGuiPresetIfAny()) {
+            loadRequestedItemCustomPresetIfAny();
+          }
+        }
       }
     });
   

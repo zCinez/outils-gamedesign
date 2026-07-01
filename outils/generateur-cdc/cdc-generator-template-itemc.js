@@ -75,6 +75,37 @@ function updateItemCustomCraftIngredientTitles() {
   });
 }
 
+function appliquerItemCustomPresetSurCraftIngredient(itemId) {
+  const selectId = `item_custom_craft_preset_${itemId}`;
+  const presetId = document.getElementById(selectId)?.value || "";
+  if (!presetId) {
+    return false;
+  }
+
+  const presetData = getItemCustomPresetVisualData(presetId);
+  if (!presetData) {
+    return false;
+  }
+
+  const itemField = document.getElementById(`item_custom_craft_item_${itemId}`);
+  const presetSelect = document.getElementById(selectId);
+
+  if (itemField) {
+    itemField.value = presetData.item;
+  }
+
+  if (presetSelect) {
+    presetSelect.value = presetData.id || "";
+    presetSelect.dataset.appliedPresetId = presetData.id || "";
+  }
+
+  updateItemCustomCraftIngredientTitles();
+  refreshAfterStructureChange();
+  updateItemCustomCraftVisualization();
+  focusItemCustomCraftIngredientField(itemId);
+  return true;
+}
+
 function ajouterItemCustomCraftIngredient(data = {}) {
   itemCustomCraftIngredientIndex++;
   const itemId = itemCustomCraftIngredientIndex;
@@ -89,6 +120,24 @@ function ajouterItemCustomCraftIngredient(data = {}) {
       <div class="gui-item-title">Ingrédient</div>
       <button type="button" class="btn-remove" onclick="supprimerItemCustomCraftIngredient(${itemId})">Supprimer</button>
     </div>
+
+    <div class="gui-item-copy-tools">
+      <div>
+        <label for="item_custom_craft_preset_${itemId}">Preset Item Custom</label>
+        <select id="item_custom_craft_preset_${itemId}" data-applied-preset-id="${escapeHtml(data.itemCustomPresetId || "")}">
+          ${buildGuiItemCustomPresetOptionsMarkup(data.itemCustomPresetId || "")}
+        </select>
+      </div>
+      <button
+        type="button"
+        class="btn-small btn-secondary btn-inline"
+        onclick="appliquerItemCustomPresetSurCraftIngredient(${itemId})"
+      >
+        Utiliser le preset
+      </button>
+    </div>
+
+    <div class="muted gui-item-copy-hint">Remplit automatiquement l'item Minecraft de l'ingrÃ©dient depuis un preset Item Custom.</div>
 
     <div class="grid-2">
       <div>
@@ -129,7 +178,8 @@ function recupererItemCustomCraftIngredients() {
       const itemId = String(itemElement.dataset.itemCustomCraftId || "");
       return {
         slot: document.getElementById(`item_custom_craft_slot_${itemId}`)?.value.trim() || "",
-        item: document.getElementById(`item_custom_craft_item_${itemId}`)?.value.trim() || ""
+        item: document.getElementById(`item_custom_craft_item_${itemId}`)?.value.trim() || "",
+        itemCustomPresetId: document.getElementById(`item_custom_craft_preset_${itemId}`)?.dataset.appliedPresetId || ""
       };
     })
     .filter((entry) => entry.slot && entry.item)
@@ -225,10 +275,11 @@ function buildItemCustomCraftSlotRenderData(item, label, slotIndex) {
 
   const headDatabaseHead = parseHeadDatabaseHead(item.item);
   const blockFaces = getMinecraftItemBlockFaces(item.item);
+  const customTextureUrl = String(item.customTextureUrl || "").trim();
   const textureUrl = resolveMinecraftItemTextureUrl(item.item);
   const renderedTextureUrl = resolveRenderedMinecraftItemIconUrl(item.item);
   const inviconUrl = resolvePreferredBlockInventoryUrl(item.item);
-  const localFallbackTexture = textureUrl || (blockFaces?.front || "");
+  const localFallbackTexture = renderedTextureUrl || inviconUrl || textureUrl || (blockFaces?.front || "");
   const isBlockLike = !!blockFaces && (
     (blockFaces.front && blockFaces.front.includes("/block/"))
     || (blockFaces.side && blockFaces.side.includes("/block/"))
@@ -236,7 +287,18 @@ function buildItemCustomCraftSlotRenderData(item, label, slotIndex) {
   );
   const slotTooltipHtml = buildGuiSlotTooltipHtml(item, slotIndex);
 
-  const slotContent = headDatabaseHead
+  const slotContent = customTextureUrl
+    ? `
+      <img
+        class="gui-slot-rendered-item-texture gui-slot-custom-item-texture"
+        src="${escapeHtml(customTextureUrl)}"
+        alt="${escapeHtml(label)}"
+        title="${escapeHtml(label)}"
+        data-fallback="${escapeHtml(localFallbackTexture)}"
+        onerror="if (this.dataset.fallback) { this.onerror = null; this.src = this.dataset.fallback; this.classList.add('is-local-fallback'); }"
+      >
+    `
+    : headDatabaseHead
     ? `
       <div class="gui-slot-hdb-placeholder" data-hdb-id="${escapeHtml(headDatabaseHead.id)}" data-hdb-label="${escapeHtml(label)}">
         <span>HDB</span>
@@ -271,19 +333,42 @@ function buildItemCustomCraftSlotRenderData(item, label, slotIndex) {
   };
 }
 
-function getItemCustomCraftResultPreviewItem() {
-  const item = valeur("itemMc", "");
-  const nom = valeur("nameItem", "");
-  const lore = valeur("loreItem", "");
+function getItemCustomCraftIngredientPreviewItem(entry) {
+  const presetData = entry?.itemCustomPresetId
+    ? getItemCustomPresetVisualData(entry.itemCustomPresetId)
+    : null;
+  const item = String(entry?.item || presetData?.item || "").trim();
+  const nom = String(presetData?.nom || "").trim();
+  const lore = String(presetData?.lore || "").trim();
+  const customTextureUrl = String(presetData?.textureSource || "").trim();
 
-  if (!item && !nom && !lore) {
+  if (!item && !nom && !lore && !customTextureUrl) {
     return null;
   }
 
   return {
     item,
     nom,
-    lore
+    lore,
+    customTextureUrl
+  };
+}
+
+function getItemCustomCraftResultPreviewItem() {
+  const item = valeur("itemMc", "");
+  const nom = valeur("nameItem", "");
+  const lore = valeur("loreItem", "");
+  const customTextureUrl = getImagePreviewSource("previewTextureItemTemplate") || resolveDirectImageUrl(document.getElementById("linkTexture")?.value || "");
+
+  if (!item && !nom && !lore && !customTextureUrl) {
+    return null;
+  }
+
+  return {
+    item,
+    nom,
+    lore,
+    customTextureUrl
   };
 }
 
@@ -308,9 +393,7 @@ function buildItemCustomCraftVisualizationMarkup(previewId = "itemCustomCraftVis
   ingredients.forEach((entry) => {
     const parsedSlot = Number.parseInt(entry.slot, 10);
     if (Number.isFinite(parsedSlot) && parsedSlot >= 0 && parsedSlot < 9) {
-      ingredientMap.set(String(parsedSlot), {
-        item: entry.item
-      });
+      ingredientMap.set(String(parsedSlot), getItemCustomCraftIngredientPreviewItem(entry));
     }
   });
 
@@ -431,7 +514,11 @@ function formatItemCustomCraftIngredientsText() {
   }
 
   return ingredients
-    .map((entry) => `- ${getItemCustomCraftSlotDescription(entry.slot)} : ${entry.item}`)
+    .map((entry) => {
+      const previewItem = getItemCustomCraftIngredientPreviewItem(entry);
+      const itemLabel = previewItem?.item || entry.item || "Aucun";
+      return `- ${getItemCustomCraftSlotDescription(entry.slot)} : ${itemLabel}`;
+    })
     .join("\n");
 }
 
@@ -442,7 +529,11 @@ function formatItemCustomCraftIngredientsHtml() {
   }
 
   return ingredients
-    .map((entry) => `<div>- ${escapeHtml(getItemCustomCraftSlotDescription(entry.slot))} : ${escapeHtml(entry.item)}</div>`)
+    .map((entry) => {
+      const previewItem = getItemCustomCraftIngredientPreviewItem(entry);
+      const itemLabel = previewItem?.item || entry.item || "Aucun";
+      return `<div>- ${escapeHtml(getItemCustomCraftSlotDescription(entry.slot))} : ${escapeHtml(itemLabel)}</div>`;
+    })
     .join("");
 }
 
