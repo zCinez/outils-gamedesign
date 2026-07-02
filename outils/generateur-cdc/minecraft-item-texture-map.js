@@ -1510,6 +1510,12 @@
     "icon_right_blue":  "item/icon_right_blue",
     "icon_search":  "item/icon_search",
     "icon_left_blue":  "item/icon_left_blue",
-    "icon_next_orange":  "item/icon_next_orange"
+    "icon_next_orange":  "item/icon_next_orange",
+    "coeur_sombre":  "item/neodium/coeur_sombre",
+    "feve":  "item/neodium/feve",
+    "frag_event":  "item/neodium/frag_event",
+    "frag_metier":  "item/neodium/frag_metier",
+    "gemme":  "item/neodium/gemme",
+    "sell_bag":  "item/neodium/sell_bag"
 };
 

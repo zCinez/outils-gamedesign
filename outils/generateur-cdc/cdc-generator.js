@@ -52,6 +52,14 @@
     const BUILTIN_MINECRAFT_ITEM_KEYS = Array.isArray(window.BUILTIN_MINECRAFT_ITEM_IDS)
       ? [...window.BUILTIN_MINECRAFT_ITEM_IDS].sort((a, b) => a.localeCompare(b))
       : [];
+    const CUSTOM_MINECRAFT_ITEM_KEYS = [
+      "coeur_sombre",
+      "feve",
+      "frag_event",
+      "frag_metier",
+      "gemme",
+      "sell_bag"
+    ];
     const MINECRAFT_ITEM_TEXTURE_MAP = window.MINECRAFT_ITEM_TEXTURE_MAP || {};
     const MINECRAFT_ITEM_BLOCK_FACES_MAP = window.MINECRAFT_ITEM_BLOCK_FACES_MAP || {};
     let headDatabaseTextureMapPromise = null;
@@ -1362,7 +1370,8 @@
     }
 
     function getAvailableMinecraftItemKeys() {
-      return BUILTIN_MINECRAFT_ITEM_KEYS;
+      return [...new Set([...BUILTIN_MINECRAFT_ITEM_KEYS, ...CUSTOM_MINECRAFT_ITEM_KEYS])]
+        .sort((a, b) => a.localeCompare(b));
     }
 
     function populateMinecraftItemOptions() {
