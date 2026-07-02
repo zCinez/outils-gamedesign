@@ -13,6 +13,7 @@ const GUI_CUSTOM_PRESETS_FILE_ROWS = Array.isArray(window.GUI_CUSTOM_PRESETS_FIL
 const ITEM_CUSTOM_PRESET_OVERRIDES_STORAGE_KEY = "neodium-item-custom-preset-overrides";
 const ITEM_CUSTOM_PRESET_HIDDEN_STORAGE_KEY = "neodium-item-custom-preset-hidden";
 const ITEM_CUSTOM_PRESETS_STORAGE_KEY = "neodium-item-custom-presets";
+const ITEM_CUSTOM_PRESET_ENTRY_STORAGE_PREFIX = "neodium-item-custom-preset-entry-";
 const ITEM_CUSTOM_PRESETS_MANIFEST_ROWS = Array.isArray(window.ITEM_CUSTOM_PRESETS_MANIFEST) ? window.ITEM_CUSTOM_PRESETS_MANIFEST : [];
 const ITEM_CUSTOM_CUSTOM_PRESETS_FILE_ROWS = Array.isArray(window.ITEM_CUSTOM_CUSTOM_PRESETS_FILE) ? window.ITEM_CUSTOM_CUSTOM_PRESETS_FILE : [];
 
@@ -309,12 +310,64 @@ function saveStoredItemCustomPresetHiddenIds(hiddenIds) {
   localStorage.setItem(ITEM_CUSTOM_PRESET_HIDDEN_STORAGE_KEY, JSON.stringify(hiddenIds));
 }
 
-function getStoredItemCustomPresets() {
-  return getStoredJson(ITEM_CUSTOM_PRESETS_STORAGE_KEY, []);
-}
-
 function getItemCustomPresetStorageId(preset, index) {
   return preset?.id || `item-custom-preset-${slugifyPresetName(preset?.name || `preset-${index + 1}`)}`;
+}
+
+function getItemCustomPresetEntryStorageKey(presetId) {
+  return `${ITEM_CUSTOM_PRESET_ENTRY_STORAGE_PREFIX}${presetId}`;
+}
+
+function getStoredItemCustomPresetEntryKeys() {
+  const keys = [];
+
+  for (let index = 0; index < localStorage.length; index += 1) {
+    const key = localStorage.key(index);
+    if (key && key.startsWith(ITEM_CUSTOM_PRESET_ENTRY_STORAGE_PREFIX)) {
+      keys.push(key);
+    }
+  }
+
+  return keys.sort((a, b) => a.localeCompare(b));
+}
+
+function migrateLegacyItemCustomPresetsStorage() {
+  try {
+    const parsed = getStoredJson(ITEM_CUSTOM_PRESETS_STORAGE_KEY, []);
+    if (!Array.isArray(parsed) || !parsed.length) {
+      return;
+    }
+
+    parsed.forEach((preset, index) => {
+      if (!preset || typeof preset !== "object") return;
+      const presetId = getItemCustomPresetStorageId(preset, index);
+      localStorage.setItem(getItemCustomPresetEntryStorageKey(presetId), JSON.stringify({ ...preset, id: presetId }));
+    });
+
+    localStorage.removeItem(ITEM_CUSTOM_PRESETS_STORAGE_KEY);
+  } catch (error) {
+    console.warn("[Neodium] Migration legacy presets Item Custom impossible", error);
+  }
+}
+
+function getStoredItemCustomPresets() {
+  migrateLegacyItemCustomPresetsStorage();
+
+  const presets = getStoredItemCustomPresetEntryKeys().map((storageKey) => {
+    try {
+      const raw = localStorage.getItem(storageKey);
+      const parsed = JSON.parse(raw ?? "{}");
+      return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : null;
+    } catch (error) {
+      return null;
+    }
+  }).filter(Boolean);
+
+  if (presets.length) {
+    return presets;
+  }
+
+  return getStoredJson(ITEM_CUSTOM_PRESETS_STORAGE_KEY, []);
 }
 
 function buildItemCustomTypeSummary(fields) {

@@ -42,6 +42,7 @@
     const ITEM_CUSTOM_PRESET_OVERRIDES_STORAGE_KEY = "neodium-item-custom-preset-overrides";
     const ITEM_CUSTOM_PRESET_HIDDEN_STORAGE_KEY = "neodium-item-custom-preset-hidden";
     const ITEM_CUSTOM_PRESETS_STORAGE_KEY = "neodium-item-custom-presets";
+    const ITEM_CUSTOM_PRESET_ENTRY_STORAGE_PREFIX = "neodium-item-custom-preset-entry-";
     const PROJECT_IMAGE_FIELDS = [
       { inputId: "imageGUICommande", previewId: "previewImageGUICommande" },
       { inputId: "guiImage", previewId: "previewImageTemplate" },
@@ -1661,7 +1662,13 @@
 
         if (state?.status === "ready") {
           await cloudSync.forceSync?.();
-          const emailSuffix = state.email ? ` (${state.email})` : "";
+          const syncedState = cloudSync.getState?.() || state;
+          if (syncedState?.status === "error") {
+            setStatus(syncedState.message || "Preset enregistré en local, mais la synchronisation cloud a échoué.");
+            return;
+          }
+
+          const emailSuffix = syncedState.email ? ` (${syncedState.email})` : "";
           setStatus(`Preset enregistré dans Cloud Neodium${emailSuffix}.`);
           return;
         }
@@ -1890,7 +1897,60 @@
       }
     }
 
+    function getItemCustomPresetEntryStorageKey(presetId) {
+      return `${ITEM_CUSTOM_PRESET_ENTRY_STORAGE_PREFIX}${presetId}`;
+    }
+
+    function getStoredItemCustomPresetEntryKeys() {
+      const keys = [];
+
+      for (let index = 0; index < localStorage.length; index += 1) {
+        const key = localStorage.key(index);
+        if (key && key.startsWith(ITEM_CUSTOM_PRESET_ENTRY_STORAGE_PREFIX)) {
+          keys.push(key);
+        }
+      }
+
+      return keys.sort((a, b) => a.localeCompare(b));
+    }
+
+    function migrateLegacyItemCustomPresetsStorage() {
+      try {
+        const raw = localStorage.getItem(ITEM_CUSTOM_PRESETS_STORAGE_KEY);
+        const parsed = JSON.parse(raw || "[]");
+        if (!Array.isArray(parsed) || !parsed.length) {
+          return;
+        }
+
+        parsed.forEach((preset, index) => {
+          if (!preset || typeof preset !== "object") return;
+          const presetId = getItemCustomPresetStorageId(preset, index);
+          localStorage.setItem(getItemCustomPresetEntryStorageKey(presetId), JSON.stringify({ ...preset, id: presetId }));
+        });
+
+        localStorage.removeItem(ITEM_CUSTOM_PRESETS_STORAGE_KEY);
+      } catch (error) {
+        console.warn("[Neodium] Migration legacy presets Item Custom impossible", error);
+      }
+    }
+
     function getCustomItemCustomPresets() {
+      migrateLegacyItemCustomPresetsStorage();
+
+      const presets = getStoredItemCustomPresetEntryKeys().map((storageKey) => {
+        try {
+          const raw = localStorage.getItem(storageKey);
+          const parsed = JSON.parse(raw || "{}");
+          return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : null;
+        } catch (error) {
+          return null;
+        }
+      }).filter(Boolean);
+
+      if (presets.length) {
+        return presets;
+      }
+
       try {
         const raw = localStorage.getItem(ITEM_CUSTOM_PRESETS_STORAGE_KEY);
         const parsed = JSON.parse(raw || "[]");
@@ -1901,7 +1961,29 @@
     }
 
     function saveCustomItemCustomPresets(presets) {
-      localStorage.setItem(ITEM_CUSTOM_PRESETS_STORAGE_KEY, JSON.stringify(presets));
+      const normalizedPresets = Array.isArray(presets) ? presets : [];
+      const nextIds = new Set();
+
+      normalizedPresets.forEach((preset, index) => {
+        if (!preset || typeof preset !== "object") return;
+        const presetId = getItemCustomPresetStorageId(preset, index);
+        nextIds.add(presetId);
+        localStorage.setItem(
+          getItemCustomPresetEntryStorageKey(presetId),
+          JSON.stringify({ ...preset, id: presetId })
+        );
+      });
+
+      getStoredItemCustomPresetEntryKeys().forEach((storageKey) => {
+        const presetId = storageKey.slice(ITEM_CUSTOM_PRESET_ENTRY_STORAGE_PREFIX.length);
+        if (!nextIds.has(presetId)) {
+          localStorage.removeItem(storageKey);
+        }
+      });
+
+      if (localStorage.getItem(ITEM_CUSTOM_PRESETS_STORAGE_KEY) != null) {
+        localStorage.removeItem(ITEM_CUSTOM_PRESETS_STORAGE_KEY);
+      }
     }
 
     function getItemCustomPresetStorageId(preset, index) {
@@ -2191,7 +2273,13 @@
 
         if (state?.status === "ready") {
           await cloudSync.forceSync?.();
-          const emailSuffix = state.email ? ` (${state.email})` : "";
+          const syncedState = cloudSync.getState?.() || state;
+          if (syncedState?.status === "error") {
+            setStatus(syncedState.message || "Preset enregistré en local, mais la synchronisation cloud a échoué.");
+            return;
+          }
+
+          const emailSuffix = syncedState.email ? ` (${syncedState.email})` : "";
           setStatus(`Preset enregistré dans Cloud Neodium${emailSuffix}.`);
           return;
         }
@@ -2209,7 +2297,8 @@
         setStatus("Preset enregistré dans la bibliothèque locale. Le cloud n'est pas encore disponible.");
       } catch (error) {
         console.error("[Neodium] Sauvegarde preset Item Custom impossible", error);
-        setStatus("Preset enregistré dans la bibliothèque locale, mais la synchronisation cloud a échoué.");
+        const reason = error instanceof Error && error.message ? ` ${error.message}` : "";
+        setStatus(`Preset enregistré dans la bibliothèque locale, mais la synchronisation cloud a échoué.${reason}`);
       }
     }
 
