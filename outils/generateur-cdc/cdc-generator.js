@@ -53,6 +53,7 @@
       ? [...window.BUILTIN_MINECRAFT_ITEM_IDS].sort((a, b) => a.localeCompare(b))
       : [];
     const CUSTOM_MINECRAFT_ITEM_KEYS = [
+      "gemme_ore_block",
       "coeur_sombre",
       "feve",
       "frag_event",
@@ -4621,11 +4622,23 @@
       return `${LOCAL_MINECRAFT_ITEM_TEXTURES_BASE_PATH}/${texturePath}.png`;
     }
 
+    function isLocalOnlyMinecraftItem(itemKey) {
+      const normalizedItemKey = normalizeMinecraftItemKey(itemKey);
+      if (!normalizedItemKey) return false;
+
+      if (CUSTOM_MINECRAFT_ITEM_KEYS.includes(normalizedItemKey)) {
+        return true;
+      }
+
+      const texturePath = getMinecraftItemTexturePath(normalizedItemKey);
+      return texturePath.includes("/neodium/") || normalizedItemKey === "gemme_ore_block";
+    }
+
     function resolveRenderedMinecraftItemIconUrl(itemKey) {
       if (parseHeadDatabaseHead(itemKey)) return "";
 
       const normalizedItemKey = normalizeMinecraftItemKey(itemKey);
-      if (!normalizedItemKey) return "";
+      if (!normalizedItemKey || isLocalOnlyMinecraftItem(normalizedItemKey)) return "";
 
       return `https://api.minecraftitems.xyz/api/item/${encodeURIComponent(normalizedItemKey)}/size=4`;
     }
@@ -4635,6 +4648,10 @@
 
       const normalizedItemKey = normalizeMinecraftItemKey(itemKey);
       if (!normalizedItemKey) return "";
+
+      if (isLocalOnlyMinecraftItem(normalizedItemKey)) {
+        return resolveMinecraftItemTextureUrl(normalizedItemKey) || getMinecraftItemBlockFaces(normalizedItemKey)?.front || "";
+      }
 
       // Some blocks have unreliable wiki invicon names, so we force the
       // rendered inventory icon to keep a consistent Minecraft-like display.
