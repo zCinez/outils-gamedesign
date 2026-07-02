@@ -803,6 +803,65 @@
 </div>`;
     }
 
+    async function buildCompactImageDataUrl(sourceDataUrl, {
+      maxWidth = 128,
+      maxHeight = 128,
+      quality = 0.86
+    } = {}) {
+      const rawSource = String(sourceDataUrl || "").trim();
+      if (!rawSource.startsWith("data:image/")) {
+        return rawSource;
+      }
+
+      return await new Promise(resolve => {
+        const image = new Image();
+
+        image.onload = () => {
+          const naturalWidth = Math.max(1, image.naturalWidth || image.width || 1);
+          const naturalHeight = Math.max(1, image.naturalHeight || image.height || 1);
+          const scale = Math.min(1, maxWidth / naturalWidth, maxHeight / naturalHeight);
+          const width = Math.max(1, Math.round(naturalWidth * scale));
+          const height = Math.max(1, Math.round(naturalHeight * scale));
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          const context = canvas.getContext("2d");
+
+          if (!context) {
+            resolve(rawSource);
+            return;
+          }
+
+          context.imageSmoothingEnabled = false;
+          context.clearRect(0, 0, width, height);
+          context.drawImage(image, 0, 0, width, height);
+
+          let compacted = "";
+          try {
+            compacted = canvas.toDataURL("image/webp", quality);
+          } catch (error) {
+            compacted = "";
+          }
+
+          if (!compacted || compacted === "data:,") {
+            try {
+              compacted = canvas.toDataURL("image/png");
+            } catch (error) {
+              compacted = "";
+            }
+          }
+
+          resolve(compacted && compacted.length < rawSource.length ? compacted : rawSource);
+        };
+
+        image.onerror = () => {
+          resolve(rawSource);
+        };
+
+        image.src = rawSource;
+      });
+    }
+
     function parseChancePercent(value) {
       const normalized = String(value).replace(",", ".").replace("%", "").trim();
       const parsed = Number.parseFloat(normalized);
@@ -1805,6 +1864,20 @@
       return Boolean(select && select.value !== "");
     }
 
+    function getSelectedGuiPreset(selectId) {
+      const select = document.getElementById(selectId);
+      if (!select || select.value === "") {
+        return null;
+      }
+
+      const presetIndex = Number.parseInt(select.value, 10);
+      if (!Number.isFinite(presetIndex)) {
+        return null;
+      }
+
+      return getAvailableGuiPresets()[presetIndex] || null;
+    }
+
     function buildAutoGuiPresetForSavedProject(state, projectName) {
       const autoName = getAutoGuiPresetName(projectName);
 
@@ -1829,6 +1902,22 @@
       return null;
     }
 
+    function buildSelectedGuiPresetForSavedProject(state, selectedPreset) {
+      if (!selectedPreset || !state || (state.template !== "gui" && state.template !== "commande")) {
+        return null;
+      }
+
+      const preset = state.template === "commande"
+        ? collectGuiCommandePresetState()
+        : collectGuiPresetState();
+
+      return {
+        ...preset,
+        id: selectedPreset.id || slugifyGuiPresetName(selectedPreset.name || preset.name || ""),
+        name: selectedPreset.name || preset.name
+      };
+    }
+
     async function ensureGuiPresetForSavedProject(state, projectName) {
       if (!state || (state.template !== "gui" && state.template !== "commande")) {
         return false;
@@ -1836,8 +1925,24 @@
 
       const isCommandeGui = state.template === "commande";
       const selectId = isCommandeGui ? "guiCommandePresetSelect" : "guiPresetSelect";
-      if (hasSelectedGuiPreset(selectId)) {
-        return false;
+      const selectedPreset = getSelectedGuiPreset(selectId);
+      const presetNameField = document.getElementById(isCommandeGui ? "guiCommandePresetName" : "guiPresetName");
+      const setStatus = isCommandeGui ? setGuiCommandePresetStatus : setGuiPresetStatus;
+
+      if (selectedPreset) {
+        const presetToUpdate = buildSelectedGuiPresetForSavedProject(state, selectedPreset);
+        if (!presetToUpdate) {
+          return false;
+        }
+
+        if (presetNameField) {
+          presetNameField.value = presetToUpdate.name || "";
+        }
+
+        await saveGuiPresetToLibrary(presetToUpdate, message => {
+          setStatus(`Preset GUI sélectionné : ${message}`);
+        });
+        return true;
       }
 
       const autoPreset = buildAutoGuiPresetForSavedProject(state, projectName);
@@ -1845,12 +1950,10 @@
         return false;
       }
 
-      const presetNameField = document.getElementById(isCommandeGui ? "guiCommandePresetName" : "guiPresetName");
       if (presetNameField) {
         presetNameField.value = autoPreset.name;
       }
 
-      const setStatus = isCommandeGui ? setGuiCommandePresetStatus : setGuiPresetStatus;
       await saveGuiPresetToLibrary(autoPreset, message => {
         setStatus(`Preset GUI auto : ${message}`);
       });
@@ -2104,6 +2207,33 @@
       };
     }
 
+    async function normalizeItemCustomPresetForStorage(preset) {
+      if (!preset || typeof preset !== "object") {
+        return preset;
+      }
+
+      const currentDataUrl = String(preset.images?.textureItemImage?.dataUrl || "").trim();
+      if (!currentDataUrl) {
+        return preset;
+      }
+
+      const compactedDataUrl = await buildCompactImageDataUrl(currentDataUrl);
+      if (!compactedDataUrl || compactedDataUrl === currentDataUrl) {
+        return preset;
+      }
+
+      return {
+        ...preset,
+        images: {
+          ...(preset.images || {}),
+          textureItemImage: {
+            ...(preset.images?.textureItemImage || {}),
+            dataUrl: compactedDataUrl
+          }
+        }
+      };
+    }
+
     function upsertCustomItemCustomPreset(preset) {
       if (!preset || typeof preset !== "object") return;
       const presetId = preset.id || getItemCustomPresetStorageId(preset);
@@ -2260,7 +2390,19 @@
 
     async function saveItemCustomPresetToLibrary(preset, setStatus) {
       try {
-        registerItemCustomPresetInApp(preset);
+        const normalizedPreset = await normalizeItemCustomPresetForStorage(preset);
+        registerItemCustomPresetInApp(normalizedPreset);
+
+        if (document.getElementById("template")?.value === "itemC") {
+          const normalizedTexture = normalizedPreset?.images?.textureItemImage;
+          if (normalizedTexture?.dataUrl) {
+            setProjectImageState("textureItemImage", "previewTextureItemTemplate", {
+              fileName: normalizedTexture.fileName || getSelectedFileName("textureItemImage", ""),
+              dataUrl: normalizedTexture.dataUrl
+            });
+            updateItemCustomCraftVisualization();
+          }
+        }
         const cloudSync = window.NeodiumCloudSync;
 
         if (!cloudSync || typeof cloudSync.getState !== "function") {
