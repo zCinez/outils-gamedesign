@@ -27,6 +27,7 @@
     const PROJECT_HISTORY_STORAGE_KEY = "neodium-cdc-project-history";
     const PROJECTS_STORAGE_KEY = "neodium-cdc-projects";
     const ACTIVE_PROJECT_STORAGE_KEY = "neodium-cdc-active-project";
+    const RECOVERY_DRAFT_STORAGE_KEY = "neodium-cdc-recovery-draft";
     const REQUESTED_GUI_PRESET_SESSION_KEY = "neodium-cdc-requested-gui-preset";
     const REQUESTED_ITEM_CUSTOM_PRESET_SESSION_KEY = "neodium-cdc-requested-item-custom-preset";
     const LOCAL_MINECRAFT_SOUNDS_BASE_PATH = "./minecraft-sounds";
@@ -264,9 +265,13 @@
     let scheduledCDCGenerationId = null;
     const LOCAL_AUTOSAVE_IDLE_DELAY = 5000;
     const LOCAL_AUTOSAVE_MAX_DELAY = 30000;
+    const RECOVERY_DRAFT_IDLE_DELAY = 800;
+    const RECOVERY_DRAFT_MAX_AGE = 1000 * 60 * 60 * 24 * 7;
     let autosaveTimeoutId = null;
     let autosaveStartedAt = 0;
+    let recoveryDraftTimeoutId = null;
     let lastAutosavedSnapshot = "";
+    let lastRecoveryDraftSnapshot = "";
     let defaultProjectSnapshot = "";
     const TEMPLATE_CONFIG = {
       commande: {
@@ -1339,6 +1344,135 @@
         autosaveTimeoutId = null;
       }
       autosaveStartedAt = 0;
+    }
+
+    function cancelRecoveryDraftSave() {
+      if (!recoveryDraftTimeoutId) return;
+      clearTimeout(recoveryDraftTimeoutId);
+      recoveryDraftTimeoutId = null;
+    }
+
+    function clearRecoveryDraft(snapshot = "") {
+      cancelRecoveryDraftSave();
+      lastRecoveryDraftSnapshot = snapshot;
+
+      try {
+        localStorage.removeItem(RECOVERY_DRAFT_STORAGE_KEY);
+      } catch (error) {
+        // Ignore storage access issues to keep the editor usable.
+      }
+    }
+
+    function buildRecoveryDraftPayload(state, { includeImages = true } = {}) {
+      const nextState = includeImages
+        ? state
+        : {
+            ...state,
+            images: {}
+          };
+
+      return {
+        version: 1,
+        savedAt: new Date().toISOString(),
+        projectId: nextState?.id || "",
+        state: nextState,
+        snapshot: buildProjectSnapshot(nextState)
+      };
+    }
+
+    function readRecoveryDraft() {
+      try {
+        const raw = localStorage.getItem(RECOVERY_DRAFT_STORAGE_KEY);
+        if (!raw) return null;
+
+        const parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed !== "object" || !parsed.state || typeof parsed.state !== "object") {
+          localStorage.removeItem(RECOVERY_DRAFT_STORAGE_KEY);
+          return null;
+        }
+
+        const savedAtTimestamp = Date.parse(String(parsed.savedAt || ""));
+        if (savedAtTimestamp && Date.now() - savedAtTimestamp > RECOVERY_DRAFT_MAX_AGE) {
+          localStorage.removeItem(RECOVERY_DRAFT_STORAGE_KEY);
+          return null;
+        }
+
+        return parsed;
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function persistRecoveryDraft({ force = false } = {}) {
+      const state = collectProjectState();
+      if (!hasMeaningfulProjectContent(state)) {
+        clearRecoveryDraft();
+        return false;
+      }
+
+      const snapshot = buildProjectSnapshot(state);
+      if (!force && snapshot === lastRecoveryDraftSnapshot) {
+        return false;
+      }
+
+      const payload = buildRecoveryDraftPayload(state);
+
+      try {
+        localStorage.setItem(RECOVERY_DRAFT_STORAGE_KEY, JSON.stringify(payload));
+        lastRecoveryDraftSnapshot = payload.snapshot;
+        return true;
+      } catch (error) {
+        try {
+          const lighterPayload = buildRecoveryDraftPayload(state, { includeImages: false });
+          localStorage.setItem(RECOVERY_DRAFT_STORAGE_KEY, JSON.stringify(lighterPayload));
+          lastRecoveryDraftSnapshot = lighterPayload.snapshot;
+          return true;
+        } catch (fallbackError) {
+          return false;
+        }
+      }
+    }
+
+    function scheduleRecoveryDraftSave() {
+      cancelRecoveryDraftSave();
+      recoveryDraftTimeoutId = window.setTimeout(() => {
+        recoveryDraftTimeoutId = null;
+        persistRecoveryDraft();
+      }, RECOVERY_DRAFT_IDLE_DELAY);
+    }
+
+    function restoreRecoveryDraftIfNeeded() {
+      const draft = readRecoveryDraft();
+      if (!draft?.state) {
+        return false;
+      }
+
+      const draftState = draft.state;
+      const draftProjectId = String(draftState.id || "").trim();
+      const currentState = collectProjectState();
+      const currentSnapshot = buildProjectSnapshot(currentState);
+      const loadedProjectId = String(currentProjectId || "").trim();
+      const hasRequestedPresetContext = Boolean(requestedGuiPresetId || requestedItemCustomPresetId);
+
+      if (loadedProjectId) {
+        if (!draftProjectId || loadedProjectId !== draftProjectId) {
+          return false;
+        }
+      } else if (hasMeaningfulProjectContent(currentState) && currentSnapshot !== defaultProjectSnapshot) {
+        return false;
+      } else if (hasRequestedPresetContext) {
+        return false;
+      }
+
+      const draftSnapshot = String(draft.snapshot || buildProjectSnapshot(draftState));
+      if (currentSnapshot === draftSnapshot) {
+        lastRecoveryDraftSnapshot = draftSnapshot;
+        return false;
+      }
+
+      loadProjectState(draftState);
+      lastRecoveryDraftSnapshot = draftSnapshot;
+      return true;
     }
 
     function populateMinecraftSoundSelect(soundKeys) {
@@ -2985,6 +3119,7 @@
       }
 
       if (shouldAutosave && shouldAutosaveGeneratorField(element)) {
+        scheduleRecoveryDraftSave();
         scheduleLocalAutosave();
       }
 
@@ -5924,6 +6059,7 @@
       const nextHistory = [entry, ...history.filter(project => project.id !== projectId)].slice(0, 50);
       saveLocalProjectHistory(nextHistory);
       lastAutosavedSnapshot = buildProjectSnapshot(entry);
+      clearRecoveryDraft(lastAutosavedSnapshot);
       cancelLocalAutosave();
       syncWorkspaceProjectInUrl();
 
@@ -6336,6 +6472,7 @@
 
     function createNewLocalProject() {
       resetFormState(true);
+      clearRecoveryDraft(defaultProjectSnapshot);
       const projectNameInput = document.getElementById("projectNameInput");
       if (projectNameInput) {
         projectNameInput.focus();
@@ -6373,6 +6510,7 @@
        ========================================================= */
     function viderFormulaire() {
       resetFormState(true);
+      clearRecoveryDraft(defaultProjectSnapshot);
       genererCDC();
     }
 
@@ -6398,11 +6536,13 @@
 
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "hidden") {
+        persistRecoveryDraft({ force: true });
         void performLocalAutosave();
       }
     });
 
     window.addEventListener("pagehide", () => {
+      persistRecoveryDraft({ force: true });
       void performLocalAutosave();
     });
 
@@ -6445,6 +6585,7 @@
         loadRequestedItemCustomPresetIfAny();
       }
     }
+    restoreRecoveryDraftIfNeeded();
 
     void window.hydrateCdcProjectsFromFiles?.().then(result => {
       if (result?.ok && result.hydrated) {
@@ -6460,6 +6601,7 @@
             loadRequestedItemCustomPresetIfAny();
           }
         }
+        restoreRecoveryDraftIfNeeded();
       }
     });
   
