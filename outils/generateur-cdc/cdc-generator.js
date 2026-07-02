@@ -1230,6 +1230,7 @@
         template: state.template,
         projectName: state.projectName,
         theme: state.theme || "light",
+        selection: state.selection || {},
         fields: state.fields,
         dynamic: state.dynamic,
         images: state.images || {}
@@ -1681,16 +1682,30 @@
     }
 
     function selectGuiPresetInLibraries(presetId) {
-      const presets = getAvailableGuiPresets();
-      const savedIndex = presets.findIndex(entry => (entry.id || "") === presetId);
-      if (savedIndex < 0) return;
-
       ["guiPresetSelect", "guiCommandePresetSelect"].forEach(selectId => {
-        const select = document.getElementById(selectId);
-        if (select) {
-          select.value = String(savedIndex);
-        }
+        selectGuiPresetInLibrary(selectId, presetId);
       });
+    }
+
+    function selectGuiPresetInLibrary(selectId, presetId) {
+      const select = document.getElementById(selectId);
+      if (!select) return false;
+
+      const normalizedPresetId = String(presetId || "").trim();
+      if (!normalizedPresetId) {
+        select.value = "";
+        return false;
+      }
+
+      const presets = getAvailableGuiPresets();
+      const savedIndex = presets.findIndex(entry => String(entry.id || "").trim() === normalizedPresetId);
+      if (savedIndex < 0) {
+        select.value = "";
+        return false;
+      }
+
+      select.value = String(savedIndex);
+      return true;
     }
 
     function registerGuiPresetInApp(preset) {
@@ -1885,6 +1900,10 @@
       }
 
       return getAvailableGuiPresets()[presetIndex] || null;
+    }
+
+    function getSelectedGuiPresetId(selectId) {
+      return String(getSelectedGuiPreset(selectId)?.id || "").trim();
     }
 
     function buildAutoGuiPresetForSavedProject(state, projectName) {
@@ -2366,14 +2385,24 @@
     }
 
     function selectItemCustomPresetInLibrary(presetId) {
-      const presets = getAvailableItemCustomPresets();
-      const savedIndex = presets.findIndex(entry => (entry.id || "") === presetId);
-      if (savedIndex < 0) return;
-
       const select = document.getElementById("itemCustomPresetSelect");
-      if (select) {
-        select.value = String(savedIndex);
+      if (!select) return false;
+
+      const normalizedPresetId = String(presetId || "").trim();
+      if (!normalizedPresetId) {
+        select.value = "";
+        return false;
       }
+
+      const presets = getAvailableItemCustomPresets();
+      const savedIndex = presets.findIndex(entry => String(entry.id || "").trim() === normalizedPresetId);
+      if (savedIndex < 0) {
+        select.value = "";
+        return false;
+      }
+
+      select.value = String(savedIndex);
+      return true;
     }
 
     function registerItemCustomPresetInApp(preset) {
@@ -2468,6 +2497,24 @@
       }
 
       applyItemCustomPreset(preset);
+    }
+
+    function getSelectedItemCustomPreset() {
+      const select = document.getElementById("itemCustomPresetSelect");
+      if (!select || select.value === "") {
+        return null;
+      }
+
+      const presetIndex = Number.parseInt(select.value, 10);
+      if (!Number.isFinite(presetIndex)) {
+        return null;
+      }
+
+      return getAvailableItemCustomPresets()[presetIndex] || null;
+    }
+
+    function getSelectedItemCustomPresetId() {
+      return String(getSelectedItemCustomPreset()?.id || "").trim();
     }
 
     function exportCurrentItemCustomAsPreset() {
@@ -5788,6 +5835,14 @@
         fields[field.id] = field.type === "checkbox" ? field.checked : field.value;
       });
 
+      const selection = {
+        workspaceProjectId: activeWorkspaceProjectId || "",
+        workspaceProjectName: activeWorkspaceProjectName || "",
+        guiPresetId: getSelectedGuiPresetId("guiPresetSelect"),
+        guiCommandePresetId: getSelectedGuiPresetId("guiCommandePresetSelect"),
+        itemCustomPresetId: getSelectedItemCustomPresetId()
+      };
+
       return {
         version: 1,
         id: currentProjectId,
@@ -5796,6 +5851,7 @@
         projectName: getProjectNameInputValue() || deriveProjectName(document.getElementById("template")?.value || "commande"),
         template: document.getElementById("template")?.value || "commande",
         theme: document.body.dataset.theme || "light",
+        selection,
         fields,
         images: collectProjectImages(),
         dynamic: {
@@ -6032,6 +6088,27 @@
       }
       switchTemplate();
 
+      const savedSelection = state.selection && typeof state.selection === "object"
+        ? state.selection
+        : {};
+      const savedWorkspaceProjectId = String(savedSelection.workspaceProjectId || state.projectId || "").trim();
+      const savedWorkspaceProject = savedWorkspaceProjectId
+        ? getWorkspaceProjectById(savedWorkspaceProjectId)
+        : null;
+
+      activeWorkspaceProjectId = savedWorkspaceProject?.id || savedWorkspaceProjectId;
+      activeWorkspaceProjectName = savedWorkspaceProject?.name
+        || (activeWorkspaceProjectId ? String(savedSelection.workspaceProjectName || state.projectLabel || "").trim() : "");
+
+      if (activeWorkspaceProjectId) {
+        localStorage.setItem(ACTIVE_PROJECT_STORAGE_KEY, activeWorkspaceProjectId);
+      } else {
+        localStorage.removeItem(ACTIVE_PROJECT_STORAGE_KEY);
+      }
+
+      populateWorkspaceProjectSelect();
+      updateWorkspaceProjectUi();
+
       const dynamic = state.dynamic || {};
       (dynamic.messages || []).forEach(message => ajouterMessage(message.titre || "", message.contenu || ""));
       (dynamic.guiCommandeItems || []).forEach(item => ajouterItemGUICommande(item));
@@ -6073,9 +6150,52 @@
         applyTheme(state.theme);
       }
 
+      populateGuiPresetLibrary();
+      populateGuiCommandePresetLibrary();
+      populateItemCustomPresetLibrary();
+
+      const savedGuiPresetId = String(savedSelection.guiPresetId || "").trim();
+      if (savedGuiPresetId) {
+        const savedGuiPreset = getAvailableGuiPresets().find(entry => String(entry.id || "").trim() === savedGuiPresetId);
+        selectGuiPresetInLibrary("guiPresetSelect", savedGuiPresetId);
+        const guiPresetNameField = document.getElementById("guiPresetName");
+        if (guiPresetNameField) {
+          guiPresetNameField.value = savedGuiPreset?.name || "";
+        }
+      }
+
+      const savedGuiCommandePresetId = String(savedSelection.guiCommandePresetId || "").trim();
+      if (savedGuiCommandePresetId) {
+        const savedGuiCommandePreset = getAvailableGuiPresets().find(entry => String(entry.id || "").trim() === savedGuiCommandePresetId);
+        selectGuiPresetInLibrary("guiCommandePresetSelect", savedGuiCommandePresetId);
+        const guiCommandePresetNameField = document.getElementById("guiCommandePresetName");
+        if (guiCommandePresetNameField) {
+          guiCommandePresetNameField.value = savedGuiCommandePreset?.name || "";
+        }
+      }
+
+      const savedItemCustomPresetId = String(savedSelection.itemCustomPresetId || "").trim();
+      if (savedItemCustomPresetId) {
+        const savedItemCustomPreset = getAvailableItemCustomPresets().find(entry => String(entry.id || "").trim() === savedItemCustomPresetId);
+        selectItemCustomPresetInLibrary(savedItemCustomPresetId);
+        const itemCustomPresetNameField = document.getElementById("itemCustomPresetName");
+        if (itemCustomPresetNameField) {
+          itemCustomPresetNameField.value = savedItemCustomPreset?.name || "";
+        }
+      }
+
       lastAutosavedSnapshot = buildProjectSnapshot({
+        projectId: activeWorkspaceProjectId,
         template: state.template || "commande",
         projectName: state.projectName || "",
+        theme: state.theme || "light",
+        selection: {
+          workspaceProjectId: activeWorkspaceProjectId,
+          workspaceProjectName: activeWorkspaceProjectName,
+          guiPresetId: savedGuiPresetId,
+          guiCommandePresetId: savedGuiCommandePresetId,
+          itemCustomPresetId: savedItemCustomPresetId
+        },
         fields: state.fields || {},
         dynamic: state.dynamic || {},
         images: state.images || {}
