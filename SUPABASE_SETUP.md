@@ -26,6 +26,7 @@ on conflict (email) do nothing;
 
 ## 3. Renseigner la config front
 
+
 Edite [assets/supabase-config.js](/C:/Users/samgi/Desktop/neodium/Wiki/outils-gamedesign/assets/supabase-config.js:1) :
 
 - `url`
