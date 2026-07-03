@@ -279,7 +279,7 @@ function buildItemCustomCraftSlotRenderData(item, label, slotIndex) {
   const textureUrl = resolveMinecraftItemTextureUrl(item.item);
   const renderedTextureUrl = resolveRenderedMinecraftItemIconUrl(item.item);
   const inviconUrl = resolvePreferredBlockInventoryUrl(item.item);
-  const localFallbackTexture = renderedTextureUrl || inviconUrl || textureUrl || (blockFaces?.front || "");
+  const localFallbackTexture = textureUrl || (blockFaces?.front || "") || inviconUrl || renderedTextureUrl;
   const isBlockLike = !!blockFaces && (
     (blockFaces.front && blockFaces.front.includes("/block/"))
     || (blockFaces.side && blockFaces.side.includes("/block/"))

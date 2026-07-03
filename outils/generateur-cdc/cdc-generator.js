@@ -54,6 +54,12 @@
       ? [...window.BUILTIN_MINECRAFT_ITEM_IDS].sort((a, b) => a.localeCompare(b))
       : [];
     const CUSTOM_MINECRAFT_ITEM_KEYS = [
+      "icon_back_orange",
+      "cancel",
+      "icon_right_blue",
+      "icon_search",
+      "icon_left_blue",
+      "icon_next_orange",
       "gemme_ore_block",
       "coeur_sombre",
       "feve",
@@ -4091,7 +4097,7 @@
         const textureUrl = item ? resolveMinecraftItemTextureUrl(item.item) : "";
         const renderedTextureUrl = item ? resolveRenderedMinecraftItemIconUrl(item.item) : "";
         const inviconUrl = item ? resolvePreferredBlockInventoryUrl(item.item) : "";
-        const localFallbackTexture = renderedTextureUrl || inviconUrl || textureUrl || (blockFaces?.front || "");
+        const localFallbackTexture = textureUrl || (blockFaces?.front || "") || inviconUrl || renderedTextureUrl;
         const isBlockLike = !!blockFaces && (
           (blockFaces.front && blockFaces.front.includes("/block/")) ||
           (blockFaces.side && blockFaces.side.includes("/block/")) ||
