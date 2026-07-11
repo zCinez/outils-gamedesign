@@ -6,5 +6,7 @@ window.NEODIUM_SUPABASE_CONFIG = Object.freeze({
   workspaceId: "global",
   syncKeyPrefixes: ["neodium_", "neodium-", "statgm-"],
   syncKeys: [],
+  localOnlyKeys: ["neodium-cdc-recovery-draft", "neodium-cdc-theme", "statgm-theme"],
+  cleanupKeys: ["neodium-cdc-recovery-draft", "neodium-cdc-theme", "statgm-theme"],
   emailRedirectTo: window.location.origin + window.location.pathname
 });

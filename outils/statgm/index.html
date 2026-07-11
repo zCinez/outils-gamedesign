@@ -1162,7 +1162,6 @@
 
   <script>
     const root = document.documentElement;
-    const themeToggle = document.querySelector("[data-theme-toggle]");
     const search = document.querySelector("[data-search]");
     const sort = document.querySelector("[data-sort]");
     const reset = document.querySelector("[data-reset]");
@@ -1170,17 +1169,13 @@
     const count = document.querySelector("[data-count]");
     const empty = document.querySelector("[data-empty]");
     const presets = [...document.querySelectorAll(".preset")];
-    const setTheme = (theme) => {
-      const nextTheme = theme === "light" ? "light" : "dark";
-      root.dataset.theme = nextTheme;
-      if (themeToggle) {
-        themeToggle.setAttribute("aria-pressed", nextTheme === "light");
-        themeToggle.setAttribute("aria-label", nextTheme === "light" ? "Passer en mode sombre" : "Passer en mode clair");
-      }
-      localStorage.setItem("statgm-theme", nextTheme);
+    const applyTheme = () => {
+      root.dataset.theme = "dark";
+      document.documentElement.style.colorScheme = "dark";
     };
 
-    setTheme(localStorage.getItem("statgm-theme"));
+    localStorage.removeItem("statgm-theme");
+    applyTheme();
 
     const updatePresets = () => {
       const query = search.value.trim().toLowerCase();
@@ -1201,12 +1196,6 @@
       count.textContent = visible;
       empty.classList.toggle("is-visible", visible === 0);
     };
-
-    if (themeToggle) {
-      themeToggle.addEventListener("click", () => {
-        setTheme(root.dataset.theme === "light" ? "dark" : "light");
-      });
-    }
 
     search.addEventListener("input", updatePresets);
     sort.addEventListener("change", updatePresets);

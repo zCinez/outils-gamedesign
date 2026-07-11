@@ -3,6 +3,8 @@
   const mode = config.mode || "shared_team_auth";
   const syncKeyPrefixes = Array.isArray(config.syncKeyPrefixes) ? config.syncKeyPrefixes : [];
   const syncKeys = new Set(Array.isArray(config.syncKeys) ? config.syncKeys : []);
+  const localOnlyKeys = new Set(Array.isArray(config.localOnlyKeys) ? config.localOnlyKeys : []);
+  const cleanupKeys = new Set(Array.isArray(config.cleanupKeys) ? config.cleanupKeys : []);
   const hasConfig = Boolean(config.url && config.anonKey);
   const storageTable = config.storageTable || "neodium_shared_storage";
   const workspaceId = config.workspaceId || "global";
@@ -70,6 +72,7 @@
   let syncLock = Promise.resolve();
   let currentUserId = "";
   let currentEmail = "";
+  let remoteCleanupComplete = false;
   let widget = null;
 
   const state = {
@@ -101,6 +104,7 @@
     if (key.startsWith("sb-") || key.startsWith("supabase.") || key.startsWith("neodium-cloud-")) {
       return false;
     }
+    if (localOnlyKeys.has(key)) return false;
 
     if (syncKeys.has(key)) return true;
     return syncKeyPrefixes.some((prefix) => key.startsWith(prefix));
@@ -599,10 +603,27 @@
     return message.includes("row-level security") || message.includes("permission denied");
   }
 
+  async function cleanupRemoteKeys() {
+    if (!supabaseClient || !currentUserId || remoteCleanupComplete || cleanupKeys.size === 0) {
+      return;
+    }
+
+    const { error } = await supabaseClient
+      .from(storageTable)
+      .delete()
+      .eq("workspace_id", workspaceId)
+      .in("storage_key", [...cleanupKeys]);
+
+    if (!error) {
+      remoteCleanupComplete = true;
+    }
+  }
+
   async function applyRemoteSnapshot(session) {
     if (!session?.user?.id) {
       currentUserId = "";
       currentEmail = "";
+      remoteCleanupComplete = false;
       initialSyncComplete = false;
       setReloadMarker("");
       updateState({
@@ -618,6 +639,9 @@
       return;
     }
 
+    if (currentUserId !== session.user.id) {
+      remoteCleanupComplete = false;
+    }
     currentUserId = session.user.id;
     currentEmail = session.user.email || "";
     updateState({
@@ -628,6 +652,8 @@
       email: currentEmail,
       message: "Chargement du cloud partage..."
     });
+
+    await cleanupRemoteKeys();
 
     const { data, error } = await supabaseClient
       .from(storageTable)
@@ -753,6 +779,7 @@
 
     currentUserId = "";
     currentEmail = "";
+    remoteCleanupComplete = false;
     initialSyncComplete = false;
     setReloadMarker("");
     updateState({

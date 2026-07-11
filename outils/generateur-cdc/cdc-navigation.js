@@ -1,6 +1,5 @@
 (function () {
   const TRANSITION_DURATION_MS = 180;
-  const THEME_STORAGE_KEY = "neodium-cdc-theme";
   const NAV_TAB_ROLES = ["home", "project", "editor", "presets", "settings"];
   function getCurrentPageMeta() {
     const currentPath = window.location.pathname.split("/").pop().toLowerCase();
@@ -73,26 +72,6 @@
         tab.removeAttribute("aria-current");
       }
     });
-  }
-
-  function fallbackToggleTheme() {
-    const nextTheme = document.body.dataset.theme === "dark" ? "light" : "dark";
-    document.body.dataset.theme = nextTheme;
-    document.documentElement.style.colorScheme = nextTheme;
-    localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
-  }
-
-  function toggleGlobalTheme() {
-    const toggleFunctionNames = ["toggleHomeTheme", "toggleLibraryTheme", "toggleTheme"];
-
-    for (const functionName of toggleFunctionNames) {
-      if (typeof window[functionName] === "function") {
-        window[functionName]();
-        return;
-      }
-    }
-
-    fallbackToggleTheme();
   }
 
   function setupPersistentNavigation() {

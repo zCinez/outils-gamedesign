@@ -1,4 +1,3 @@
-const PRESETS_THEME_STORAGE_KEY = "neodium-cdc-theme";
 const PRESETS_PROJECTS_STORAGE_KEY = "neodium-cdc-projects";
 const PRESETS_ACTIVE_PROJECT_STORAGE_KEY = "neodium-cdc-active-project";
 const REQUESTED_GUI_PRESET_SESSION_KEY = "neodium-cdc-requested-gui-preset";
@@ -25,7 +24,8 @@ function applyPresetsTheme(theme) {
 }
 
 function initPresetsTheme() {
-  applyPresetsTheme(localStorage.getItem(PRESETS_THEME_STORAGE_KEY) || "light");
+  localStorage.removeItem("neodium-cdc-theme");
+  applyPresetsTheme("dark");
 }
 
 function escapePresetsHtml(value) {

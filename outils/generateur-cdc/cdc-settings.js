@@ -1,4 +1,3 @@
-const SETTINGS_THEME_STORAGE_KEY = "neodium-cdc-theme";
 const SETTINGS_ACTIVE_PROJECT_STORAGE_KEY = "neodium-cdc-active-project";
 const SETTINGS_TEMPLATE_LABEL_OVERRIDES_STORAGE_KEY = "neodium-template-label-overrides";
 const SETTINGS_TEMPLATE_META_STORAGE_KEY = "neodium-template-meta-overrides";
@@ -683,13 +682,8 @@ function applySettingsTheme(theme) {
 }
 
 function initSettingsTheme() {
-  applySettingsTheme(localStorage.getItem(SETTINGS_THEME_STORAGE_KEY) || "light");
-}
-
-function toggleTheme() {
-  const nextTheme = document.body.dataset.theme === "dark" ? "light" : "dark";
-  applySettingsTheme(nextTheme);
-  localStorage.setItem(SETTINGS_THEME_STORAGE_KEY, nextTheme);
+  localStorage.removeItem("neodium-cdc-theme");
+  applySettingsTheme("dark");
 }
 
 function updateSettingsTopTabs() {
@@ -952,6 +946,5 @@ window.escapeSettingsHtml = escapeSettingsHtml;
 window.buildSettingsTemplateDetail = buildSettingsTemplateDetail;
 window.initSettingsTheme = initSettingsTheme;
 window.updateSettingsTopTabs = updateSettingsTopTabs;
-window.toggleTheme = toggleTheme;
 
 document.addEventListener("DOMContentLoaded", initSettingsPage);

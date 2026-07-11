@@ -1,4 +1,3 @@
-const LIBRARY_THEME_STORAGE_KEY = "neodium-cdc-theme";
 const LIBRARY_HISTORY_STORAGE_KEY = "neodium-cdc-project-history";
 const LIBRARY_PROJECTS_STORAGE_KEY = "neodium-cdc-projects";
 const LIBRARY_ACTIVE_PROJECT_STORAGE_KEY = "neodium-cdc-active-project";
@@ -120,7 +119,8 @@ function applyLibraryTheme(theme) {
 }
 
 function initLibraryTheme() {
-  applyLibraryTheme(localStorage.getItem(LIBRARY_THEME_STORAGE_KEY) || "light");
+  localStorage.removeItem("neodium-cdc-theme");
+  applyLibraryTheme("dark");
 }
 
 function downloadBlob(filename, content, type) {

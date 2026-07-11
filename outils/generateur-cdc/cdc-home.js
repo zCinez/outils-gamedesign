@@ -1,4 +1,3 @@
-const HOME_THEME_STORAGE_KEY = "neodium-cdc-theme";
 const HOME_PROJECTS_STORAGE_KEY = "neodium-cdc-projects";
 const HOME_HISTORY_STORAGE_KEY = "neodium-cdc-project-history";
 const HOME_ACTIVE_PROJECT_STORAGE_KEY = "neodium-cdc-active-project";
@@ -108,13 +107,8 @@ function applyHomeTheme(theme) {
 }
 
 function initHomeTheme() {
-  applyHomeTheme(localStorage.getItem(HOME_THEME_STORAGE_KEY) || "light");
-}
-
-function toggleHomeTheme() {
-  const nextTheme = document.body.dataset.theme === "dark" ? "light" : "dark";
-  applyHomeTheme(nextTheme);
-  localStorage.setItem(HOME_THEME_STORAGE_KEY, nextTheme);
+  localStorage.removeItem("neodium-cdc-theme");
+  applyHomeTheme("dark");
 }
 
 function updateHomeTopTabs() {

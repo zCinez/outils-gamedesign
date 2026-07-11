@@ -1,20 +1,13 @@
 const root = document.documentElement;
-const themeToggle = document.querySelector("[data-theme-toggle]");
 const processedNumberInputs = new WeakSet();
 
-const setTheme = (theme) => {
-  const nextTheme = theme === "light" ? "light" : "dark";
-  root.dataset.theme = nextTheme;
-
-  if (themeToggle) {
-    themeToggle.setAttribute("aria-pressed", nextTheme === "light");
-    themeToggle.setAttribute("aria-label", nextTheme === "light" ? "Passer en mode sombre" : "Passer en mode clair");
-  }
-
-  localStorage.setItem("statgm-theme", nextTheme);
+const applyTheme = () => {
+  root.dataset.theme = "dark";
+  document.documentElement.style.colorScheme = "dark";
 };
 
-setTheme(localStorage.getItem("statgm-theme"));
+localStorage.removeItem("statgm-theme");
+applyTheme();
 
 const injectPortalLink = () => {
   const nav = document.querySelector(".nav");
@@ -72,9 +65,3 @@ inputObserver.observe(document.body, {
   childList: true,
   subtree: true
 });
-
-if (themeToggle) {
-  themeToggle.addEventListener("click", () => {
-    setTheme(root.dataset.theme === "light" ? "dark" : "light");
-  });
-}

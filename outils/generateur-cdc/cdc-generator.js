@@ -22,7 +22,6 @@
     let mobSpawnIndex = 0;
     let mobDropIndex = 0;
     let libreSectionIndex = 0;
-    const THEME_STORAGE_KEY = "neodium-cdc-theme";
     const TEMPLATE_LABEL_OVERRIDES_STORAGE_KEY = "neodium-template-label-overrides";
     const PROJECT_HISTORY_STORAGE_KEY = "neodium-cdc-project-history";
     const PROJECTS_STORAGE_KEY = "neodium-cdc-projects";
@@ -50,6 +49,12 @@
       { inputId: "textureItemImage", previewId: "previewTextureItemTemplate" },
       { inputId: "metierGuiXpImage", previewId: "previewMetierGuiXpImage" }
     ];
+    const PROJECT_IMAGE_COMPRESSION_OPTIONS = Object.freeze({
+      imageGUICommande: { maxWidth: 1024, maxHeight: 1024, quality: 0.82 },
+      guiImage: { maxWidth: 1024, maxHeight: 1024, quality: 0.82 },
+      textureItemImage: { maxWidth: 256, maxHeight: 256, quality: 0.9 },
+      metierGuiXpImage: { maxWidth: 1024, maxHeight: 1024, quality: 0.82 }
+    });
     const BUILTIN_MINECRAFT_ITEM_KEYS = Array.isArray(window.BUILTIN_MINECRAFT_ITEM_IDS)
       ? [...window.BUILTIN_MINECRAFT_ITEM_IDS].sort((a, b) => a.localeCompare(b))
       : [];
@@ -879,6 +884,15 @@
         };
 
         image.src = rawSource;
+      });
+    }
+
+    async function readFileAsDataUrl(file) {
+      return await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (event) => resolve(String(event.target?.result || ""));
+        reader.onerror = () => reject(reader.error || new Error("Lecture image impossible."));
+        reader.readAsDataURL(file);
       });
     }
 
@@ -3154,16 +3168,9 @@
       window.syncGlobalThemeSwitch?.(normalizedTheme);
     }
 
-    function toggleTheme() {
-      const nextTheme = document.body.dataset.theme === "dark" ? "light" : "dark";
-      applyTheme(nextTheme);
-      localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
-      scheduleLocalAutosave();
-    }
-
     function initTheme() {
-      const savedTheme = localStorage.getItem(THEME_STORAGE_KEY);
-      applyTheme(savedTheme || "light");
+      localStorage.removeItem("neodium-cdc-theme");
+      applyTheme("dark");
     }
 
     /* =========================================================
@@ -3289,25 +3296,34 @@
        - affiche un aperçu dans le formulaire
        - déclenche aussi la mise à jour du rendu final
        ========================================================= */
-    function previewImage(event, previewId) {
+    async function previewImage(event, previewId) {
       const input = event.target;
       const file = input.files[0];
 
       if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
+        try {
+          const sourceDataUrl = await readFileAsDataUrl(file);
+          const compressionOptions = PROJECT_IMAGE_COMPRESSION_OPTIONS[input.id] || {
+            maxWidth: 1024,
+            maxHeight: 1024,
+            quality: 0.82
+          };
+          const compactedDataUrl = await buildCompactImageDataUrl(sourceDataUrl, compressionOptions);
+
           setProjectImageState(input.id, previewId, {
             fileName: file.name,
-            dataUrl: e.target?.result || ""
+            dataUrl: compactedDataUrl || sourceDataUrl
           });
-          if (input.id === "textureItemImage") {
-            updateItemCustomCraftVisualization();
-          }
-          invalidateCDC();
-          genererCDC(true);
-          scheduleLocalAutosave();
-        };
-        reader.readAsDataURL(file);
+        } catch (error) {
+          setProjectImageState(input.id, previewId);
+        }
+
+        if (input.id === "textureItemImage") {
+          updateItemCustomCraftVisualization();
+        }
+        invalidateCDC();
+        genererCDC(true);
+        scheduleLocalAutosave();
       } else {
         setProjectImageState(input.id, previewId);
         if (input.id === "textureItemImage") {
