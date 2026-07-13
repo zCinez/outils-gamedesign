@@ -1258,31 +1258,20 @@
         .trim();
     }
 
-    function getHistoryEntryExplicitProjectName(entry) {
-      const normalizedProjectName = String(entry?.projectName || "").trim();
-      const fallbackName = deriveProjectName(entry?.template || "commande");
-
-      if (!normalizedProjectName) {
-        return "";
-      }
-
-      return normalizeHistoryProjectName(normalizedProjectName) === normalizeHistoryProjectName(fallbackName)
-        ? ""
-        : normalizedProjectName;
-    }
-
     function buildHistoryDuplicateKey(entry) {
       if (!entry || typeof entry !== "object") return "";
 
-      const explicitProjectName = getHistoryEntryExplicitProjectName(entry);
-      if (!explicitProjectName) {
+      const normalizedProjectName = normalizeHistoryProjectName(
+        String(entry.projectName || "").trim() || deriveProjectName(entry.template || "commande")
+      );
+      if (!normalizedProjectName) {
         return "";
       }
 
       return [
         String(entry.projectId || "").trim() || "__local__",
         String(entry.template || "").trim() || "commande",
-        normalizeHistoryProjectName(explicitProjectName)
+        normalizedProjectName
       ].join("::");
     }
 
@@ -1331,7 +1320,7 @@
       });
 
       if (duplicateIdToKeptId.size === 0) {
-        alert("Aucun doublon prudent a supprimer pour ce projet.");
+        alert("Aucun doublon a supprimer pour ce projet.");
         return;
       }
 
