@@ -8,6 +8,11 @@
   const hasConfig = Boolean(config.url && config.anonKey);
   const storageTable = config.storageTable || "neodium_shared_storage";
   const workspaceId = config.workspaceId || "global";
+  const cloudCompressionEnabled = config.cloudCompressionEnabled !== false;
+  const cloudCompressionMinLength = Number.isFinite(config.cloudCompressionMinLength)
+    ? Math.max(256, Math.round(config.cloudCompressionMinLength))
+    : 1024;
+  const compressedValuePrefix = String(config.compressedValuePrefix || "__neodium_gzip__:");
   const syncStateEventName = "neodium-cloud-state";
   const panelStorageKey = "neodium-cloud-panel-open";
   const reloadStorageKey = "neodium-cloud-last-reload-user";
@@ -72,6 +77,7 @@
   let syncLock = Promise.resolve();
   let currentUserId = "";
   let currentEmail = "";
+  let compressionModulePromise = null;
   let remoteCleanupComplete = false;
   let widget = null;
 
@@ -97,6 +103,88 @@
 
   function rawRemoveLocal(key) {
     nativeRemoveItem.call(window.localStorage, key);
+  }
+
+  function shouldAttemptCloudCompression(value) {
+    return cloudCompressionEnabled && String(value ?? "").length >= cloudCompressionMinLength;
+  }
+
+  async function getCompressionModule() {
+    if (compressionModulePromise) {
+      return compressionModulePromise;
+    }
+
+    compressionModulePromise = import("https://cdn.jsdelivr.net/npm/pako@2.1.0/+esm")
+      .then((module) => module?.default || module)
+      .catch(() => null);
+
+    return compressionModulePromise;
+  }
+
+  function bytesToBase64(bytes) {
+    const parts = [];
+    const chunkSize = 0x8000;
+
+    for (let offset = 0; offset < bytes.length; offset += chunkSize) {
+      const chunk = bytes.subarray(offset, offset + chunkSize);
+      let binary = "";
+      for (let index = 0; index < chunk.length; index += 1) {
+        binary += String.fromCharCode(chunk[index]);
+      }
+      parts.push(binary);
+    }
+
+    return window.btoa(parts.join(""));
+  }
+
+  function base64ToBytes(base64Value) {
+    const binary = window.atob(base64Value);
+    const bytes = new Uint8Array(binary.length);
+
+    for (let index = 0; index < binary.length; index += 1) {
+      bytes[index] = binary.charCodeAt(index);
+    }
+
+    return bytes;
+  }
+
+  async function encodeStorageValue(value) {
+    const normalizedValue = String(value ?? "");
+    if (!shouldAttemptCloudCompression(normalizedValue)) {
+      return normalizedValue;
+    }
+
+    const compressionModule = await getCompressionModule();
+    if (!compressionModule?.gzip) {
+      return normalizedValue;
+    }
+
+    try {
+      const compressedBytes = compressionModule.gzip(normalizedValue);
+      const compressedValue = `${compressedValuePrefix}${bytesToBase64(compressedBytes)}`;
+      return compressedValue.length < normalizedValue.length ? compressedValue : normalizedValue;
+    } catch (error) {
+      return normalizedValue;
+    }
+  }
+
+  async function decodeStorageValue(value) {
+    const normalizedValue = String(value ?? "");
+    if (!normalizedValue.startsWith(compressedValuePrefix)) {
+      return normalizedValue;
+    }
+
+    const compressionModule = await getCompressionModule();
+    if (!compressionModule?.ungzip) {
+      throw new Error("Impossible de lire les donnees cloud compressees.");
+    }
+
+    try {
+      const compressedPayload = normalizedValue.slice(compressedValuePrefix.length);
+      return compressionModule.ungzip(base64ToBytes(compressedPayload), { to: "string" });
+    } catch (error) {
+      throw new Error("Impossible de decompresser les donnees cloud.");
+    }
   }
 
   function isTrackedKey(key) {
@@ -546,19 +634,19 @@
     const upserts = [];
     const deletions = [];
 
-    operations.forEach(([key, mutation]) => {
+    for (const [key, mutation] of operations) {
       if (mutation.type === "remove") {
         deletions.push(key);
-        return;
+        continue;
       }
 
       upserts.push({
         workspace_id: workspaceId,
         storage_key: key,
-        storage_value: mutation.value,
+        storage_value: await encodeStorageValue(mutation.value),
         updated_at: new Date().toISOString()
       });
-    });
+    }
 
     if (upserts.length) {
       const { error } = await supabaseClient
@@ -566,7 +654,11 @@
         .upsert(upserts, { onConflict: "workspace_id,storage_key" });
 
       if (error) {
-        upserts.forEach((entry) => pendingMutations.set(entry.storage_key, { type: "set", value: entry.storage_value }));
+        operations.forEach(([key, mutation]) => {
+          if (mutation.type === "set") {
+            pendingMutations.set(key, { type: "set", value: mutation.value });
+          }
+        });
         updateState({ syncing: false, status: "error", message: error.message || "Impossible d'ecrire dans Supabase." });
         return;
       }
@@ -677,10 +769,34 @@
 
     const remoteRows = Array.isArray(data) ? data : [];
     const remoteMap = new Map();
-    remoteRows.forEach((row) => {
-      if (!row || !isTrackedKey(row.storage_key)) return;
-      remoteMap.set(row.storage_key, String(row.storage_value ?? ""));
-    });
+    const rowsToRecompress = [];
+
+    try {
+      for (const row of remoteRows) {
+        if (!row || !isTrackedKey(row.storage_key)) continue;
+
+        const storedValue = String(row.storage_value ?? "");
+        const decodedValue = await decodeStorageValue(storedValue);
+        remoteMap.set(row.storage_key, decodedValue);
+
+        if (shouldAttemptCloudCompression(decodedValue) && !storedValue.startsWith(compressedValuePrefix)) {
+          const recompressedValue = await encodeStorageValue(decodedValue);
+          if (recompressedValue !== storedValue) {
+            rowsToRecompress.push({ key: row.storage_key, value: decodedValue });
+          }
+        }
+      }
+    } catch (error) {
+      updateState({
+        ready: true,
+        status: "error",
+        syncing: false,
+        label: "Partage equipe",
+        email: currentEmail,
+        message: error instanceof Error ? error.message : "Lecture Supabase impossible."
+      });
+      return;
+    }
 
     let appliedRemoteChanges = false;
     suppressTrackedWrites = true;
@@ -699,6 +815,10 @@
         pendingMutations.set(entry.key, { type: "set", value: entry.value });
       });
     }
+
+    rowsToRecompress.forEach((entry) => {
+      pendingMutations.set(entry.key, { type: "set", value: entry.value });
+    });
 
     initialSyncComplete = true;
     updateState({

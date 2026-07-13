@@ -4,6 +4,8 @@ window.NEODIUM_SUPABASE_CONFIG = Object.freeze({
   mode: "shared_team_auth",
   storageTable: "neodium_shared_storage",
   workspaceId: "global",
+  cloudCompressionEnabled: true,
+  cloudCompressionMinLength: 1024,
   syncKeyPrefixes: ["neodium_", "neodium-", "statgm-"],
   syncKeys: [],
   localOnlyKeys: ["neodium-cdc-recovery-draft", "neodium-cdc-theme", "statgm-theme"],

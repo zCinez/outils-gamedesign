@@ -26,6 +26,7 @@
     const PROJECT_HISTORY_STORAGE_KEY = "neodium-cdc-project-history";
     const PROJECTS_STORAGE_KEY = "neodium-cdc-projects";
     const ACTIVE_PROJECT_STORAGE_KEY = "neodium-cdc-active-project";
+    const ACTIVE_HISTORY_PROJECTS_STORAGE_KEY = "neodium-cdc-active-history-projects";
     const RECOVERY_DRAFT_STORAGE_KEY = "neodium-cdc-recovery-draft";
     const REQUESTED_GUI_PRESET_SESSION_KEY = "neodium-cdc-requested-gui-preset";
     const REQUESTED_ITEM_CUSTOM_PRESET_SESSION_KEY = "neodium-cdc-requested-item-custom-preset";
@@ -1032,6 +1033,72 @@
       return getWorkspaceProjects().find(project => project.id === projectId) || null;
     }
 
+    function getHistoryProjectScopeKey(workspaceProjectId = activeWorkspaceProjectId) {
+      const normalizedProjectId = String(workspaceProjectId || "").trim();
+      return normalizedProjectId || "__local__";
+    }
+
+    function getRememberedHistoryProjects() {
+      try {
+        const raw = localStorage.getItem(ACTIVE_HISTORY_PROJECTS_STORAGE_KEY);
+        const parsed = JSON.parse(raw || "{}");
+        return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+      } catch (error) {
+        return {};
+      }
+    }
+
+    function saveRememberedHistoryProjects(entriesByScope) {
+      localStorage.setItem(ACTIVE_HISTORY_PROJECTS_STORAGE_KEY, JSON.stringify(entriesByScope));
+    }
+
+    function getRememberedHistoryProjectId(workspaceProjectId = activeWorkspaceProjectId) {
+      const scopeKey = getHistoryProjectScopeKey(workspaceProjectId);
+      const rememberedProjects = getRememberedHistoryProjects();
+      return String(rememberedProjects[scopeKey] || "").trim();
+    }
+
+    function rememberHistoryProjectId(projectId, workspaceProjectId = activeWorkspaceProjectId) {
+      const normalizedProjectId = String(projectId || "").trim();
+      const scopeKey = getHistoryProjectScopeKey(workspaceProjectId);
+      const rememberedProjects = getRememberedHistoryProjects();
+
+      if (!normalizedProjectId) {
+        delete rememberedProjects[scopeKey];
+      } else {
+        rememberedProjects[scopeKey] = normalizedProjectId;
+      }
+
+      if (Object.keys(rememberedProjects).length === 0) {
+        localStorage.removeItem(ACTIVE_HISTORY_PROJECTS_STORAGE_KEY);
+        return;
+      }
+
+      saveRememberedHistoryProjects(rememberedProjects);
+    }
+
+    function clearRememberedHistoryProjectId(workspaceProjectId = activeWorkspaceProjectId) {
+      rememberHistoryProjectId("", workspaceProjectId);
+    }
+
+    function syncRememberedHistoryProjectForWorkspace(workspaceProjectId = activeWorkspaceProjectId) {
+      const scopeWorkspaceProjectId = String(workspaceProjectId || "").trim();
+      const nextMatchingEntry = getLocalProjectHistory().find((entry) => {
+        const entryWorkspaceProjectId = String(entry?.projectId || "").trim();
+        if (!scopeWorkspaceProjectId) {
+          return !entryWorkspaceProjectId;
+        }
+        return entryWorkspaceProjectId === scopeWorkspaceProjectId;
+      });
+
+      if (nextMatchingEntry?.id) {
+        rememberHistoryProjectId(nextMatchingEntry.id, scopeWorkspaceProjectId);
+        return;
+      }
+
+      clearRememberedHistoryProjectId(scopeWorkspaceProjectId);
+    }
+
     function resolveRequestedGuiPresetContext() {
       try {
         requestedGuiPresetId = window.sessionStorage.getItem(REQUESTED_GUI_PRESET_SESSION_KEY) || "";
@@ -1065,6 +1132,10 @@
         localStorage.setItem(ACTIVE_PROJECT_STORAGE_KEY, activeWorkspaceProjectId);
       } else {
         localStorage.removeItem(ACTIVE_PROJECT_STORAGE_KEY);
+      }
+
+      if (!requestedHistoryProjectId) {
+        requestedHistoryProjectId = getRememberedHistoryProjectId(activeWorkspaceProjectId);
       }
     }
 
@@ -1166,6 +1237,129 @@
         hour: "2-digit",
         minute: "2-digit"
       });
+    }
+
+    function getHistoryEntryTimestampRank(entry) {
+      const updatedTimestamp = Date.parse(String(entry?.updatedAt || ""));
+      if (!Number.isNaN(updatedTimestamp)) {
+        return updatedTimestamp;
+      }
+
+      const createdTimestamp = Date.parse(String(entry?.createdAt || ""));
+      return Number.isNaN(createdTimestamp) ? 0 : createdTimestamp;
+    }
+
+    function normalizeHistoryProjectName(value) {
+      return String(value || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    function getHistoryEntryExplicitProjectName(entry) {
+      const normalizedProjectName = String(entry?.projectName || "").trim();
+      const fallbackName = deriveProjectName(entry?.template || "commande");
+
+      if (!normalizedProjectName) {
+        return "";
+      }
+
+      return normalizeHistoryProjectName(normalizedProjectName) === normalizeHistoryProjectName(fallbackName)
+        ? ""
+        : normalizedProjectName;
+    }
+
+    function buildHistoryDuplicateKey(entry) {
+      if (!entry || typeof entry !== "object") return "";
+
+      const explicitProjectName = getHistoryEntryExplicitProjectName(entry);
+      if (!explicitProjectName) {
+        return "";
+      }
+
+      return [
+        String(entry.projectId || "").trim() || "__local__",
+        String(entry.template || "").trim() || "commande",
+        normalizeHistoryProjectName(explicitProjectName)
+      ].join("::");
+    }
+
+    function dedupeCurrentHistoryProjects() {
+      const history = getLocalProjectHistory();
+      const scopeWorkspaceProjectId = String(activeWorkspaceProjectId || "").trim();
+      const duplicatesByKey = new Map();
+
+      history.forEach((entry) => {
+        const entryWorkspaceProjectId = String(entry?.projectId || "").trim();
+        const isInScope = scopeWorkspaceProjectId
+          ? entryWorkspaceProjectId === scopeWorkspaceProjectId
+          : !entryWorkspaceProjectId;
+
+        if (!isInScope) return;
+
+        const duplicateKey = buildHistoryDuplicateKey(entry);
+        if (!duplicateKey) return;
+
+        if (!duplicatesByKey.has(duplicateKey)) {
+          duplicatesByKey.set(duplicateKey, []);
+        }
+
+        duplicatesByKey.get(duplicateKey).push(entry);
+      });
+
+      const duplicateIdToKeptId = new Map();
+
+      duplicatesByKey.forEach((entries) => {
+        if (!Array.isArray(entries) || entries.length < 2) return;
+
+        const sortedEntries = [...entries].sort((a, b) => {
+          const rankDifference = getHistoryEntryTimestampRank(b) - getHistoryEntryTimestampRank(a);
+          if (rankDifference !== 0) {
+            return rankDifference;
+          }
+          return String(b.id || "").localeCompare(String(a.id || ""));
+        });
+
+        const [keptEntry, ...duplicateEntries] = sortedEntries;
+        duplicateEntries.forEach((entry) => {
+          if (entry?.id && keptEntry?.id) {
+            duplicateIdToKeptId.set(entry.id, keptEntry.id);
+          }
+        });
+      });
+
+      if (duplicateIdToKeptId.size === 0) {
+        alert("Aucun doublon prudent a supprimer pour ce projet.");
+        return;
+      }
+
+      const duplicateGroupCount = new Set(duplicateIdToKeptId.values()).size;
+      const confirmed = confirm(
+        `Supprimer ${duplicateIdToKeptId.size} doublon${duplicateIdToKeptId.size > 1 ? "s" : ""} et garder ${duplicateGroupCount} version${duplicateGroupCount > 1 ? "s" : ""} la plus recente${duplicateGroupCount > 1 ? "s" : ""} ?`
+      );
+      if (!confirmed) return;
+
+      const nextHistory = history.filter((entry) => !duplicateIdToKeptId.has(entry.id));
+      saveLocalProjectHistory(nextHistory);
+
+      const nextCurrentProjectId = duplicateIdToKeptId.get(currentProjectId) || currentProjectId;
+      if (nextCurrentProjectId !== currentProjectId) {
+        currentProjectId = nextCurrentProjectId || null;
+        lastAutosavedSnapshot = "";
+      }
+
+      const rememberedProjectId = getRememberedHistoryProjectId(scopeWorkspaceProjectId);
+      const nextRememberedProjectId = duplicateIdToKeptId.get(rememberedProjectId) || rememberedProjectId;
+      if (nextRememberedProjectId !== rememberedProjectId) {
+        rememberHistoryProjectId(nextRememberedProjectId, scopeWorkspaceProjectId);
+      } else {
+        syncRememberedHistoryProjectForWorkspace(scopeWorkspaceProjectId);
+      }
+
+      renderProjectHistory();
+      alert(`Doublons supprimes : ${duplicateIdToKeptId.size}.`);
     }
 
     function updateHistorySidebarState() {
@@ -6061,8 +6255,15 @@
       const renderedContent = getCurrentRenderedContent();
       const now = new Date().toISOString();
       const history = getLocalProjectHistory();
-      const projectId = currentProjectId || `project-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      const rememberedProjectId = getRememberedHistoryProjectId(activeWorkspaceProjectId);
+      const rememberedProject = rememberedProjectId
+        ? history.find((project) => project.id === rememberedProjectId)
+        : null;
+      const projectId = currentProjectId
+        || rememberedProject?.id
+        || `project-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
       currentProjectId = projectId;
+      rememberHistoryProjectId(projectId, activeWorkspaceProjectId);
 
       const entry = {
         ...state,
@@ -6281,6 +6482,8 @@
         localStorage.removeItem(ACTIVE_PROJECT_STORAGE_KEY);
       }
 
+      rememberHistoryProjectId(currentProjectId, activeWorkspaceProjectId);
+
       populateWorkspaceProjectSelect();
       updateWorkspaceProjectUi();
 
@@ -6399,6 +6602,7 @@
 
       const project = getLocalProjectHistory().find(entry => entry.id === requestedHistoryProjectId);
       if (!project) {
+        syncRememberedHistoryProjectForWorkspace(activeWorkspaceProjectId);
         requestedHistoryProjectId = "";
         syncWorkspaceProjectInUrl();
         return false;
@@ -6488,12 +6692,14 @@
         currentProjectId = null;
         lastAutosavedSnapshot = "";
       }
+      syncRememberedHistoryProjectForWorkspace(project.projectId);
       void window.syncCdcProjectsDirectoryFromStorage?.();
       renderProjectHistory();
     }
 
     function createNewLocalProject() {
       resetFormState(true);
+      clearRememberedHistoryProjectId(activeWorkspaceProjectId);
       clearRecoveryDraft(defaultProjectSnapshot);
       const projectNameInput = document.getElementById("projectNameInput");
       if (projectNameInput) {
@@ -6532,6 +6738,7 @@
        ========================================================= */
     function viderFormulaire() {
       resetFormState(true);
+      clearRememberedHistoryProjectId(activeWorkspaceProjectId);
       clearRecoveryDraft(defaultProjectSnapshot);
       genererCDC();
     }
