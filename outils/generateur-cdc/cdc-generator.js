@@ -51,10 +51,10 @@
       { inputId: "metierGuiXpImage", previewId: "previewMetierGuiXpImage" }
     ];
     const PROJECT_IMAGE_COMPRESSION_OPTIONS = Object.freeze({
-      imageGUICommande: { maxWidth: 1024, maxHeight: 1024, quality: 0.82 },
-      guiImage: { maxWidth: 1024, maxHeight: 1024, quality: 0.82 },
-      textureItemImage: { maxWidth: 256, maxHeight: 256, quality: 0.9 },
-      metierGuiXpImage: { maxWidth: 1024, maxHeight: 1024, quality: 0.82 }
+      imageGUICommande: { maxWidth: 960, maxHeight: 960, quality: 0.78, minQuality: 0.58, targetBytes: 240 * 1024, imageSmoothing: true },
+      guiImage: { maxWidth: 960, maxHeight: 960, quality: 0.78, minQuality: 0.58, targetBytes: 240 * 1024, imageSmoothing: true },
+      textureItemImage: { maxWidth: 256, maxHeight: 256, quality: 0.84, minQuality: 0.64, targetBytes: 96 * 1024, imageSmoothing: false },
+      metierGuiXpImage: { maxWidth: 960, maxHeight: 960, quality: 0.78, minQuality: 0.58, targetBytes: 240 * 1024, imageSmoothing: true }
     });
     const BUILTIN_MINECRAFT_ITEM_KEYS = Array.isArray(window.BUILTIN_MINECRAFT_ITEM_IDS)
       ? [...window.BUILTIN_MINECRAFT_ITEM_IDS].sort((a, b) => a.localeCompare(b))
@@ -829,10 +829,29 @@
 </div>`;
     }
 
+    function estimateDataUrlBytes(dataUrl) {
+      const rawValue = String(dataUrl || "").trim();
+      const base64Marker = ";base64,";
+      const markerIndex = rawValue.indexOf(base64Marker);
+      if (markerIndex < 0) {
+        return rawValue.length;
+      }
+
+      const base64Payload = rawValue.slice(markerIndex + base64Marker.length);
+      const paddingLength = base64Payload.endsWith("==")
+        ? 2
+        : (base64Payload.endsWith("=") ? 1 : 0);
+
+      return Math.max(0, Math.floor((base64Payload.length * 3) / 4) - paddingLength);
+    }
+
     async function buildCompactImageDataUrl(sourceDataUrl, {
       maxWidth = 128,
       maxHeight = 128,
-      quality = 0.86
+      quality = 0.86,
+      minQuality = 0.62,
+      targetBytes = 120 * 1024,
+      imageSmoothing = true
     } = {}) {
       const rawSource = String(sourceDataUrl || "").trim();
       if (!rawSource.startsWith("data:image/")) {
@@ -843,41 +862,73 @@
         const image = new Image();
 
         image.onload = () => {
+          const sourceBytes = estimateDataUrlBytes(rawSource);
           const naturalWidth = Math.max(1, image.naturalWidth || image.width || 1);
           const naturalHeight = Math.max(1, image.naturalHeight || image.height || 1);
-          const scale = Math.min(1, maxWidth / naturalWidth, maxHeight / naturalHeight);
-          const width = Math.max(1, Math.round(naturalWidth * scale));
-          const height = Math.max(1, Math.round(naturalHeight * scale));
-          const canvas = document.createElement("canvas");
-          canvas.width = width;
-          canvas.height = height;
-          const context = canvas.getContext("2d");
-
-          if (!context) {
-            resolve(rawSource);
-            return;
+          const baseScale = Math.min(1, maxWidth / naturalWidth, maxHeight / naturalHeight);
+          const scaleCandidates = [1, 0.92, 0.84, 0.76, 0.68]
+            .map(multiplier => Math.min(1, baseScale * multiplier))
+            .filter((value, index, values) => value > 0.2 && values.indexOf(value) === index);
+          const qualityCandidates = [];
+          for (let currentQuality = quality; currentQuality >= minQuality; currentQuality -= 0.08) {
+            qualityCandidates.push(Number(currentQuality.toFixed(2)));
+          }
+          if (!qualityCandidates.length) {
+            qualityCandidates.push(Number(minQuality.toFixed(2)));
           }
 
-          context.imageSmoothingEnabled = false;
-          context.clearRect(0, 0, width, height);
-          context.drawImage(image, 0, 0, width, height);
+          let bestCandidate = rawSource;
+          let bestCandidateBytes = sourceBytes;
 
-          let compacted = "";
-          try {
-            compacted = canvas.toDataURL("image/webp", quality);
-          } catch (error) {
-            compacted = "";
-          }
+          for (const scale of scaleCandidates) {
+            const width = Math.max(1, Math.round(naturalWidth * scale));
+            const height = Math.max(1, Math.round(naturalHeight * scale));
+            const canvas = document.createElement("canvas");
+            canvas.width = width;
+            canvas.height = height;
+            const context = canvas.getContext("2d");
 
-          if (!compacted || compacted === "data:,") {
+            if (!context) {
+              continue;
+            }
+
             try {
-              compacted = canvas.toDataURL("image/png");
+              context.imageSmoothingEnabled = imageSmoothing;
+              context.clearRect(0, 0, width, height);
+              context.drawImage(image, 0, 0, width, height);
             } catch (error) {
-              compacted = "";
+              continue;
+            }
+
+            for (const candidateQuality of qualityCandidates) {
+              let compacted = "";
+
+              try {
+                compacted = canvas.toDataURL("image/webp", candidateQuality);
+              } catch (error) {
+                compacted = "";
+              }
+
+              if (!compacted || compacted === "data:,") {
+                continue;
+              }
+
+              const compactedBytes = estimateDataUrlBytes(compacted);
+              if (compactedBytes >= bestCandidateBytes) {
+                continue;
+              }
+
+              bestCandidate = compacted;
+              bestCandidateBytes = compactedBytes;
+
+              if (bestCandidateBytes <= targetBytes) {
+                resolve(bestCandidate);
+                return;
+              }
             }
           }
 
-          resolve(compacted && compacted.length < rawSource.length ? compacted : rawSource);
+          resolve(bestCandidateBytes < sourceBytes ? bestCandidate : rawSource);
         };
 
         image.onerror = () => {
@@ -895,6 +946,51 @@
         reader.onerror = () => reject(reader.error || new Error("Lecture image impossible."));
         reader.readAsDataURL(file);
       });
+    }
+
+    async function normalizeProjectImagesForStorage(images = {}) {
+      if (!images || typeof images !== "object" || Array.isArray(images)) {
+        return {};
+      }
+
+      const normalizedImages = {};
+
+      for (const [imageKey, imageValue] of Object.entries(images)) {
+        if (!imageValue || typeof imageValue !== "object" || Array.isArray(imageValue)) {
+          continue;
+        }
+
+        const rawDataUrl = String(imageValue.dataUrl || "").trim();
+        const compressionOptions = PROJECT_IMAGE_COMPRESSION_OPTIONS[imageKey] || {
+          maxWidth: 960,
+          maxHeight: 960,
+          quality: 0.78,
+          minQuality: 0.58,
+          targetBytes: 240 * 1024,
+          imageSmoothing: true
+        };
+        const compactedDataUrl = rawDataUrl
+          ? await buildCompactImageDataUrl(rawDataUrl, compressionOptions)
+          : "";
+
+        normalizedImages[imageKey] = {
+          ...imageValue,
+          dataUrl: compactedDataUrl || rawDataUrl
+        };
+      }
+
+      return normalizedImages;
+    }
+
+    async function normalizeProjectStateForStorage(state) {
+      if (!state || typeof state !== "object" || Array.isArray(state)) {
+        return state;
+      }
+
+      return {
+        ...state,
+        images: await normalizeProjectImagesForStorage(state.images || {})
+      };
     }
 
     function parseChancePercent(value) {
@@ -1525,7 +1621,7 @@
         return false;
       }
 
-      saveCurrentProjectToHistory(false, state, {
+      await saveCurrentProjectToHistory(false, state, {
         syncDirectory: false,
         ensureAutoGuiPreset: false,
         ensureAutoItemCustomPreset: false
@@ -6244,7 +6340,7 @@
       };
     }
 
-    function saveCurrentProjectToHistory(
+    async function saveCurrentProjectToHistory(
       showFeedback = true,
       providedState = null,
       {
@@ -6253,7 +6349,9 @@
         ensureAutoItemCustomPreset = true
       } = {}
     ) {
-      const state = providedState || collectProjectState();
+      const state = await normalizeProjectStateForStorage(providedState || collectProjectState());
+      restoreProjectImages(state.images || {});
+      invalidateCDC();
       const renderedContent = getCurrentRenderedContent();
       const now = new Date().toISOString();
       const history = getLocalProjectHistory();
@@ -6276,7 +6374,7 @@
         templateLabel: getTemplateLabel(state.template),
         author: state.author || "",
         renderedText: renderedContent.renderedText,
-        renderedHtml: renderedContent.renderedHtml,
+        renderedHtml: "",
         createdAt: history.find(project => project.id === projectId)?.createdAt || now,
         updatedAt: now
       };
@@ -6312,8 +6410,8 @@
       }
     }
 
-    function sauvegarderProjet() {
-      saveCurrentProjectToHistory(false);
+    async function sauvegarderProjet() {
+      await saveCurrentProjectToHistory(false);
 
       const run = async () => {
         const result = await window.syncCdcProjectsDirectoryFromStorage?.({ promptForDirectory: true });
@@ -6336,7 +6434,7 @@
         alert("Impossible de sauvegarder le projet dans le dossier sélectionné.");
       };
 
-      void run();
+      await run();
     }
 
     function resetFormState(includeDefaults = true) {

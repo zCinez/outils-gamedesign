@@ -106,6 +106,7 @@ function normalizeHistoryEntry(rawEntry: unknown) {
     projectId: String(entry.projectId || "").trim(),
     projectName: String(entry.projectName || "Projet sans nom").trim() || "Projet sans nom",
     template: String(entry.template || "commande").trim() || "commande",
+    renderedHtml: "",
     createdAt,
     updatedAt
   };
