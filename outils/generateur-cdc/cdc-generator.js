@@ -74,9 +74,15 @@
       "gemme",
       "sell_bag"
     ];
+    const MAX_MINECRAFT_ITEM_SUGGESTIONS = 18;
     const MINECRAFT_ITEM_TEXTURE_MAP = window.MINECRAFT_ITEM_TEXTURE_MAP || {};
     const MINECRAFT_ITEM_BLOCK_FACES_MAP = window.MINECRAFT_ITEM_BLOCK_FACES_MAP || {};
     let headDatabaseTextureMapPromise = null;
+    let minecraftItemAutocompleteMenu = null;
+    let activeMinecraftItemAutocompleteInput = null;
+    let activeMinecraftItemSuggestions = [];
+    let activeMinecraftItemSuggestionIndex = -1;
+    let suppressMinecraftItemAutocompleteInputEvent = false;
     const BUILTIN_MINECRAFT_SOUND_EVENTS = [
       "ambient.cave",
       "block.amethyst_block.break",
@@ -1832,6 +1838,316 @@
         option.value = key;
         datalist.appendChild(option);
       });
+    }
+
+    function isMinecraftItemAutocompleteInput(element) {
+      return element instanceof HTMLInputElement
+        && element.dataset.minecraftItemAutocomplete === "true";
+    }
+
+    function prepareMinecraftItemAutocompleteInput(input) {
+      if (!isMinecraftItemAutocompleteInput(input)) return;
+      input.setAttribute("autocomplete", "off");
+      input.setAttribute("autocapitalize", "off");
+      input.setAttribute("spellcheck", "false");
+    }
+
+    function getMinecraftItemAutocompleteMenu() {
+      if (minecraftItemAutocompleteMenu) {
+        return minecraftItemAutocompleteMenu;
+      }
+
+      const menu = document.createElement("div");
+      menu.id = "minecraftItemAutocompleteMenu";
+      Object.assign(menu.style, {
+        position: "absolute",
+        zIndex: "4000",
+        display: "none",
+        minWidth: "240px",
+        maxHeight: "280px",
+        overflowY: "auto",
+        padding: "6px",
+        borderRadius: "14px",
+        border: "1px solid rgba(92, 225, 230, 0.18)",
+        background: "rgba(9, 14, 20, 0.96)",
+        boxShadow: "0 18px 40px rgba(0, 0, 0, 0.34)",
+        backdropFilter: "blur(10px)"
+      });
+      document.body.appendChild(menu);
+      minecraftItemAutocompleteMenu = menu;
+      return menu;
+    }
+
+    function closeMinecraftItemAutocomplete() {
+      const menu = getMinecraftItemAutocompleteMenu();
+      menu.style.display = "none";
+      menu.innerHTML = "";
+      activeMinecraftItemAutocompleteInput = null;
+      activeMinecraftItemSuggestions = [];
+      activeMinecraftItemSuggestionIndex = -1;
+    }
+
+    function positionMinecraftItemAutocompleteMenu() {
+      const menu = getMinecraftItemAutocompleteMenu();
+      const input = activeMinecraftItemAutocompleteInput;
+      if (!menu || !input) return;
+
+      const rect = input.getBoundingClientRect();
+      const width = Math.max(rect.width, 280);
+      menu.style.left = `${window.scrollX + rect.left}px`;
+      menu.style.top = `${window.scrollY + rect.bottom + 6}px`;
+      menu.style.width = `${width}px`;
+    }
+
+    function getMinecraftItemSuggestionMatches(query) {
+      const normalizedQuery = String(query || "").trim().toLowerCase();
+      const itemKeys = getAvailableMinecraftItemKeys();
+
+      if (!normalizedQuery) {
+        return itemKeys.slice(0, MAX_MINECRAFT_ITEM_SUGGESTIONS);
+      }
+
+      const exactMatches = [];
+      const startsWithMatches = [];
+      const tokenMatches = [];
+      const containsMatches = [];
+
+      itemKeys.forEach((itemKey) => {
+        const normalizedItemKey = itemKey.toLowerCase();
+        if (normalizedItemKey === normalizedQuery) {
+          exactMatches.push(itemKey);
+          return;
+        }
+
+        if (normalizedItemKey.startsWith(normalizedQuery)) {
+          startsWithMatches.push(itemKey);
+          return;
+        }
+
+        if (normalizedItemKey.split(/[_\-\s]+/).some(token => token.startsWith(normalizedQuery))) {
+          tokenMatches.push(itemKey);
+          return;
+        }
+
+        if (normalizedItemKey.includes(normalizedQuery)) {
+          containsMatches.push(itemKey);
+        }
+      });
+
+      return [...exactMatches, ...startsWithMatches, ...tokenMatches, ...containsMatches]
+        .slice(0, MAX_MINECRAFT_ITEM_SUGGESTIONS);
+    }
+
+    function updateMinecraftItemAutocompleteOptionStyles() {
+      const menu = getMinecraftItemAutocompleteMenu();
+      [...menu.querySelectorAll("[data-minecraft-item-suggestion-index]")].forEach((button) => {
+        const suggestionIndex = Number.parseInt(button.dataset.minecraftItemSuggestionIndex || "-1", 10);
+        const isActive = suggestionIndex === activeMinecraftItemSuggestionIndex;
+        Object.assign(button.style, {
+          background: isActive ? "rgba(92, 225, 230, 0.18)" : "transparent",
+          color: isActive ? "#effdff" : "rgba(245, 248, 252, 0.96)"
+        });
+      });
+    }
+
+    function renderMinecraftItemAutocompleteMenu() {
+      const menu = getMinecraftItemAutocompleteMenu();
+
+      if (!activeMinecraftItemAutocompleteInput || !activeMinecraftItemSuggestions.length) {
+        closeMinecraftItemAutocomplete();
+        return;
+      }
+
+      menu.innerHTML = "";
+
+      activeMinecraftItemSuggestions.forEach((itemKey, index) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.dataset.minecraftItemSuggestionIndex = String(index);
+        button.textContent = itemKey;
+        Object.assign(button.style, {
+          display: "block",
+          width: "100%",
+          padding: "9px 12px",
+          border: "none",
+          borderRadius: "10px",
+          textAlign: "left",
+          font: "inherit",
+          cursor: "pointer",
+          transition: "background 120ms ease, color 120ms ease"
+        });
+        button.addEventListener("mouseenter", () => {
+          activeMinecraftItemSuggestionIndex = index;
+          updateMinecraftItemAutocompleteOptionStyles();
+        });
+        button.addEventListener("mousedown", (event) => {
+          event.preventDefault();
+          applyMinecraftItemAutocompleteSuggestion(itemKey);
+        });
+        menu.appendChild(button);
+      });
+
+      positionMinecraftItemAutocompleteMenu();
+      updateMinecraftItemAutocompleteOptionStyles();
+      menu.style.display = "block";
+    }
+
+    function updateMinecraftItemAutocomplete(input, { preserveSelection = false } = {}) {
+      if (!isMinecraftItemAutocompleteInput(input)) {
+        closeMinecraftItemAutocomplete();
+        return;
+      }
+
+      prepareMinecraftItemAutocompleteInput(input);
+      activeMinecraftItemAutocompleteInput = input;
+
+      const currentHighlightedValue = preserveSelection
+        ? activeMinecraftItemSuggestions[activeMinecraftItemSuggestionIndex] || ""
+        : "";
+
+      activeMinecraftItemSuggestions = getMinecraftItemSuggestionMatches(input.value || "");
+      activeMinecraftItemSuggestionIndex = currentHighlightedValue
+        ? activeMinecraftItemSuggestions.indexOf(currentHighlightedValue)
+        : -1;
+
+      if (activeMinecraftItemSuggestionIndex < 0 && activeMinecraftItemSuggestions.length) {
+        activeMinecraftItemSuggestionIndex = 0;
+      }
+
+      renderMinecraftItemAutocompleteMenu();
+    }
+
+    function moveMinecraftItemAutocompleteSelection(direction) {
+      if (!activeMinecraftItemAutocompleteInput) return;
+
+      if (!activeMinecraftItemSuggestions.length) {
+        updateMinecraftItemAutocomplete(activeMinecraftItemAutocompleteInput);
+        return;
+      }
+
+      const total = activeMinecraftItemSuggestions.length;
+      if (!total) return;
+
+      if (activeMinecraftItemSuggestionIndex < 0) {
+        activeMinecraftItemSuggestionIndex = direction > 0 ? 0 : total - 1;
+      } else {
+        activeMinecraftItemSuggestionIndex = (activeMinecraftItemSuggestionIndex + direction + total) % total;
+      }
+
+      updateMinecraftItemAutocompleteOptionStyles();
+
+      const menu = getMinecraftItemAutocompleteMenu();
+      const activeButton = menu.querySelector(`[data-minecraft-item-suggestion-index="${activeMinecraftItemSuggestionIndex}"]`);
+      activeButton?.scrollIntoView({ block: "nearest" });
+    }
+
+    function applyMinecraftItemAutocompleteSuggestion(itemKey) {
+      const input = activeMinecraftItemAutocompleteInput;
+      if (!input) return;
+
+      const nextValue = String(itemKey || "").trim();
+      if (!nextValue) return;
+
+      suppressMinecraftItemAutocompleteInputEvent = true;
+      input.value = nextValue;
+      closeMinecraftItemAutocomplete();
+      input.focus();
+      input.setSelectionRange?.(nextValue.length, nextValue.length);
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+
+    function syncMinecraftItemAutocompleteInputs(root = document) {
+      if (!root?.querySelectorAll) return;
+      root.querySelectorAll("input[data-minecraft-item-autocomplete='true']").forEach((input) => {
+        prepareMinecraftItemAutocompleteInput(input);
+      });
+    }
+
+    function initMinecraftItemAutocomplete() {
+      document.addEventListener("focusin", (event) => {
+        if (isMinecraftItemAutocompleteInput(event.target)) {
+          updateMinecraftItemAutocomplete(event.target);
+          return;
+        }
+
+        const menu = minecraftItemAutocompleteMenu;
+        if (menu && !menu.contains(event.target)) {
+          closeMinecraftItemAutocomplete();
+        }
+      });
+
+      document.addEventListener("input", (event) => {
+        if (!isMinecraftItemAutocompleteInput(event.target)) {
+          return;
+        }
+
+        if (suppressMinecraftItemAutocompleteInputEvent) {
+          suppressMinecraftItemAutocompleteInputEvent = false;
+          return;
+        }
+
+        updateMinecraftItemAutocomplete(event.target, { preserveSelection: true });
+      });
+
+      document.addEventListener("click", (event) => {
+        if (!isMinecraftItemAutocompleteInput(event.target)) {
+          return;
+        }
+
+        updateMinecraftItemAutocomplete(event.target, { preserveSelection: true });
+      });
+
+      document.addEventListener("keydown", (event) => {
+        if (!isMinecraftItemAutocompleteInput(event.target)) {
+          return;
+        }
+
+        if (event.key === "ArrowDown") {
+          event.preventDefault();
+          moveMinecraftItemAutocompleteSelection(1);
+          return;
+        }
+
+        if (event.key === "ArrowUp") {
+          event.preventDefault();
+          moveMinecraftItemAutocompleteSelection(-1);
+          return;
+        }
+
+        if (event.key === "Escape") {
+          closeMinecraftItemAutocomplete();
+          return;
+        }
+
+        if ((event.key === "Enter" || event.key === "Tab")
+          && activeMinecraftItemSuggestionIndex >= 0
+          && activeMinecraftItemSuggestions[activeMinecraftItemSuggestionIndex]) {
+          if (event.key === "Enter") {
+            event.preventDefault();
+          }
+          applyMinecraftItemAutocompleteSuggestion(activeMinecraftItemSuggestions[activeMinecraftItemSuggestionIndex]);
+        }
+      });
+
+      document.addEventListener("mousedown", (event) => {
+        const menu = minecraftItemAutocompleteMenu;
+        if (!menu) return;
+        if (menu.contains(event.target)) return;
+        if (isMinecraftItemAutocompleteInput(event.target)) return;
+        closeMinecraftItemAutocomplete();
+      });
+
+      window.addEventListener("resize", () => {
+        if (activeMinecraftItemAutocompleteInput) {
+          positionMinecraftItemAutocompleteMenu();
+        }
+      });
+
+      window.addEventListener("scroll", () => {
+        if (activeMinecraftItemAutocompleteInput) {
+          positionMinecraftItemAutocompleteMenu();
+        }
+      }, true);
     }
 
     function setGuiPresetStatus(message) {
@@ -4222,7 +4538,7 @@
         <input type="text" id="gui_cmd_slot_${itemId}" placeholder="Ex : 0" value="${escapeHtml(data.slot || "")}">
 
         <label for="gui_cmd_item_${itemId}">Item</label>
-        <input type="text" id="gui_cmd_item_${itemId}" list="minecraftItemOptions" placeholder="Choisir ou écrire un item Minecraft" value="${escapeHtml(data.item || "")}">
+        <input type="text" id="gui_cmd_item_${itemId}" data-minecraft-item-autocomplete="true" placeholder="Choisir ou écrire un item Minecraft" value="${escapeHtml(data.item || "")}">
 
         <label for="gui_cmd_nom_${itemId}">Nom</label>
         <input type="text" id="gui_cmd_nom_${itemId}" placeholder="Ex : &aBanque" value="${escapeHtml(data.nom || "")}">
@@ -4811,7 +5127,7 @@
         <input type="text" id="gui_tpl_slot_${itemId}" placeholder="Ex : 0" value="${escapeHtml(data.slot || "")}">
 
         <label for="gui_tpl_item_${itemId}">Item</label>
-        <input type="text" id="gui_tpl_item_${itemId}" list="minecraftItemOptions" placeholder="Choisir ou écrire un item Minecraft" value="${escapeHtml(data.item || "")}">
+        <input type="text" id="gui_tpl_item_${itemId}" data-minecraft-item-autocomplete="true" placeholder="Choisir ou écrire un item Minecraft" value="${escapeHtml(data.item || "")}">
 
         <label for="gui_tpl_nom_${itemId}">Nom</label>
         <input type="text" id="gui_tpl_nom_${itemId}" placeholder="Ex : &6Banque" value="${escapeHtml(data.nom || "")}">
@@ -6975,11 +7291,13 @@
       await window.NeodiumCdcRemoteStore?.whenHydrated?.();
 
       initTheme();
+      initMinecraftItemAutocomplete();
       applyTemplateOptionLabels();
       resolveWorkspaceProjectContext();
       refreshGeneratorStorageViews();
       populateMinecraftSoundSelect(BUILTIN_MINECRAFT_SOUND_EVENTS);
       populateMinecraftItemOptions();
+      syncMinecraftItemAutocompleteInputs();
       updateCommandeInterfaceFields();
       updateOuvertureFields();
       updateTypeItemFields();
