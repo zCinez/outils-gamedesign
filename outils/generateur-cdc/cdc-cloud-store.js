@@ -190,6 +190,50 @@
     }
   }
 
+  async function extractFunctionErrorDetails(error) {
+    const fallbackMessage = String(error?.message || "Appel de fonction impossible.");
+    const context = error?.context;
+    const status = Number(context?.status || 0);
+    let backendMessage = "";
+
+    if (context && typeof context === "object") {
+      const response = typeof context.clone === "function" ? context.clone() : context;
+
+      if (typeof response.json === "function") {
+        try {
+          const payload = await response.json();
+          backendMessage = String(
+            payload?.error
+            || payload?.message
+            || payload?.reason
+            || ""
+          ).trim();
+        } catch (parseError) {
+          backendMessage = "";
+        }
+      }
+
+      if (!backendMessage && typeof response.text === "function") {
+        try {
+          backendMessage = String(await response.text()).trim();
+        } catch (parseError) {
+          backendMessage = "";
+        }
+      }
+    }
+
+    let message = backendMessage || fallbackMessage;
+
+    if (status === 400 && /action inconnue/i.test(message)) {
+      message = `${message} La fonction turso-cdc doit etre redeployee.`;
+    }
+
+    return {
+      status,
+      message
+    };
+  }
+
   async function invokeRemote(action, payload = {}) {
     const cloudSync = window.NeodiumCloudSync;
     if (!cloudSync?.invokeFunction) {
@@ -209,8 +253,17 @@
     });
 
     if (error) {
+      const errorDetails = await extractFunctionErrorDetails(error);
       warnOnce(`Appel de la fonction ${FUNCTION_NAME} en erreur.`, error);
-      return { ok: false, reason: "invoke_failed", error };
+      return {
+        ok: false,
+        reason: "invoke_failed",
+        error: {
+          ...error,
+          message: errorDetails.message,
+          status: errorDetails.status
+        }
+      };
     }
 
     if (!data || typeof data !== "object") {
