@@ -5921,13 +5921,96 @@
       document.getElementById("preview").innerHTML = previewHtml;
     }
 
-    function getClipboardPreviewHtml() {
+    function isRelativeClipboardImageSource(sourceUrl) {
+      const normalizedUrl = String(sourceUrl || "").trim();
+      if (!normalizedUrl) return false;
+      if (/^(data:|https?:|blob:|file:)/i.test(normalizedUrl)) {
+        return false;
+      }
+      return normalizedUrl.startsWith("./")
+        || normalizedUrl.startsWith("../")
+        || normalizedUrl.startsWith("/");
+    }
+
+    async function buildClipboardCompatibleImageSource(sourceUrl) {
+      const normalizedUrl = String(sourceUrl || "").trim();
+      if (!normalizedUrl) {
+        return normalizedUrl;
+      }
+
+      if (isRelativeClipboardImageSource(normalizedUrl)) {
+        try {
+          return new URL(normalizedUrl, window.location.href).href;
+        } catch (error) {
+          return normalizedUrl;
+        }
+      }
+
+      if (!normalizedUrl.startsWith("data:image/")) {
+        return normalizedUrl;
+      }
+
+      return await new Promise(resolve => {
+        const image = new Image();
+
+        image.onload = () => {
+          try {
+            const canvas = document.createElement("canvas");
+            canvas.width = Math.max(1, image.naturalWidth || image.width || 1);
+            canvas.height = Math.max(1, image.naturalHeight || image.height || 1);
+            const context = canvas.getContext("2d");
+
+            if (!context) {
+              resolve(normalizedUrl);
+              return;
+            }
+
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            context.drawImage(image, 0, 0);
+
+            const clipboardDataUrl = canvas.toDataURL("image/png");
+            resolve(clipboardDataUrl && clipboardDataUrl !== "data:," ? clipboardDataUrl : normalizedUrl);
+          } catch (error) {
+            resolve(normalizedUrl);
+          }
+        };
+
+        image.onerror = () => {
+          resolve(normalizedUrl);
+        };
+
+        image.src = normalizedUrl;
+      });
+    }
+
+    async function normalizeClipboardPreviewImages(clone) {
+      const images = Array.from(clone.querySelectorAll("img"));
+
+      await Promise.all(images.map(async (image) => {
+        const rawSource = String(image.getAttribute("src") || "").trim();
+        if (!rawSource) return;
+        const nextSource = await buildClipboardCompatibleImageSource(rawSource);
+        if (nextSource && nextSource !== rawSource) {
+          image.setAttribute("src", nextSource);
+        }
+
+        const rawFallback = String(image.getAttribute("data-fallback") || "").trim();
+        if (!rawFallback) return;
+        const nextFallback = await buildClipboardCompatibleImageSource(rawFallback);
+        if (nextFallback && nextFallback !== rawFallback) {
+          image.setAttribute("data-fallback", nextFallback);
+        }
+      }));
+    }
+
+    async function getClipboardPreviewHtml() {
       const preview = document.getElementById("preview");
       if (!preview) {
         return "";
       }
 
       const clone = preview.cloneNode(true);
+      await normalizeClipboardPreviewImages(clone);
 
       clone.querySelectorAll(".preview-image-block").forEach(block => {
         block.style.margin = "12px 0";
@@ -6034,7 +6117,7 @@
         genererCDC(true);
       }
 
-      const htmlContent = getClipboardPreviewHtml();
+      const htmlContent = await getClipboardPreviewHtml();
 
       try {
         if (window.ClipboardItem && navigator.clipboard?.write && htmlContent) {
