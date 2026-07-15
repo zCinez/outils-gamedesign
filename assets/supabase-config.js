@@ -8,7 +8,19 @@ window.NEODIUM_SUPABASE_CONFIG = Object.freeze({
   cloudCompressionMinLength: 1024,
   syncKeyPrefixes: ["neodium_", "neodium-", "statgm-"],
   syncKeys: [],
-  localOnlyKeys: ["neodium-cdc-recovery-draft", "neodium-cdc-theme", "statgm-theme"],
-  cleanupKeys: ["neodium-cdc-recovery-draft", "neodium-cdc-theme", "statgm-theme"],
+  localOnlyKeys: [
+    "neodium-cdc-recovery-draft",
+    "neodium-cdc-theme",
+    "statgm-theme",
+    "neodium-cdc-project-history",
+    "neodium-cdc-projects",
+    "neodium-cdc-active-project",
+    "neodium-cdc-active-history-projects"
+  ],
+  cleanupKeys: [
+    "neodium-cdc-recovery-draft",
+    "neodium-cdc-theme",
+    "statgm-theme"
+  ],
   emailRedirectTo: window.location.origin + window.location.pathname
 });

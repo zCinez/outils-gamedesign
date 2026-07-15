@@ -548,17 +548,24 @@ function renderItemCustomPresetsLibrary() {
   `).join("");
 }
 
-initPresetsTheme();
-updatePresetsTopTabs();
-updatePresetsProjectSummary();
-renderGuiPresetsLibrary();
-renderItemCustomPresetsLibrary();
+function refreshPresetsFromStorage() {
+  updatePresetsTopTabs();
+  updatePresetsProjectSummary();
+  renderGuiPresetsLibrary();
+  renderItemCustomPresetsLibrary();
+}
 
-void window.hydrateCdcProjectsFromFiles?.().then(result => {
+async function bootPresetsPage() {
+  await window.NeodiumCdcRemoteStore?.whenHydrated?.();
+
+  initPresetsTheme();
+  refreshPresetsFromStorage();
+  window.addEventListener("neodium-cdc-storage-updated", refreshPresetsFromStorage);
+
+  const result = await window.hydrateCdcProjectsFromFiles?.();
   if (result?.ok && result.hydrated) {
-    updatePresetsTopTabs();
-    updatePresetsProjectSummary();
-    renderGuiPresetsLibrary();
-    renderItemCustomPresetsLibrary();
+    refreshPresetsFromStorage();
   }
-});
+}
+
+void bootPresetsPage();

@@ -7,6 +7,10 @@ const HOME_GUI_CUSTOM_PRESETS_STORAGE_KEY = "neodium-gui-custom-presets";
 const HOME_GUI_PRESETS = Array.isArray(window.GUI_PRESETS_MANIFEST) ? window.GUI_PRESETS_MANIFEST : [];
 const HOME_GUI_CUSTOM_PRESETS_FILE = Array.isArray(window.GUI_CUSTOM_PRESETS_FILE) ? window.GUI_CUSTOM_PRESETS_FILE : [];
 
+function queueHomeRemoteSnapshotSync() {
+  window.NeodiumCdcRemoteStore?.queueFullSync?.();
+}
+
 function getHomeProjects() {
   try {
     const raw = localStorage.getItem(HOME_PROJECTS_STORAGE_KEY);
@@ -19,6 +23,7 @@ function getHomeProjects() {
 
 function saveHomeProjects(projects) {
   localStorage.setItem(HOME_PROJECTS_STORAGE_KEY, JSON.stringify(projects));
+  queueHomeRemoteSnapshotSync();
 }
 
 function getHomeHistory() {
@@ -33,6 +38,7 @@ function getHomeHistory() {
 
 function saveHomeHistory(history) {
   localStorage.setItem(HOME_HISTORY_STORAGE_KEY, JSON.stringify(history));
+  queueHomeRemoteSnapshotSync();
 }
 
 function getHomeGuiPresetOverrides() {
@@ -548,17 +554,25 @@ function initHomeEvents() {
   }
 }
 
-initHomeTheme();
-updateHomeTopTabs();
-renderHomeProjects();
-renderHomeGuiPresets();
-renderHomeRecentActivity();
-initHomeEvents();
+function refreshHomeFromStorage() {
+  updateHomeTopTabs();
+  renderHomeProjects();
+  renderHomeRecentActivity();
+}
 
-void window.hydrateCdcProjectsFromFiles?.().then(result => {
+async function bootHomePage() {
+  await window.NeodiumCdcRemoteStore?.whenHydrated?.();
+
+  initHomeTheme();
+  refreshHomeFromStorage();
+  renderHomeGuiPresets();
+  initHomeEvents();
+  window.addEventListener("neodium-cdc-storage-updated", refreshHomeFromStorage);
+
+  const result = await window.hydrateCdcProjectsFromFiles?.();
   if (result?.ok && result.hydrated) {
-    updateHomeTopTabs();
-    renderHomeProjects();
-    renderHomeRecentActivity();
+    refreshHomeFromStorage();
   }
-});
+}
+
+void bootHomePage();

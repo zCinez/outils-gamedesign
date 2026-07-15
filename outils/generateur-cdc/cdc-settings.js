@@ -1,7 +1,8 @@
 const SETTINGS_ACTIVE_PROJECT_STORAGE_KEY = "neodium-cdc-active-project";
 const SETTINGS_TEMPLATE_LABEL_OVERRIDES_STORAGE_KEY = "neodium-template-label-overrides";
 const SETTINGS_TEMPLATE_META_STORAGE_KEY = "neodium-template-meta-overrides";
-const SETTINGS_SECTIONS = ["gui", "template"];
+const SETTINGS_SECTIONS = ["gui", "template", "cloud"];
+const SETTINGS_BACKUP_PREFIXES = ["neodium-", "neodium_", "statgm-"];
 const SETTINGS_TEMPLATE_STATUS_LABELS = Object.freeze({
   active: "Actif",
   inactive: "Non actif",
@@ -526,6 +527,10 @@ const SETTINGS_TEMPLATE_CATALOG = [
 ];
 
 let currentSettingsTemplateId = SETTINGS_TEMPLATE_CATALOG[0]?.id || "";
+let settingsCloudTransferState = {
+  label: "En attente",
+  tone: "idle"
+};
 
 function escapeSettingsHtml(value) {
   return String(value ?? "")
@@ -929,11 +934,235 @@ function renderSettingsTemplateCatalog() {
   detail.innerHTML = buildSettingsTemplateDetail(selectedTemplate);
 }
 
-function initSettingsPage() {
+function getSettingsCloudState() {
+  return window.NeodiumCloudSync?.getState?.() || null;
+}
+
+function getSettingsCloudSnapshot() {
+  return window.NeodiumCdcRemoteStore?.readLocalSnapshot?.() || {
+    projects: [],
+    history: []
+  };
+}
+
+function formatSettingsCount(value, singularLabel, pluralLabel = `${singularLabel}s`) {
+  const count = Number(value || 0);
+  return `${count} ${count > 1 ? pluralLabel : singularLabel}`;
+}
+
+function getSettingsCloudSessionLabel(cloudState) {
+  if (cloudState?.email) {
+    return `Connecte : ${cloudState.email}`;
+  }
+
+  if (cloudState?.status === "syncing") {
+    return "Synchronisation...";
+  }
+
+  if (cloudState?.status === "error") {
+    return "Cloud en erreur";
+  }
+
+  return "Session locale";
+}
+
+function getSettingsCloudSessionTone(cloudState) {
+  if (cloudState?.email) return "success";
+  if (cloudState?.status === "syncing") return "working";
+  if (cloudState?.status === "error") return "error";
+  return "idle";
+}
+
+function collectSettingsBackupStorage() {
+  const entries = {};
+
+  for (let index = 0; index < localStorage.length; index += 1) {
+    const key = localStorage.key(index);
+    if (!key) continue;
+    if (!SETTINGS_BACKUP_PREFIXES.some(prefix => key.startsWith(prefix))) continue;
+    entries[key] = localStorage.getItem(key);
+  }
+
+  return Object.fromEntries(
+    Object.entries(entries).sort(([leftKey], [rightKey]) => leftKey.localeCompare(rightKey))
+  );
+}
+
+function downloadSettingsJson(filename, payload) {
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
+  URL.revokeObjectURL(url);
+}
+
+function buildSettingsBackupPayload() {
+  const snapshot = getSettingsCloudSnapshot();
+  const cloudState = getSettingsCloudState();
+
+  return {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    source: "cdc-settings-backup",
+    cloud: {
+      configured: Boolean(cloudState?.configured),
+      status: String(cloudState?.status || ""),
+      email: String(cloudState?.email || "")
+    },
+    snapshot,
+    localStorage: collectSettingsBackupStorage()
+  };
+}
+
+function setSettingsCloudTransferBadge(label, tone = "idle") {
+  settingsCloudTransferState = {
+    label: String(label || "En attente"),
+    tone: String(tone || "idle")
+  };
+
+  const badge = document.getElementById("settingsLegacyTransferBadge");
+  if (!badge) return;
+  badge.textContent = settingsCloudTransferState.label;
+  badge.dataset.state = settingsCloudTransferState.tone;
+}
+
+function renderSettingsCloudPanel() {
+  const cloudState = getSettingsCloudState();
+  const snapshot = getSettingsCloudSnapshot();
+  const sessionBadge = document.getElementById("settingsCloudSessionBadge");
+  const snapshotBadge = document.getElementById("settingsCloudSnapshotBadge");
+  const statusText = document.getElementById("settingsCloudStatusText");
+
+  if (sessionBadge) {
+    sessionBadge.textContent = getSettingsCloudSessionLabel(cloudState);
+    sessionBadge.dataset.state = getSettingsCloudSessionTone(cloudState);
+  }
+
+  if (snapshotBadge) {
+    snapshotBadge.textContent = `${formatSettingsCount(snapshot.projects.length, "projet")} · ${formatSettingsCount(snapshot.history.length, "CDC")}`;
+  }
+
+  if (statusText) {
+    if (cloudState?.email) {
+      statusText.textContent = `Turso voit actuellement ${formatSettingsCount(snapshot.projects.length, "projet")} et ${formatSettingsCount(snapshot.history.length, "CDC")} dans ton cache local synchronisable.`;
+    } else if (cloudState?.status === "syncing") {
+      statusText.textContent = "Connexion cloud en cours. Les actions de migration seront disponibles juste apres.";
+    } else {
+      statusText.textContent = "Connecte-toi au cloud pour piloter la migration et les sauvegardes Turso.";
+    }
+  }
+
+  setSettingsCloudTransferBadge(settingsCloudTransferState.label, settingsCloudTransferState.tone);
+}
+
+function setSettingsButtonBusy(button, isBusy, busyLabel) {
+  if (!button) return;
+
+  if (!button.dataset.defaultLabel) {
+    button.dataset.defaultLabel = button.textContent || "";
+  }
+
+  button.disabled = isBusy;
+  button.textContent = isBusy ? busyLabel : (button.dataset.defaultLabel || "");
+}
+
+async function handleSettingsTransferSupabaseToTurso() {
+  const cloudState = getSettingsCloudState();
+  const transferButton = document.getElementById("settingsTransferSupabaseToTursoButton");
+
+  if (!cloudState?.email) {
+    alert("Connecte-toi d'abord au cloud Supabase pour lancer la migration.");
+    return;
+  }
+
+  const confirmed = window.confirm("Importer les anciennes sauvegardes CDC de Supabase vers Turso ?");
+  if (!confirmed) return;
+
+  setSettingsButtonBusy(transferButton, true, "Transfert en cours...");
+  setSettingsCloudTransferBadge("Transfert en cours...", "working");
+
+  try {
+    const result = await window.NeodiumCdcRemoteStore?.importLegacySupabaseSnapshot?.();
+
+    if (!result?.ok) {
+      const errorMessage = result?.error?.message || "Migration impossible pour le moment.";
+      setSettingsCloudTransferBadge("Erreur", "error");
+      renderSettingsCloudPanel();
+      alert(errorMessage);
+      return;
+    }
+
+    renderSettingsCloudPanel();
+
+    if (!result.imported || (!result.legacyProjectsCount && !result.legacyHistoryCount)) {
+      setSettingsCloudTransferBadge("Aucune donnee legacy", "warning");
+      renderSettingsCloudPanel();
+      alert("Aucune ancienne sauvegarde Supabase n'a ete trouvee pour les CDC.");
+      return;
+    }
+
+    if (result.changed) {
+      setSettingsCloudTransferBadge("Migration terminee", "success");
+      renderSettingsCloudPanel();
+      alert(`Migration terminee : ${result.legacyProjectsCount} projet(s) legacy et ${result.legacyHistoryCount} CDC legacy fusionnes dans Turso.`);
+      return;
+    }
+
+    setSettingsCloudTransferBadge("Deja fusionne", "success");
+    renderSettingsCloudPanel();
+    alert(`Les donnees legacy Supabase existent bien (${result.legacyProjectsCount} projet(s), ${result.legacyHistoryCount} CDC), mais Turso contenait deja la meme chose.`);
+  } catch (error) {
+    setSettingsCloudTransferBadge("Erreur", "error");
+    renderSettingsCloudPanel();
+    alert(error instanceof Error ? error.message : "Migration impossible pour le moment.");
+  } finally {
+    setSettingsButtonBusy(transferButton, false);
+  }
+}
+
+async function handleSettingsDownloadFullBackup() {
+  const downloadButton = document.getElementById("settingsDownloadFullBackupButton");
+  setSettingsButtonBusy(downloadButton, true, "Preparation...");
+
+  try {
+    await window.NeodiumCdcRemoteStore?.whenHydrated?.();
+    const payload = buildSettingsBackupPayload();
+    const safeTimestamp = new Date().toISOString().replaceAll(":", "-").replaceAll(".", "-");
+    downloadSettingsJson(`neodium-cdc-backup-${safeTimestamp}.json`, payload);
+    setSettingsCloudTransferBadge(settingsCloudTransferState.label, settingsCloudTransferState.tone);
+  } catch (error) {
+    alert(error instanceof Error ? error.message : "Impossible de preparer la sauvegarde.");
+  } finally {
+    setSettingsButtonBusy(downloadButton, false);
+  }
+}
+
+function bindSettingsCloudActions() {
+  document.getElementById("settingsTransferSupabaseToTursoButton")?.addEventListener("click", () => {
+    void handleSettingsTransferSupabaseToTurso();
+  });
+
+  document.getElementById("settingsDownloadFullBackupButton")?.addEventListener("click", () => {
+    void handleSettingsDownloadFullBackup();
+  });
+}
+
+async function initSettingsPage() {
+  await window.NeodiumCdcRemoteStore?.whenHydrated?.();
+
   initSettingsTheme();
   updateSettingsTopTabs();
   initSettingsSections();
   renderSettingsTemplateCatalog();
+  renderSettingsCloudPanel();
+  bindSettingsCloudActions();
+
+  window.addEventListener("neodium-cloud-state", renderSettingsCloudPanel);
+  window.addEventListener("neodium-cdc-storage-updated", renderSettingsCloudPanel);
 }
 
 window.SETTINGS_TEMPLATE_CATALOG = SETTINGS_TEMPLATE_CATALOG;
@@ -947,4 +1176,6 @@ window.buildSettingsTemplateDetail = buildSettingsTemplateDetail;
 window.initSettingsTheme = initSettingsTheme;
 window.updateSettingsTopTabs = updateSettingsTopTabs;
 
-document.addEventListener("DOMContentLoaded", initSettingsPage);
+document.addEventListener("DOMContentLoaded", () => {
+  void initSettingsPage();
+});

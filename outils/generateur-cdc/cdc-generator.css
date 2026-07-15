@@ -2543,6 +2543,94 @@ body[data-theme="dark"] .project-history-delete {
       gap: 14px;
     }
 
+    .settings-cloud-overview {
+      padding: 18px 20px;
+      border-radius: 20px;
+      border: 1px solid rgba(201, 122, 31, 0.14);
+      background: rgba(255, 248, 239, 0.76);
+    }
+
+    .settings-cloud-status-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .settings-cloud-status-copy {
+      margin: 12px 0 0;
+      font-size: 13px;
+    }
+
+    .settings-cloud-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .settings-cloud-card {
+      padding: 20px;
+      border-radius: 20px;
+      border: 1px solid rgba(201, 122, 31, 0.14);
+      background: rgba(255, 255, 255, 0.68);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    }
+
+    .settings-cloud-card-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .settings-cloud-card-top h3 {
+      margin: 8px 0 0;
+      font-size: 24px;
+      letter-spacing: -0.03em;
+    }
+
+    .settings-cloud-card-copy {
+      margin: 0;
+      min-height: 66px;
+      line-height: 1.6;
+    }
+
+    .settings-cloud-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .settings-cloud-badge[data-state="success"],
+    #settingsLegacyTransferBadge[data-state="success"] {
+      background: rgba(42, 132, 92, 0.12);
+      border-color: rgba(42, 132, 92, 0.22);
+      color: #216f4c;
+    }
+
+    .settings-cloud-badge[data-state="working"],
+    #settingsLegacyTransferBadge[data-state="working"] {
+      background: rgba(201, 122, 31, 0.16);
+      border-color: rgba(201, 122, 31, 0.24);
+      color: #8a4e08;
+    }
+
+    .settings-cloud-badge[data-state="error"],
+    #settingsLegacyTransferBadge[data-state="error"] {
+      background: rgba(170, 39, 39, 0.12);
+      border-color: rgba(170, 39, 39, 0.22);
+      color: #9c2727;
+    }
+
+    .settings-cloud-badge[data-state="warning"],
+    #settingsLegacyTransferBadge[data-state="warning"] {
+      background: rgba(184, 124, 22, 0.12);
+      border-color: rgba(184, 124, 22, 0.24);
+      color: #93610e;
+    }
+
     .settings-template-catalog {
       display: grid;
       gap: 18px;
@@ -3029,6 +3117,12 @@ body[data-theme="dark"] .project-history-delete {
       background: rgba(201, 122, 31, 0.1);
     }
 
+    .settings-panel[data-settings-panel="cloud"] .settings-panel-mark {
+      color: #2b7a97;
+      border-color: rgba(71, 154, 181, 0.24);
+      background: rgba(71, 154, 181, 0.12);
+    }
+
     body[data-theme="dark"] .settings-menu-item {
       background: linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(26, 23, 20, 0.9) 100%);
       border-color: rgba(255, 255, 255, 0.08);
@@ -3144,6 +3238,19 @@ body[data-theme="dark"] .project-history-delete {
       background: rgba(224, 154, 66, 0.12);
     }
 
+    body[data-theme="dark"] .settings-panel[data-settings-panel="cloud"] .settings-panel-mark {
+      color: #bfefff;
+      border-color: rgba(71, 154, 181, 0.24);
+      background: rgba(71, 154, 181, 0.14);
+    }
+
+    body[data-theme="dark"] .settings-cloud-overview,
+    body[data-theme="dark"] .settings-cloud-card {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.08);
+      box-shadow: none;
+    }
+
     /* =========================================================
        Compatibilite du theme unifie Neodium sur la page Parametres
        - la page force deja une palette sombre via le CSS global
@@ -3233,6 +3340,19 @@ body[data-theme="dark"] .project-history-delete {
       color: #ffd9a5 !important;
       border-color: rgba(224, 154, 66, 0.18) !important;
       background: rgba(224, 154, 66, 0.12) !important;
+    }
+
+    .settings-page .settings-panel[data-settings-panel="cloud"] .settings-panel-mark {
+      color: #bfefff !important;
+      border-color: rgba(71, 154, 181, 0.24) !important;
+      background: rgba(71, 154, 181, 0.14) !important;
+    }
+
+    .settings-page .settings-cloud-overview,
+    .settings-page .settings-cloud-card {
+      background: rgba(255, 255, 255, 0.05) !important;
+      border-color: rgba(255, 255, 255, 0.08) !important;
+      box-shadow: none !important;
     }
 
     .library-page .app {
@@ -3467,7 +3587,8 @@ body[data-theme="dark"] .project-history-delete {
       .settings-template-workspace,
       .settings-placeholder-hero,
       .settings-placeholder-grid,
-      .settings-template-list {
+      .settings-template-list,
+      .settings-cloud-grid {
         grid-template-columns: 1fr;
       }
 

@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="../../assets/neodium-global-header.css?v=20260625b" />
   <script src="../../assets/supabase-config.js"></script>
   <script src="../../assets/cloud-sync.js?v=20260626b"></script>
+  <script src="./cdc-cloud-store.js?v=20260715a" defer></script>
   <script src="../../assets/neodium-global-header.js?v=20260626b" defer></script>
 </head>
 <body class="settings-page page-nav">
@@ -56,6 +57,18 @@
           >
             <span class="settings-menu-item-title">Template</span>
             <span class="settings-menu-item-copy">Catalogue, variables et futurs réglages de génération.</span>
+          </button>
+          <button
+            type="button"
+            id="settingsMenuCloud"
+            class="settings-menu-item"
+            role="tab"
+            aria-selected="false"
+            aria-controls="settingsPanelCloud"
+            data-settings-section="cloud"
+          >
+            <span class="settings-menu-item-title">Cloud</span>
+            <span class="settings-menu-item-copy">Migration Supabase, sauvegarde de secours et suivi Turso.</span>
           </button>
         </div>
       </aside>
@@ -150,11 +163,78 @@
             </div>
           </div>
         </section>
+
+        <section
+          id="settingsPanelCloud"
+          class="card settings-panel"
+          role="tabpanel"
+          aria-labelledby="settingsMenuCloud"
+          data-settings-panel="cloud"
+          hidden
+        >
+          <div class="settings-panel-header">
+            <div>
+              <div class="template-badge">Section active</div>
+              <h2>Cloud et sauvegardes</h2>
+              <p class="muted settings-panel-copy">
+                Utilise cette zone pour rapatrier les anciennes sauvegardes Supabase dans Turso et telecharger un export complet de secours.
+              </p>
+            </div>
+            <div class="settings-panel-mark" aria-hidden="true">03</div>
+          </div>
+
+          <div class="settings-placeholder">
+            <div class="settings-cloud-overview">
+              <div class="settings-placeholder-label">Etat actuel</div>
+              <div class="settings-cloud-status-row">
+                <span id="settingsCloudSessionBadge" class="settings-template-chip settings-cloud-badge">Session locale</span>
+                <span id="settingsCloudSnapshotBadge" class="settings-template-chip settings-template-chip-soft">0 projet</span>
+              </div>
+              <p id="settingsCloudStatusText" class="muted settings-cloud-status-copy">
+                Connecte-toi au cloud pour piloter la migration et les sauvegardes Turso.
+              </p>
+            </div>
+
+            <div class="settings-cloud-grid">
+              <article class="settings-cloud-card">
+                <div class="settings-cloud-card-top">
+                  <div>
+                    <div class="settings-placeholder-label">Migration legacy</div>
+                    <h3>Transfert Supabase vers Turso</h3>
+                  </div>
+                  <span id="settingsLegacyTransferBadge" class="settings-template-chip settings-template-chip-soft">En attente</span>
+                </div>
+                <p class="muted settings-cloud-card-copy">
+                  Ce bouton lit les anciennes cles CDC encore presentes dans Supabase, les fusionne avec l'etat actuel, puis les reinjecte dans Turso.
+                </p>
+                <div class="settings-cloud-actions">
+                  <button id="settingsTransferSupabaseToTursoButton" type="button" class="btn-primary">Transferer Supabase vers Turso</button>
+                </div>
+              </article>
+
+              <article class="settings-cloud-card">
+                <div class="settings-cloud-card-top">
+                  <div>
+                    <div class="settings-placeholder-label">Sauvegarde manuelle</div>
+                    <h3>Telecharger tout</h3>
+                  </div>
+                  <span class="settings-template-chip settings-template-chip-soft">JSON complet</span>
+                </div>
+                <p class="muted settings-cloud-card-copy">
+                  Telecharge un export complet des donnees CDC locales actuelles, avec les projets, l'historique et les cles utiles pour une restauration manuelle.
+                </p>
+                <div class="settings-cloud-actions">
+                  <button id="settingsDownloadFullBackupButton" type="button" class="btn-secondary">Telecharger tout</button>
+                </div>
+              </article>
+            </div>
+          </div>
+        </section>
       </main>
     </div>
   </div>
 
   <script src="./cdc-navigation.js?v=20260701b" defer></script>
-  <script src="./cdc-settings.js?v=20260701d" defer></script>
+  <script src="./cdc-settings.js?v=20260715a" defer></script>
 </body>
 </html>

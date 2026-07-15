@@ -5,6 +5,10 @@ const LIBRARY_ACTIVE_PROJECT_STORAGE_KEY = "neodium-cdc-active-project";
 let currentWorkspaceProjectId = "";
 let currentWorkspaceProject = null;
 
+function queueLibraryRemoteSnapshotSync() {
+  window.NeodiumCdcRemoteStore?.queueFullSync?.();
+}
+
 function getLibraryHistory() {
   try {
     const raw = localStorage.getItem(LIBRARY_HISTORY_STORAGE_KEY);
@@ -27,10 +31,12 @@ function getLibraryProjects() {
 
 function saveLibraryProjects(projects) {
   localStorage.setItem(LIBRARY_PROJECTS_STORAGE_KEY, JSON.stringify(projects));
+  queueLibraryRemoteSnapshotSync();
 }
 
 function saveLibraryHistory(history) {
   localStorage.setItem(LIBRARY_HISTORY_STORAGE_KEY, JSON.stringify(history));
+  queueLibraryRemoteSnapshotSync();
 }
 
 function resolveLibraryProjectContext() {
@@ -476,19 +482,27 @@ function renderCdcLibrary() {
   `).join("");
 }
 
-initLibraryTheme();
-resolveLibraryProjectContext();
-updateLibraryProjectUi();
-renderCdcLibrary();
-
 window.editLibraryCdc = editLibraryCdc;
 window.deleteLibraryCdc = deleteLibraryCdc;
 window.downloadLibraryCdcPdf = downloadLibraryCdcPdf;
 
-void window.hydrateCdcProjectsFromFiles?.().then(result => {
+function refreshLibraryFromStorage() {
+  resolveLibraryProjectContext();
+  updateLibraryProjectUi();
+  renderCdcLibrary();
+}
+
+async function bootLibraryPage() {
+  await window.NeodiumCdcRemoteStore?.whenHydrated?.();
+
+  initLibraryTheme();
+  refreshLibraryFromStorage();
+  window.addEventListener("neodium-cdc-storage-updated", refreshLibraryFromStorage);
+
+  const result = await window.hydrateCdcProjectsFromFiles?.();
   if (result?.ok && result.hydrated) {
-    resolveLibraryProjectContext();
-    updateLibraryProjectUi();
-    renderCdcLibrary();
+    refreshLibraryFromStorage();
   }
-});
+}
+
+void bootLibraryPage();

@@ -73,6 +73,7 @@
   let suppressTrackedWrites = false;
   let initialSyncComplete = false;
   let supabaseClient = null;
+  let initPromise = Promise.resolve();
   let authSubscription = null;
   let syncLock = Promise.resolve();
   let currentUserId = "";
@@ -959,17 +960,58 @@
     }
   }
 
+  async function getSession() {
+    if (!supabaseClient) {
+      return null;
+    }
+
+    const { data, error } = await supabaseClient.auth.getSession();
+    if (error) {
+      throw error;
+    }
+
+    return data?.session || null;
+  }
+
+  async function getAccessToken() {
+    const session = await getSession();
+    return session?.access_token || "";
+  }
+
+  async function invokeFunction(functionName, { body, headers } = {}) {
+    if (!supabaseClient) {
+      throw new Error("Supabase n'est pas pret.");
+    }
+
+    const accessToken = await getAccessToken();
+    const { data, error } = await supabaseClient.functions.invoke(functionName, {
+      body,
+      headers: {
+        ...(headers || {}),
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {})
+      }
+    });
+
+    return { data, error };
+  }
+
   window.NeodiumCloudSync = {
     getState: getPublicState,
     signInWithMagicLink,
     signOut,
     forceSync,
+    getSession,
+    getAccessToken,
+    invokeFunction,
     reloadFromCloud: async () => {
       if (!supabaseClient) return;
       const { data } = await supabaseClient.auth.getSession();
       await syncSession(data?.session || null);
     },
-    whenReady: () => syncLock,
+    whenReady: async () => {
+      await initPromise;
+      return await syncLock;
+    },
     unsubscribe: () => authSubscription?.unsubscribe?.()
   };
 
@@ -979,5 +1021,6 @@
     ensureWidget();
   }
 
-  void initSupabase();
+  initPromise = initSupabase();
+  void initPromise;
 })();

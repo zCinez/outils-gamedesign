@@ -1226,6 +1226,18 @@
       localStorage.setItem(PROJECT_HISTORY_STORAGE_KEY, JSON.stringify(history));
     }
 
+    function queueGeneratorRemoteSnapshotSync() {
+      window.NeodiumCdcRemoteStore?.queueFullSync?.();
+    }
+
+    function syncGeneratorHistoryEntry(entry) {
+      return window.NeodiumCdcRemoteStore?.syncHistoryEntry?.(entry);
+    }
+
+    function deleteGeneratorHistoryEntry(entryId) {
+      return window.NeodiumCdcRemoteStore?.deleteHistoryEntry?.(entryId);
+    }
+
     function formatProjectTimestamp(value) {
       if (!value) return "Date inconnue";
       const date = new Date(value);
@@ -1332,6 +1344,7 @@
 
       const nextHistory = history.filter((entry) => !duplicateIdToKeptId.has(entry.id));
       saveLocalProjectHistory(nextHistory);
+      queueGeneratorRemoteSnapshotSync();
 
       const nextCurrentProjectId = duplicateIdToKeptId.get(currentProjectId) || currentProjectId;
       if (nextCurrentProjectId !== currentProjectId) {
@@ -6294,6 +6307,7 @@
       }
 
       if (showFeedback) {
+        void syncGeneratorHistoryEntry(entry);
         alert("Projet enregistré dans l'historique local.");
       }
     }
@@ -6677,6 +6691,7 @@
       if (!confirmed) return;
 
       saveLocalProjectHistory(history.filter(entry => entry.id !== projectId));
+      void deleteGeneratorHistoryEntry(projectId);
       if (currentProjectId === projectId) {
         currentProjectId = null;
         lastAutosavedSnapshot = "";
@@ -6766,54 +6781,54 @@
 
     document.getElementById("loadProjectInput")?.addEventListener("change", chargerProjetDepuisFichier);
 
-    /* =========================================================
-       18. INITIALISATION AU CHARGEMENT
-       ========================================================= */
-    initTheme();
-    applyTemplateOptionLabels();
-    resolveWorkspaceProjectContext();
-    populateWorkspaceProjectSelect();
-    updateWorkspaceProjectUi();
-    populateMinecraftSoundSelect(BUILTIN_MINECRAFT_SOUND_EVENTS);
-    populateMinecraftItemOptions();
-    populateGuiPresetLibrary();
-    populateGuiCommandePresetLibrary();
-    populateItemCustomPresetLibrary();
-    updateCommandeInterfaceFields();
-    updateOuvertureFields();
-    updateTypeItemFields();
-    updateGuiTailleField();
-    choiceObtentionFields();
-    updateItemCustomCraftVisualization();
-    utilisationChoiseItemFields();
-    startEventFields();
-    updateEventInterfaceFields();
-    updateMetierXpMessageFields();
-    updateCaisseChanceHelper();
-    updateGuiCommandeVisualization();
-    updateGuiTemplateVisualization();
-    renderProjectHistory();
-    ajouterMessage("Message erreur", '"&cUne erreur est survenue."');
-    ajouterMessage("Message permission", '"&cVous n’avez pas la permission."');
-    ajouterSoundDesignEntry();
-    switchTemplate();
-    defaultProjectSnapshot = buildProjectSnapshot(collectProjectState());
-    if (!loadRequestedHistoryProjectIfAny()) {
-      if (!loadRequestedGuiPresetIfAny()) {
-        loadRequestedItemCustomPresetIfAny();
-      }
+    function refreshGeneratorStorageViews() {
+      populateWorkspaceProjectSelect();
+      updateWorkspaceProjectUi();
+      populateGuiPresetLibrary();
+      populateGuiCommandePresetLibrary();
+      renderProjectHistory();
+      populateItemCustomPresetLibrary();
     }
-    restoreRecoveryDraftIfNeeded();
 
-    void window.hydrateCdcProjectsFromFiles?.().then(result => {
+    async function bootGeneratorPage() {
+      await window.NeodiumCdcRemoteStore?.whenHydrated?.();
+
+      initTheme();
+      applyTemplateOptionLabels();
+      resolveWorkspaceProjectContext();
+      refreshGeneratorStorageViews();
+      populateMinecraftSoundSelect(BUILTIN_MINECRAFT_SOUND_EVENTS);
+      populateMinecraftItemOptions();
+      updateCommandeInterfaceFields();
+      updateOuvertureFields();
+      updateTypeItemFields();
+      updateGuiTailleField();
+      choiceObtentionFields();
+      updateItemCustomCraftVisualization();
+      utilisationChoiseItemFields();
+      startEventFields();
+      updateEventInterfaceFields();
+      updateMetierXpMessageFields();
+      updateCaisseChanceHelper();
+      updateGuiCommandeVisualization();
+      updateGuiTemplateVisualization();
+      ajouterMessage("Message erreur", '"&cUne erreur est survenue."');
+      ajouterMessage("Message permission", '"&cVous n’avez pas la permission."');
+      ajouterSoundDesignEntry();
+      switchTemplate();
+      defaultProjectSnapshot = buildProjectSnapshot(collectProjectState());
+      window.addEventListener("neodium-cdc-storage-updated", refreshGeneratorStorageViews);
+      if (!loadRequestedHistoryProjectIfAny()) {
+        if (!loadRequestedGuiPresetIfAny()) {
+          loadRequestedItemCustomPresetIfAny();
+        }
+      }
+      restoreRecoveryDraftIfNeeded();
+
+      const result = await window.hydrateCdcProjectsFromFiles?.();
       if (result?.ok && result.hydrated) {
         resolveWorkspaceProjectContext();
-        populateWorkspaceProjectSelect();
-        updateWorkspaceProjectUi();
-        populateGuiPresetLibrary();
-        populateGuiCommandePresetLibrary();
-        renderProjectHistory();
-        populateItemCustomPresetLibrary();
+        refreshGeneratorStorageViews();
         if (!loadRequestedHistoryProjectIfAny()) {
           if (!loadRequestedGuiPresetIfAny()) {
             loadRequestedItemCustomPresetIfAny();
@@ -6821,5 +6836,7 @@
         }
         restoreRecoveryDraftIfNeeded();
       }
-    });
+    }
+
+    void bootGeneratorPage();
   

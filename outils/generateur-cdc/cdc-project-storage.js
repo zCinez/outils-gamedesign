@@ -7,6 +7,10 @@
   const PROJECTS_FOLDER_NAME = "cdc-projects";
   const MANIFEST_FILE_NAME = "manifest.js";
 
+  function queueProjectStorageRemoteSnapshotSync() {
+    window.NeodiumCdcRemoteStore?.queueFullSync?.();
+  }
+
   function getStoredProjects() {
     try {
       const raw = localStorage.getItem(PROJECTS_STORAGE_KEY);
@@ -149,10 +153,12 @@
 
   function saveStoredProjects(projects) {
     localStorage.setItem(PROJECTS_STORAGE_KEY, JSON.stringify(projects));
+    queueProjectStorageRemoteSnapshotSync();
   }
 
   function saveStoredHistory(history) {
     localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(history));
+    queueProjectStorageRemoteSnapshotSync();
   }
 
   function getNormalizedTimestamp(value) {

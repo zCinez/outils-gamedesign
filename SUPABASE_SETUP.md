@@ -2,6 +2,11 @@
 
 Ce portail est maintenant configure en mode equipe : plusieurs emails autorises se connectent et partagent les memes donnees.
 
+Note :
+
+- l'authentification reste sur Supabase
+- le stockage cloud des projets CDC peut maintenant passer par Turso via [TURSO_CDC_SETUP.md](/C:/Users/samgi/Desktop/neodium/Wiki/outils-gamedesign/TURSO_CDC_SETUP.md)
+
 ## 1. Creer les tables et policies
 
 Dans Supabase SQL Editor, execute le script de [supabase/neodium_user_storage.sql](/C:/Users/samgi/Desktop/neodium/Wiki/outils-gamedesign/supabase/neodium_user_storage.sql).
