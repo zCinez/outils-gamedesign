@@ -1301,15 +1301,23 @@
       const editorTopTabProject = document.getElementById("editorTopTabProject");
       const editorTopTabEditor = document.getElementById("editorTopTabEditor");
       const workspaceProjectSelect = document.getElementById("workspaceProjectSelect");
+      const hasActiveProject = Boolean(activeWorkspaceProjectId);
+      const projectHref = hasActiveProject
+        ? `./cdc-library.html?projectId=${encodeURIComponent(activeWorkspaceProjectId)}`
+        : "./projects.html";
 
       if (backToProjectLink) {
-        backToProjectLink.href = activeWorkspaceProjectId
-          ? `./cdc-library.html?projectId=${encodeURIComponent(activeWorkspaceProjectId)}`
-          : "./cdc-library.html";
+        backToProjectLink.href = projectHref;
+        backToProjectLink.classList.toggle("is-disabled", !hasActiveProject);
+        backToProjectLink.setAttribute("aria-disabled", hasActiveProject ? "false" : "true");
+        backToProjectLink.tabIndex = hasActiveProject ? 0 : -1;
+        backToProjectLink.title = hasActiveProject
+          ? `Retourner au projet ${activeWorkspaceProjectName || ""}`.trim()
+          : "Sélectionne un projet pour activer ce retour direct.";
       }
 
       if (editorTopTabProject) {
-        editorTopTabProject.href = "./projects.html";
+        editorTopTabProject.href = projectHref;
         editorTopTabProject.classList.remove("is-disabled");
       }
 

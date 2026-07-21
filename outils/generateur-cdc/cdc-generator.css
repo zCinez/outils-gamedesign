@@ -1217,6 +1217,25 @@ body[data-theme="dark"] .project-history-delete {
       background: rgba(255, 255, 255, 0.86);
     }
 
+    .editor-project-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .editor-project-link {
+      width: 100%;
+      justify-content: center;
+      text-decoration: none;
+    }
+
+    .editor-project-link.is-disabled,
+    .editor-project-link[aria-disabled="true"] {
+      opacity: 0.55;
+      pointer-events: none;
+    }
+
     .editor-template-badge {
       margin-top: 10px;
       align-self: flex-start;
