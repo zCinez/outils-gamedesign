@@ -66,6 +66,7 @@
       "icon_search",
       "icon_left_blue",
       "icon_next_orange",
+      "couronne",
       "gemme_ore_block",
       "coeur_sombre",
       "feve",
