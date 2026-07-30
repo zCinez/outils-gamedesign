@@ -4735,6 +4735,9 @@
           (blockFaces.side && blockFaces.side.includes("/block/")) ||
           (blockFaces.top && blockFaces.top.includes("/block/"))
         );
+        const blockPreviewTextureUrl = isBlockLike
+          ? (renderedTextureUrl || inviconUrl || textureUrl || (blockFaces?.front || ""))
+          : "";
         const slotTooltipHtml = item ? buildGuiSlotTooltipHtml(item, index) : "";
         const slotContent = customTextureUrl
           ? `
@@ -4753,18 +4756,14 @@
               <span>HDB</span>
             </div>
           `
-          : isBlockLike
+          : blockPreviewTextureUrl
           ? `
             <img
               class="gui-slot-rendered-item-texture gui-slot-block-inventory-texture"
-              src="${inviconUrl}"
+              src="${escapeHtml(blockPreviewTextureUrl)}"
               alt="${escapeHtml(label)}"
               title="${escapeHtml(label)}"
-              data-item-key="${escapeHtml(item?.item || "")}"
-              data-front-texture="${escapeHtml(blockFaces?.front || "")}"
-              data-side-texture="${escapeHtml(blockFaces?.side || "")}"
-              data-top-texture="${escapeHtml(blockFaces?.top || "")}"
-              data-fallback="${localFallbackTexture}"
+              data-fallback="${escapeHtml(localFallbackTexture)}"
               onerror="if (this.dataset.fallback) { this.onerror = null; this.src = this.dataset.fallback; this.classList.add('is-local-fallback'); }"
             >
           `
