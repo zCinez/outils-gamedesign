@@ -334,13 +334,15 @@ function buildEditorUrlForCdc(entry) {
   return `./cdc-generator.html${params.toString() ? `?${params.toString()}` : ""}`;
 }
 
+function getProjectLibraryItems() {
+  if (!currentWorkspaceProjectId) return [];
+  return getLibraryHistory().filter(entry => entry.projectId === currentWorkspaceProjectId);
+}
+
 function getFilteredLibraryItems() {
   const search = document.getElementById("librarySearch")?.value.trim().toLowerCase() || "";
   const sortMode = document.getElementById("librarySort")?.value || "recent";
-  const history = getLibraryHistory().filter(entry => {
-    if (currentWorkspaceProjectId && entry.projectId !== currentWorkspaceProjectId) {
-      return false;
-    }
+  const history = getProjectLibraryItems().filter(entry => {
     if (!search) return true;
     const haystack = [
       entry.projectName,
@@ -370,17 +372,20 @@ function getFilteredLibraryItems() {
 }
 
 function updateLibraryProjectUi() {
-  const projectName = currentWorkspaceProject?.name || "Projet inconnu";
+  const projectName = currentWorkspaceProject?.name || "Aucun projet sélectionné";
   const title = document.getElementById("libraryProjectTitle");
   const headerTitle = document.getElementById("libraryHeaderProjectName");
   const createLink = document.getElementById("libraryCreateCdcLink");
 
   if (title) title.textContent = projectName;
   if (headerTitle) headerTitle.textContent = projectName;
+  const renameButton = document.getElementById("libraryRenameProject");
+  if (renameButton) renameButton.disabled = !currentWorkspaceProject;
   if (createLink) {
-    createLink.href = currentWorkspaceProjectId
+    createLink.textContent = currentWorkspaceProject ? "+ Créer un CDC" : "Choisir un projet";
+    createLink.href = currentWorkspaceProject
       ? `./cdc-generator.html?projectId=${encodeURIComponent(currentWorkspaceProjectId)}`
-      : "./cdc-generator.html";
+      : "./projects.html";
   }
 
   updateLibraryTopTabs();
@@ -456,10 +461,16 @@ function renderCdcLibrary() {
   if (!list) return;
 
   const items = getFilteredLibraryItems();
-  renderLibraryStats(items);
+  renderLibraryStats(getProjectLibraryItems()
+    .sort((a, b) => String(b.updatedAt || b.createdAt || "").localeCompare(String(a.updatedAt || a.createdAt || ""))));
 
   if (items.length === 0) {
-    list.innerHTML = `<div class="library-empty">Aucun CDC enregistré pour le moment. Retourne sur la page de création pour enregistrer un premier document.</div>`;
+    const searching = Boolean(document.getElementById("librarySearch")?.value.trim());
+    list.innerHTML = `<div class="library-empty">${searching
+      ? "Aucun CDC ne correspond à ta recherche. Essaie un autre nom."
+      : currentWorkspaceProject
+        ? "Ton projet attend son premier CDC. Utilise le bouton « Créer un CDC » pour commencer."
+        : 'Choisis un projet pour retrouver ses documents. <a href="./projects.html">Voir les projets</a>'}</div>`;
     return;
   }
 
@@ -467,6 +478,7 @@ function renderCdcLibrary() {
     <article class="library-item">
       <div class="library-item-top">
         <div>
+          <span class="library-document-icon" aria-hidden="true"><svg viewBox="0 0 20 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M4 2h8l5 5v15H4zM12 2v6h5M7 12h7M7 16h7"/></svg></span>
           <p class="library-item-title">${escapeLibraryHtml(item.projectName || "CDC sans nom")}</p>
           <div class="library-item-date">Créé le ${escapeLibraryHtml(formatLibraryTimestamp(item.createdAt || item.updatedAt))}</div>
           <div class="library-item-date">Modifié le ${escapeLibraryHtml(formatLibraryTimestamp(item.updatedAt || item.createdAt))}</div>
@@ -493,15 +505,23 @@ function refreshLibraryFromStorage() {
 }
 
 async function bootLibraryPage() {
-  await window.NeodiumCdcRemoteStore?.whenHydrated?.();
-
+  const finishLoading = window.NeodiumLoading?.begin("Chargement du projet…");
+  const list = document.getElementById("cdcLibraryList");
   initLibraryTheme();
   refreshLibraryFromStorage();
   window.addEventListener("neodium-cdc-storage-updated", refreshLibraryFromStorage);
-
-  const result = await window.hydrateCdcProjectsFromFiles?.();
-  if (result?.ok && result.hydrated) {
+  try {
+    await window.NeodiumCdcRemoteStore?.whenHydrated?.();
     refreshLibraryFromStorage();
+    const result = await window.hydrateCdcProjectsFromFiles?.();
+    if (result?.ok && result.hydrated) refreshLibraryFromStorage();
+  } catch (error) {
+    console.warn("Chargement du projet incomplet.", error);
+    finishLoading?.();
+    window.NeodiumLoading?.notice("Chargement incomplet : les données disponibles restent affichées.");
+  } finally {
+    list?.setAttribute("aria-busy", "false");
+    finishLoading?.();
   }
 }
 

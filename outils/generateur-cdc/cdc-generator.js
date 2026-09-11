@@ -77,6 +77,7 @@
     ];
     const MAX_MINECRAFT_ITEM_SUGGESTIONS = 18;
     const MINECRAFT_ITEM_TEXTURE_MAP = window.MINECRAFT_ITEM_TEXTURE_MAP || {};
+    const MINECRAFT_INVENTORY_ICONS = window.MINECRAFT_INVENTORY_ICONS || {};
     const MINECRAFT_ITEM_BLOCK_FACES_MAP = window.MINECRAFT_ITEM_BLOCK_FACES_MAP || {};
     let headDatabaseTextureMapPromise = null;
     let minecraftItemAutocompleteMenu = null;
@@ -5372,7 +5373,8 @@
         }
 
         const renderedHeadUrl = `https://mc-heads.net/head/${encodeURIComponent(textureHash)}/64.png`;
-        placeholder.innerHTML = `<img class="gui-slot-rendered-item-texture" src="${renderedHeadUrl}" alt="${escapeHtml(label)}" title="${escapeHtml(label)}">`;
+        const fallbackHeadUrl = resolveRenderedMinecraftItemIconUrl("player_head");
+        placeholder.innerHTML = `<img class="gui-slot-rendered-item-texture" src="${renderedHeadUrl}" alt="${escapeHtml(label)}" title="${escapeHtml(label)}" data-fallback="${escapeHtml(fallbackHeadUrl)}" onerror="this.onerror = null; this.src = this.dataset.fallback;">`;
       });
     }
 
@@ -5389,7 +5391,7 @@
       const normalizedItemKey = normalizeMinecraftItemKey(itemKey);
       if (!normalizedItemKey) return "";
 
-      const texturePath = MINECRAFT_ITEM_TEXTURE_MAP[normalizedItemKey];
+      const texturePath = MINECRAFT_INVENTORY_ICONS[normalizedItemKey] || MINECRAFT_ITEM_TEXTURE_MAP[normalizedItemKey];
       if (!texturePath) return "";
 
       return `${LOCAL_MINECRAFT_ITEM_TEXTURES_BASE_PATH}/${texturePath}.png`;
@@ -5413,7 +5415,8 @@
       const normalizedItemKey = normalizeMinecraftItemKey(itemKey);
       if (!normalizedItemKey || isLocalOnlyMinecraftItem(normalizedItemKey)) return "";
 
-      return `https://api.minecraftitems.xyz/api/item/${encodeURIComponent(normalizedItemKey)}/size=4`;
+      const texturePath = MINECRAFT_INVENTORY_ICONS[normalizedItemKey];
+      return texturePath ? `${LOCAL_MINECRAFT_ITEM_TEXTURES_BASE_PATH}/${texturePath}.png` : "";
     }
 
     function resolvePreferredBlockInventoryUrl(itemKey) {
@@ -5426,13 +5429,7 @@
         return resolveMinecraftItemTextureUrl(normalizedItemKey) || getMinecraftItemBlockFaces(normalizedItemKey)?.front || "";
       }
 
-      // Some blocks have unreliable wiki invicon names, so we force the
-      // rendered inventory icon to keep a consistent Minecraft-like display.
-      if (normalizedItemKey === "emerald_block" || normalizedItemKey === "lapis_ore") {
-        return resolveRenderedMinecraftItemIconUrl(normalizedItemKey);
-      }
-
-      return resolveMinecraftWikiInviconUrl(normalizedItemKey);
+      return resolveRenderedMinecraftItemIconUrl(normalizedItemKey);
     }
 
     function toMinecraftWikiInviconName(itemKey) {
@@ -7121,6 +7118,19 @@
       return true;
     }
 
+    function loadProjectStateWithLoader(state, label = "Chargement du CDC…") {
+      const finishLoading = window.NeodiumLoading?.begin(label);
+
+      // Yield once so the loader can be painted before rebuilding a large CDC form.
+      window.requestAnimationFrame(() => {
+        try {
+          loadProjectState(state);
+        } finally {
+          window.requestAnimationFrame(() => finishLoading?.());
+        }
+      });
+    }
+
     function clearRequestedGuiPreset() {
       requestedGuiPresetId = "";
       try {
@@ -7181,7 +7191,7 @@
         return;
       }
 
-      loadProjectState(project);
+      loadProjectStateWithLoader(project);
     }
 
     function deleteHistoryProject(projectId) {
@@ -7225,8 +7235,10 @@
       reader.onload = () => {
         try {
           const parsed = JSON.parse(String(reader.result || "{}"));
-          loadProjectState(parsed);
-          alert("Sauvegarde chargée avec succès.");
+          loadProjectStateWithLoader(parsed, "Import de la sauvegarde…");
+          window.requestAnimationFrame(() => {
+            window.requestAnimationFrame(() => alert("Sauvegarde chargée avec succès."));
+          });
         } catch (error) {
           alert("Impossible de charger cette sauvegarde JSON.");
         } finally {
@@ -7296,52 +7308,61 @@
     }
 
     async function bootGeneratorPage() {
-      await window.NeodiumCdcRemoteStore?.whenHydrated?.();
+      const hasRequestedCdc = new URL(window.location.href).searchParams.has("cdcId");
+      const finishRequestedCdcLoading = hasRequestedCdc
+        ? window.NeodiumLoading?.begin("Ouverture du CDC…")
+        : null;
 
-      initTheme();
-      initMinecraftItemAutocomplete();
-      applyTemplateOptionLabels();
-      resolveWorkspaceProjectContext();
-      refreshGeneratorStorageViews();
-      populateMinecraftSoundSelect(BUILTIN_MINECRAFT_SOUND_EVENTS);
-      populateMinecraftItemOptions();
-      syncMinecraftItemAutocompleteInputs();
-      updateCommandeInterfaceFields();
-      updateOuvertureFields();
-      updateTypeItemFields();
-      updateGuiTailleField();
-      choiceObtentionFields();
-      updateItemCustomCraftVisualization();
-      utilisationChoiseItemFields();
-      startEventFields();
-      updateEventInterfaceFields();
-      updateMetierXpMessageFields();
-      updateCaisseChanceHelper();
-      updateGuiCommandeVisualization();
-      updateGuiTemplateVisualization();
-      ajouterMessage("Message erreur", '"&cUne erreur est survenue."');
-      ajouterMessage("Message permission", '"&cVous n’avez pas la permission."');
-      ajouterSoundDesignEntry();
-      switchTemplate();
-      defaultProjectSnapshot = buildProjectSnapshot(collectProjectState());
-      window.addEventListener("neodium-cdc-storage-updated", refreshGeneratorStorageViews);
-      if (!loadRequestedHistoryProjectIfAny()) {
-        if (!loadRequestedGuiPresetIfAny()) {
-          loadRequestedItemCustomPresetIfAny();
-        }
-      }
-      restoreRecoveryDraftIfNeeded();
+      try {
+        await window.NeodiumCdcRemoteStore?.whenHydrated?.();
 
-      const result = await window.hydrateCdcProjectsFromFiles?.();
-      if (result?.ok && result.hydrated) {
+        initTheme();
+        initMinecraftItemAutocomplete();
+        applyTemplateOptionLabels();
         resolveWorkspaceProjectContext();
         refreshGeneratorStorageViews();
+        populateMinecraftSoundSelect(BUILTIN_MINECRAFT_SOUND_EVENTS);
+        populateMinecraftItemOptions();
+        syncMinecraftItemAutocompleteInputs();
+        updateCommandeInterfaceFields();
+        updateOuvertureFields();
+        updateTypeItemFields();
+        updateGuiTailleField();
+        choiceObtentionFields();
+        updateItemCustomCraftVisualization();
+        utilisationChoiseItemFields();
+        startEventFields();
+        updateEventInterfaceFields();
+        updateMetierXpMessageFields();
+        updateCaisseChanceHelper();
+        updateGuiCommandeVisualization();
+        updateGuiTemplateVisualization();
+        ajouterMessage("Message erreur", '"&cUne erreur est survenue."');
+        ajouterMessage("Message permission", '"&cVous n’avez pas la permission."');
+        ajouterSoundDesignEntry();
+        switchTemplate();
+        defaultProjectSnapshot = buildProjectSnapshot(collectProjectState());
+        window.addEventListener("neodium-cdc-storage-updated", refreshGeneratorStorageViews);
         if (!loadRequestedHistoryProjectIfAny()) {
           if (!loadRequestedGuiPresetIfAny()) {
             loadRequestedItemCustomPresetIfAny();
           }
         }
         restoreRecoveryDraftIfNeeded();
+
+        const result = await window.hydrateCdcProjectsFromFiles?.();
+        if (result?.ok && result.hydrated) {
+          resolveWorkspaceProjectContext();
+          refreshGeneratorStorageViews();
+          if (!loadRequestedHistoryProjectIfAny()) {
+            if (!loadRequestedGuiPresetIfAny()) {
+              loadRequestedItemCustomPresetIfAny();
+            }
+          }
+          restoreRecoveryDraftIfNeeded();
+        }
+      } finally {
+        window.requestAnimationFrame(() => finishRequestedCdcLoading?.());
       }
     }
 

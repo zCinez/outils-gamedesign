@@ -1,0 +1,276 @@
+/* CDC workspace layout, shared by every page of the generator. */
+.cdc-studio {
+  --cdc-rail: 204px;
+  --cdc-gap: 24px;
+  --cdc-glass: linear-gradient(135deg, rgba(54, 60, 84, .62), rgba(22, 24, 35, .92) 58%, rgba(40, 30, 48, .64));
+  /* A transformed body would make the fixed navigation scroll with the page. */
+  transform: none !important;
+  transition: opacity 180ms ease;
+}
+.cdc-studio .home-shell,
+.cdc-studio .settings-shell,
+.cdc-studio .app {
+  width: auto;
+  max-width: 1740px;
+  margin: 0 0 0 calc(var(--cdc-rail) + 44px);
+  padding: 20px 28px 48px 0;
+  min-width: 0;
+}
+.cdc-studio .app { display: block; min-height: 0; }
+.cdc-studio .main { min-width: 0; }
+body.cdc-studio.page-nav, body.cdc-studio.page-nav.page-nav-leaving { opacity: 1; }
+.cdc-studio .home-topbar { padding: 0; margin: 0 0 18px; }
+.cdc-studio .card { background: var(--cdc-glass) !important; margin-bottom: 0; }
+.cdc-studio h1 { font-size: clamp(26px, 3vw, 40px); font-weight: 600; letter-spacing: -.045em !important; line-height: 1.15; }
+.cdc-studio .muted { line-height: 1.65; }
+.cdc-studio .home-eyebrow { font-size: 9px; margin: 0 0 14px; }
+.cdc-studio .home-eyebrow::before { display: none; }
+
+/* Independent rail: it does not move or resize the document preview. */
+.cdc-studio .cdc-workspace-nav {
+  position: fixed;
+  z-index: 45;
+  top: 100px;
+  left: 22px;
+  bottom: 24px;
+  width: var(--cdc-rail);
+  margin: 0;
+  padding: 24px 12px !important;
+  display: flex;
+  flex-direction: column;
+  border-radius: 24px !important;
+  background: linear-gradient(160deg, rgba(44, 49, 72, .87), rgba(19, 21, 30, .95) 70%) !important;
+}
+.cdc-workspace-nav::before {
+  content: "ATELIER NEODIUM";
+  color: #bab8ea;
+  letter-spacing: .2em;
+  font-size: 9px;
+  padding: 4px 10px 28px;
+}
+.cdc-workspace-nav::after {
+  content: "De l'idée au cahier des charges.";
+  margin-top: auto;
+  padding: 24px 10px 4px;
+  color: var(--neo-muted-2);
+  font-size: 11px;
+  line-height: 1.8;
+}
+.cdc-studio .cdc-workspace-nav .top-tabs {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px !important;
+  overflow: visible;
+}
+.cdc-studio .cdc-workspace-nav .top-tab {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+  min-height: 46px;
+  padding: 12px 14px;
+  font-size: 12px;
+}
+.cdc-workspace-nav .top-tab::before {
+  content: "";
+  width: 12px;
+  height: 12px;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  opacity: .7;
+  flex: 0 0 auto;
+}
+.cdc-workspace-nav .top-tab:nth-child(2)::before { border-radius: 2px 5px 2px 2px; }
+.cdc-workspace-nav .top-tab:nth-child(3)::before { width: 6px; height: 15px; transform: rotate(35deg); margin-inline: 3px; border-radius: 2px; }
+.cdc-workspace-nav .top-tab:nth-child(4)::before { box-shadow: inset 0 0 0 3px rgba(170, 168, 255, .25); }
+.cdc-workspace-nav .top-tab:nth-child(5)::before { border-radius: 50%; }
+.cdc-studio .cdc-workspace-nav .cdc-portal-tab { margin-top: auto; border-top: 1px solid var(--neo-border) !important; border-radius: 0 !important; }
+
+/* Context and actions are separate from the form and its live document. */
+.cdc-document-controls { padding: 26px !important; margin-bottom: var(--cdc-gap) !important; }
+.cdc-document-controls .editor-header { display: grid; grid-template-columns: 1fr minmax(380px, 1.2fr); gap: 30px; margin-bottom: 22px; align-items: start; }
+.cdc-document-controls h1 { margin: 0 0 12px; }
+.cdc-document-controls .editor-intro { max-width: 40ch; font-size: 12px; }
+.cdc-document-controls .editor-context-grid { width: 100%; margin: 0; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.cdc-document-controls .editor-project-summary { padding: 0 0 0 18px; border: 0 !important; border-left: 1px solid var(--neo-border) !important; border-radius: 0 !important; background: transparent !important; box-shadow: none !important; }
+.cdc-document-controls .editor-project-select { margin: 8px 0; min-height: 40px; font-size: 12px; padding: 10px; }
+.cdc-document-controls .editor-template-badge { font-size: 10px; margin-top: 2px; }
+.cdc-document-controls .editor-project-actions { margin-top: 2px; }
+.cdc-document-controls .editor-project-link { padding: 5px 0; min-height: 28px; font-size: 11px; justify-content: flex-start; border: 0 !important; background: transparent !important; color: #b9b8e8 !important; }
+.cdc-document-controls .editor-draft-panel { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 18px; align-items: end; padding: 18px; margin: 0; }
+.cdc-document-controls .project-draft-meta { grid-column: 1 / -1; margin-bottom: 10px; }
+.cdc-document-controls .editor-draft-panel label { grid-column: 1; font-size: 11px; margin-bottom: 7px; }
+.cdc-document-controls #projectNameInput { grid-column: 1; margin: 0; min-height: 42px; }
+.cdc-document-controls .editor-draft-actions { grid-column: 2; grid-row: 3; display: flex; flex-direction: row; gap: 8px; margin: 0; }
+.cdc-document-controls .editor-draft-actions button { min-height: 42px; padding-inline: 18px; }
+.cdc-document-controls .editor-toolbar { display: flex; align-items: center; padding: 16px 0 0; margin: 0; border: 0 !important; background: transparent !important; box-shadow: none !important; backdrop-filter: none; }
+.cdc-document-controls .editor-toolbar button { font-size: 11px; padding: 9px 12px; min-height: 34px; }
+.cdc-toolbar-label { color: var(--neo-muted-2); font-size: 10px; margin-right: auto; }
+.cdc-preview-jump { display: none; color: #c3bdf7; font-size: 12px; text-decoration: none; }
+/* Keep the writing flow natural: conception first, then the live document. */
+.cdc-editor-workspace { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--cdc-gap); align-items: start; }
+.cdc-studio .cdc-form-card, .cdc-studio .cdc-preview-card { min-width: 0; padding: 24px; }
+.cdc-section-heading { display: flex; gap: 12px; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+.cdc-section-heading h2 { margin: 0; font-size: 20px; line-height: 1.25; }
+.cdc-section-heading .home-eyebrow { margin-bottom: 8px; }
+.cdc-studio .cdc-form-card .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.cdc-form-card .grid-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.cdc-form-card .grid-3 > :nth-child(3), .cdc-form-card .gui-preset-actions { grid-column: 1 / -1; }
+.cdc-form-card .gui-preset-actions { flex-direction: row; flex-wrap: wrap; }
+.cdc-form-card input, .cdc-form-card select, .cdc-form-card textarea { min-width: 0; font-size: 12px; }
+.cdc-form-card label { font-size: 12px; }
+.cdc-form-card .template-form > h3 { border-top: 1px solid var(--neo-border); padding-top: 22px; margin-top: 28px; font-size: 16px; }
+.cdc-studio .cdc-form-card .checkbox-group { display: flex; flex-wrap: wrap; gap: 8px 18px; padding: 12px; }
+.cdc-form-card .checkbox-group label { margin: 0; display: inline-flex; align-items: center; gap: 7px; }
+.cdc-form-card .checkbox-group input { width: auto; margin: 0; }
+.cdc-form-card .gui-item, .cdc-form-card .dynamic-block, .cdc-form-card .message-item { padding: 16px; }
+.cdc-preview-card { position: static; max-height: none; overflow: visible; scrollbar-width: thin; scroll-margin-top: 24px; }
+.cdc-preview-card .cdc-section-heading { margin-bottom: 12px; }
+.cdc-preview-help { font-size: 11px; margin: 0 0 20px; }
+.cdc-live-label { flex-shrink: 0; font-size: 9px; padding: 6px 9px; border-radius: 999px; color: #9cdbcc; border: 1px solid rgba(118, 201, 181, .16); background: rgba(73, 160, 139, .08); }
+.cdc-live-label::before { content: ""; display: inline-block; width: 5px; height: 5px; border-radius: 50%; background: #8cc9b8; margin-right: 5px; }
+.cdc-studio .cdc-preview-card .doc-preview { padding: 20px; border: 1px solid rgba(209, 211, 237, .1); border-radius: 12px; background: rgba(10, 12, 19, .4); font-size: 12px; overflow-wrap: anywhere; }
+.cdc-studio .editor-history-card { margin-top: 24px; }
+
+/* Dashboard: an editorial entry point beside a compact recent-files panel. */
+.cdc-dashboard-page .home-shell { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(310px, .85fr); gap: 24px; }
+.cdc-dashboard-page .home-topbar { grid-column: 1 / -1; margin: 0; }
+.cdc-dashboard-page .home-hero { padding: 34px; }
+.cdc-dashboard-page .home-hero h1 { font-size: clamp(30px, 3.5vw, 50px); }
+.cdc-dashboard-page .home-intro { font-size: 13px; }
+.cdc-dashboard-page .home-highlights { gap: 6px; }
+.cdc-dashboard-page .home-highlight { padding: 6px 9px; font-size: 10px; }
+.cdc-dashboard-page .cdc-recent-panel { margin-top: 0; padding: 26px; }
+.cdc-recent-panel .sidebar-section-header h2 { font-size: 21px; }
+.cdc-recent-panel .home-section-copy { font-size: 12px; }
+.cdc-studio .home-summary-list { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; }
+.cdc-studio .home-summary-card { min-height: 0; padding: 22px 0 22px 56px; border: 0 !important; border-top: 1px solid var(--neo-border) !important; border-radius: 0 !important; background: transparent !important; }
+.cdc-studio .home-summary-card::before { left: 0; top: 24px; width: 36px; height: 40px; }
+.cdc-studio .home-summary-card .library-item-top { gap: 8px; }
+.cdc-studio .home-summary-card .library-item-title { font-size: 13px; font-weight: 650; }
+.cdc-studio .home-summary-card .library-item-date { font-size: 11px; line-height: 1.7; margin-top: 5px; }
+.cdc-studio .home-summary-card .home-project-actions { margin-top: 12px; }
+.cdc-shortcuts { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+.cdc-shortcut { position: relative; padding: 28px; border: 1px solid var(--neo-border); border-radius: 22px; background: linear-gradient(135deg, rgba(36, 42, 59, .8), rgba(19, 22, 32, .65)); color: var(--neo-text); text-decoration: none; }
+.cdc-shortcut h2 { font-size: 20px; margin: 10px 0; font-weight: 550; letter-spacing: -.03em; }
+.cdc-shortcut p { font-size: 12px; color: var(--neo-muted); margin: 0 0 24px; line-height: 1.6; }
+.cdc-shortcut-icon { float: right; display: grid; place-items: center; width: 38px; height: 38px; border: 1px solid rgba(119, 190, 190, .2); border-radius: 12px; background: rgba(92, 188, 178, .09); color: #8fc9c6; }
+.cdc-shortcut:nth-child(2) .cdc-shortcut-icon { color: #c2aedb; background: rgba(159, 120, 190, .1); border-color: rgba(159, 120, 190, .2); }
+.cdc-shortcut-action { font-size: 11px; color: #b6b7ed; }
+.cdc-shortcut:hover { border-color: var(--neo-border-hot); }
+
+/* Collections replace the former tall, mostly empty cards. */
+.cdc-studio.projects-page .home-shell { display: grid; grid-template-columns: minmax(270px, .7fr) minmax(0, 1.3fr); align-items: start; gap: 24px; }
+.projects-page .home-topbar, .gui-presets-page .home-topbar { grid-column: 1 / -1; }
+.cdc-studio.projects-page .home-create-card { height: auto; margin: 0 !important; padding: 28px; }
+.projects-page .home-create-card h1 { font-size: 29px; margin: 0 0 20px; }
+.projects-page .home-create-card p { font-size: 12px; margin-bottom: 26px; }
+.projects-page .home-create-card label { font-size: 11px; }
+.cdc-studio.projects-page .home-projects-card { margin: 0; }
+.cdc-studio .home-projects-list { grid-template-columns: minmax(0, 1fr); }
+.cdc-studio .home-project-card { min-height: 0; }
+.projects-page .home-project-card, .gui-presets-page .home-project-card { padding: 18px; }
+.cdc-studio .home-project-actions { justify-content: flex-start; margin-top: 16px; gap: 7px; }
+.cdc-studio .home-project-actions button { font-size: 10px; font-weight: 550 !important; padding: 8px 10px; }
+.cdc-studio .home-projects-toolbar { gap: 10px; }
+.cdc-studio .home-projects-toolbar input, .cdc-studio .home-projects-toolbar select { min-width: 0; font-size: 12px; margin-bottom: 0; }
+.cdc-studio.gui-presets-page .home-shell { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; align-items: start; }
+.cdc-studio.gui-presets-page .home-create-card { grid-column: 1 / -1; height: auto; margin: 0 !important; padding: 30px; }
+.gui-presets-page .home-create-card h1 { margin: 0 0 14px; }
+.gui-presets-page .home-create-card > .muted { max-width: 60ch; font-size: 13px; }
+.cdc-studio.gui-presets-page .home-projects-card { margin: 0 !important; }
+.gui-presets-page .home-projects-card .sidebar-section-header { border-bottom: 1px solid var(--neo-border); padding-bottom: 18px; margin-bottom: 20px; }
+.gui-presets-page .home-section-copy { font-size: 12px; }
+.gui-presets-page #guiPresetsSection { border-top: 2px solid rgba(108, 190, 187, .4) !important; }
+.gui-presets-page #itemCustomPresetsSection { border-top: 2px solid rgba(173, 139, 208, .4) !important; }
+.cdc-studio.library-page .app { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; }
+.cdc-studio.library-page .library-sidebar { position: static; max-height: none; padding: 24px; }
+.library-page .sidebar-nav-stacked { display: flex; flex-wrap: wrap; gap: 8px; }
+.library-page .library-sidebar h1 { font-size: 28px; margin: 22px 0 10px; }
+.cdc-studio.library-page .library-list-card { margin-top: 24px; }
+.cdc-studio .settings-layout { grid-template-columns: 250px minmax(0, 1fr); gap: 24px; }
+.cdc-studio .settings-sidebar { padding: 22px; }
+.cdc-studio .settings-sidebar h1 { font-size: 28px; }
+.cdc-studio .settings-sidebar-copy { font-size: 12px; }
+
+@media (min-width: 1001px) and (max-width: 1270px) {
+  .cdc-document-controls .editor-header { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  .cdc-document-controls .editor-project-summary { padding-left: 0; border: 0 !important; }
+  .cdc-studio .cdc-form-card .grid-2, .cdc-form-card .grid-3 { grid-template-columns: minmax(0, 1fr); }
+  .cdc-studio .settings-layout { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 1000px) {
+  .cdc-studio .cdc-workspace-nav { position: relative; top: auto; left: auto; bottom: auto; width: auto; margin: 16px 18px 0; padding: 7px !important; }
+  .cdc-workspace-nav::before, .cdc-workspace-nav::after { display: none; }
+  .cdc-studio .cdc-workspace-nav .top-tabs { flex-direction: row; flex-wrap: nowrap; overflow-x: auto; }
+  .cdc-studio .cdc-workspace-nav .top-tab { flex: 0 0 auto; min-height: 42px; padding: 10px 14px; }
+  .cdc-studio .cdc-workspace-nav .cdc-portal-tab { margin: 0; border: 0 !important; }
+  .cdc-studio .home-shell, .cdc-studio .settings-shell, .cdc-studio .app { margin: 0; padding: 20px 18px 36px; }
+  .cdc-editor-workspace { grid-template-columns: minmax(0, 1fr); }
+  .cdc-preview-card { position: static; max-height: none; overflow: visible; }
+  .cdc-preview-jump { display: inline-flex; padding: 8px 0; }
+  .cdc-document-controls .editor-header { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  .cdc-document-controls .editor-project-summary { padding-left: 0; border: 0 !important; }
+}
+@media (max-width: 720px) {
+  .cdc-studio .home-shell, .cdc-studio .settings-shell, .cdc-studio .app { padding: 18px 14px 36px; }
+  .cdc-dashboard-page .home-shell, .cdc-studio.projects-page .home-shell,
+  .cdc-studio.gui-presets-page .home-shell, .cdc-shortcuts, .cdc-studio .settings-layout { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+  .cdc-studio .cdc-workspace-nav { margin: 12px 14px 0; }
+  .cdc-workspace-nav .top-tab::before { display: none; }
+  .cdc-studio .cdc-workspace-nav .top-tab { font-size: 11px; padding: 10px 12px; }
+  .cdc-dashboard-page .home-hero { padding: 26px; }
+  .cdc-studio .cdc-document-controls, .cdc-studio .cdc-form-card, .cdc-studio .cdc-preview-card { padding: 20px !important; }
+  .cdc-document-controls .editor-draft-panel { grid-template-columns: minmax(0, 1fr); padding: 14px; }
+  .cdc-document-controls .editor-draft-actions { grid-column: 1; grid-row: auto; margin-top: 12px; }
+  .cdc-document-controls .editor-draft-actions button { flex: 1; padding-inline: 8px; }
+  .cdc-toolbar-label { flex: 1 0 100%; }
+  .cdc-document-controls .editor-toolbar button { min-height: 40px; }
+  .cdc-studio .cdc-form-card .grid-2, .cdc-form-card .grid-3 { grid-template-columns: minmax(0, 1fr); }
+  .cdc-document-controls .editor-context-grid { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+  .cdc-studio .home-projects-toolbar { flex-wrap: wrap; }
+  .cdc-studio .home-projects-toolbar input { flex: 1 0 100%; }
+  .cdc-studio .home-project-actions button { min-height: 40px; }
+  .cdc-studio .cdc-preview-card .doc-preview { padding: 14px; }
+  .cdc-section-heading h2 { font-size: 18px; }
+}
+.cdc-studio.library-page .library-header-card { padding: 30px; }
+.library-back-link { display: inline-block; color: var(--neo-muted); font-size: 12px; text-decoration: none; margin-bottom: 30px; }
+.library-back-link:hover { color: var(--neo-text); }
+.library-project-heading { display: flex; justify-content: space-between; align-items: center; gap: 28px; }
+.library-project-heading h1 { margin: 0 0 16px; overflow-wrap: anywhere; }
+.library-project-heading .library-intro { max-width: 60ch; font-size: 13px; }
+.library-project-actions { display: flex; flex-direction: column; flex-shrink: 0; gap: 10px; }
+.library-project-actions a { display: inline-flex; align-items: center; justify-content: center; padding: 13px 18px; border-radius: 14px; text-decoration: none; }
+.cdc-studio .library-stats { margin-top: 28px; padding-top: 24px; border-top: 1px solid var(--neo-border); gap: 24px; }
+.cdc-studio .library-stat { padding: 0; border: 0 !important; background: transparent !important; box-shadow: none !important; }
+.cdc-studio .library-stat-value { font-size: 28px; }
+.cdc-studio .library-stat-label { font-size: 11px; }
+.cdc-studio .library-main-list-card { padding: 26px; }
+.cdc-studio .library-main-list-card h2 { margin: 0; font-size: 22px; text-transform: none; letter-spacing: -.03em; }
+.cdc-studio .library-toolbar { grid-template-columns: minmax(0, 1fr) 180px; }
+.cdc-studio #cdcLibraryList { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 16px; }
+.cdc-studio #cdcLibraryList .library-empty { grid-column: 1 / -1; padding: 36px 24px; text-align: center; line-height: 1.7; }
+.cdc-studio #cdcLibraryList .library-item { margin: 0; padding: 22px; min-width: 0; }
+.cdc-studio #cdcLibraryList .library-item-top { align-items: start; }
+.cdc-studio #cdcLibraryList .library-item-title { font-size: 16px; overflow-wrap: anywhere; margin: 14px 0 10px; }
+.cdc-studio #cdcLibraryList .library-item-date { font-size: 11px; }
+.library-document-icon { display: grid; place-items: center; width: 36px; height: 40px; border-radius: 10px; color: #c2b7f4; border: 1px solid #a49bc342; background: #a49bc317; }
+.library-document-icon svg { width: 19px; height: 22px; }
+.cdc-studio #cdcLibraryList .library-item-actions { display: flex; flex-wrap: wrap; margin-top: 22px; gap: 8px; }
+.cdc-studio #cdcLibraryList .library-item-actions button { font-size: 11px; padding: 10px 12px; }
+@media (max-width: 720px) {
+  .library-project-heading { flex-direction: column; align-items: stretch; }
+  .library-project-actions { flex-direction: row; flex-wrap: wrap; }
+  .cdc-studio .library-stats { grid-template-columns: 1fr; gap: 18px; }
+  .cdc-studio .library-toolbar { grid-template-columns: minmax(0, 1fr); }
+  .cdc-studio.library-page .library-header-card, .cdc-studio .library-main-list-card { padding: 22px; }
+}
+@media print {
+  .cdc-studio .cdc-workspace-nav { display: none; }
+  .cdc-studio .app { margin: 0; padding: 0; }
+  .cdc-editor-workspace { display: block; }
+  .cdc-preview-card { position: static; max-height: none; overflow: visible; }
+}

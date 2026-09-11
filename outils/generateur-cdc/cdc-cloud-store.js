@@ -246,12 +246,16 @@
       return { ok: false, reason: "signed_out" };
     }
 
-    const { data, error } = await cloudSync.invokeFunction(FUNCTION_NAME, {
+    const invoke = () => cloudSync.invokeFunction(FUNCTION_NAME, {
       body: {
         action,
         ...payload
       }
     });
+
+    const { data, error } = window.NeodiumLoading
+      ? await window.NeodiumLoading.track(action === "get_snapshot" ? "Chargement des CDC cloud…" : "Enregistrement des CDC cloud…", invoke)
+      : await invoke();
 
     if (error) {
       const errorDetails = await extractFunctionErrorDetails(error);

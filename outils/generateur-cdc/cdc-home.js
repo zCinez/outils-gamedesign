@@ -156,7 +156,7 @@ function getHomeTemplateLabel(template) {
     gui: "GUI",
     itemC: "Item Custom",
     event: "Event",
-    metier: "MÃ©tier",
+    metier: "Métier",
     rankUp: "Rank-up",
     mobs: "Mobs",
     libre: "Libre",
@@ -449,8 +449,8 @@ function renderHomeRecentActivity() {
         <div class="library-item-top">
           <div>
             <p class="library-item-title">${escapeHomeHtml(latestProject.name || "Projet sans nom")}</p>
-            <div class="library-item-date">DerniÃ¨re activitÃ© : ${escapeHomeHtml(formatHomeTimestamp(latestProject.activityAt))}</div>
-            <div class="library-item-date">CDC liÃ©s : ${getProjectCdcCount(latestProject.id)}</div>
+            <div class="library-item-date">Dernière activité : ${escapeHomeHtml(formatHomeTimestamp(latestProject.activityAt))}</div>
+            <div class="library-item-date">CDC liés : ${getProjectCdcCount(latestProject.id)}</div>
           </div>
           <span class="project-history-template">Projet</span>
         </div>
@@ -463,8 +463,8 @@ function renderHomeRecentActivity() {
       <div class="library-item home-project-card home-summary-card">
         <div class="library-item-top">
           <div>
-            <p class="library-item-title">Aucun projet modifiÃ©</p>
-            <div class="library-item-date">CrÃ©e ou modifie un projet pour le retrouver ici.</div>
+            <p class="library-item-title">Aucun projet modifié</p>
+            <div class="library-item-date">Crée ou modifie un projet pour le retrouver ici.</div>
           </div>
           <span class="project-history-template">Projet</span>
         </div>
@@ -480,7 +480,7 @@ function renderHomeRecentActivity() {
           <div>
             <p class="library-item-title">${escapeHomeHtml(latestCdc.projectName || "CDC sans nom")}</p>
             <div class="library-item-date">Projet : ${escapeHomeHtml(cdcProjectLabel)}</div>
-            <div class="library-item-date">ModifiÃ© le : ${escapeHomeHtml(formatHomeTimestamp(latestCdc.updatedAt || latestCdc.createdAt))}</div>
+            <div class="library-item-date">Modifié le : ${escapeHomeHtml(formatHomeTimestamp(latestCdc.updatedAt || latestCdc.createdAt))}</div>
           </div>
           <span class="project-history-template">${escapeHomeHtml(cdcTemplateLabel)}</span>
         </div>
@@ -494,8 +494,8 @@ function renderHomeRecentActivity() {
       <div class="library-item home-project-card home-summary-card">
         <div class="library-item-top">
           <div>
-            <p class="library-item-title">Aucun CDC modifiÃ©</p>
-            <div class="library-item-date">Le dernier CDC enregistrÃ© apparaÃ®tra ici automatiquement.</div>
+            <p class="library-item-title">Aucun CDC modifié</p>
+            <div class="library-item-date">Le dernier CDC enregistré apparaîtra ici automatiquement.</div>
           </div>
           <span class="project-history-template">CDC</span>
         </div>

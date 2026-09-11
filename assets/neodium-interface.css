@@ -1,0 +1,24 @@
+.neodium-loading[hidden] { display: none !important; }
+.neodium-loading { pointer-events: auto; }
+.neodium-loading { position: fixed; z-index: 10000; left: 24px; bottom: 82px; max-width: min(480px, calc(100vw - 48px)); display: flex; align-items: center; gap: 12px; padding: 14px 16px; color: #eeedf8; background: #202333f5; border: 1px solid #b3add04d; border-radius: 16px; box-shadow: 0 12px 40px #0005; font-size: 12px; line-height: 1.6; }
+.neodium-loading button { flex-shrink: 0; padding: 4px 9px !important; min-height: 32px; background: transparent !important; border: 0 !important; color: inherit !important; cursor: pointer; }
+.neodium-spinner { width: 18px; height: 18px; border: 2px solid #afa6e532; border-top-color: #c4b8ff; border-radius: 50%; animation: neodium-spin .8s linear infinite; flex: 0 0 auto; }
+.neodium-loading.is-notice .neodium-spinner { animation: none; border-color: #d6b777; }
+@keyframes neodium-spin { to { transform: rotate(360deg); } }
+.neodium-legal-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 18px; margin: 32px 28px 0; padding: 24px 0 90px; border-top: 1px solid #b3add026; color: #aaaabb; font-size: 11px; line-height: 1.8; }
+.neodium-legal-footer nav { display: flex; flex-wrap: wrap; gap: 10px 24px; }
+.neodium-legal-footer a { color: #c6c2dd; text-decoration: none; }
+.neodium-legal-footer a:hover { text-decoration: underline; }
+.cdc-studio .neodium-legal-footer { margin-left: calc(var(--cdc-rail) + 44px); }
+.legal-shell { max-width: 960px; margin: 30px auto; padding: 0 24px; }
+.legal-shell .legal-paper { padding: clamp(24px, 5vw, 56px); border: 1px solid #b3add030; border-radius: 28px; background: linear-gradient(135deg, #303449aa, #151721e8 65%, #2b2235aa); box-shadow: 0 24px 64px #0003; }
+.legal-shell h1 { font-size: clamp(28px, 4vw, 44px); letter-spacing: -.04em; line-height: 1.2; }
+.legal-shell h2 { font-size: 20px; margin-top: 32px; }
+.legal-shell p, .legal-shell li { font-size: 14px; line-height: 1.85; color: #c5c6d3; }
+.legal-shell a { color: #bfc2ff; overflow-wrap: anywhere; }
+.legal-shell .legal-note { border: 1px solid #d6b77755; border-radius: 14px; padding: 16px 20px; background: #d6b7770a; }
+.legal-shell .legal-eyebrow { font-size: 10px; letter-spacing: .2em; color: #b5acd9; }
+@media (max-width: 1000px) { .cdc-studio .neodium-legal-footer { margin-left: 18px; margin-right: 18px; } }
+@media (max-width: 600px) { .neodium-legal-footer { flex-direction: column; align-items: flex-start; margin-inline: 18px; } .neodium-legal-footer nav { flex-direction: column; gap: 8px; } .legal-shell { padding: 0 14px; } .neodium-loading { left: 14px; max-width: calc(100vw - 28px); } }
+@media (prefers-reduced-motion: reduce) { .neodium-spinner { animation: none; } }
+@media print { .neodium-loading, .neodium-legal-footer { display: none !important; } }

@@ -80,6 +80,12 @@
 
     if (!navShell || !navElement) return;
 
+    // Keep the fixed workspace rail outside animated page containers.
+    navShell.classList.add("cdc-workspace-nav");
+    const globalHeader = document.querySelector(".neodium-global-header");
+    if (globalHeader) globalHeader.after(navShell);
+    else document.body.prepend(navShell);
+
     if (!navElement.querySelector("[data-portal-link]")) {
       const portalLink = document.createElement("a");
       portalLink.className = "top-tab cdc-portal-tab";
