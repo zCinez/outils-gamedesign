@@ -6,7 +6,8 @@ function renderGuiCommandeItemText(item, index) {
 - Item : ${item.item || "Aucun"}
 - Nom : ${item.nom || "Aucun"}
 - Lore :
-${renderLoreText(item.lore, "Aucun")}`;
+${renderLoreText(item.lore, "Aucun")}
+- Effet d'enchantement : ${item.enchanted ? "Oui" : "Non"}`;
 
   if (loreVariantesText) {
     text += `\n${loreVariantesText}`;
@@ -31,7 +32,8 @@ function renderGuiCommandeGroupedItemText(group) {
 - ${itemSummary.label} : ${itemSummary.value}
 - Nom : ${group.nom || "Aucun"}
 - Lore :
-${renderLoreText(group.lore, "Aucun")}`;
+${renderLoreText(group.lore, "Aucun")}
+- Effet d'enchantement : ${group.enchanted ? "Oui" : "Non"}`;
 
   if (loreVariantesText) {
     text += `\n${loreVariantesText}`;
@@ -64,7 +66,8 @@ function renderGuiCommandeItemHtml(item, index) {
 - Slot : ${escapeHtml(item.slot || "Aucun")}<br>
 - Item : ${escapeHtml(item.item || "Aucun")}<br>
 - Nom : ${escapeHtml(item.nom || "Aucun")}<br>
-- Lore :<br>${renderLoreHtml(item.lore, "Aucun")}<br>`;
+- Lore :<br>${renderLoreHtml(item.lore, "Aucun")}<br>
+- Effet d'enchantement : ${item.enchanted ? "Oui" : "Non"}<br>`;
 
   if (loreVariantesHtml) {
     html += loreVariantesHtml;
@@ -88,7 +91,8 @@ function renderGuiCommandeGroupedItemHtml(group) {
 - Slots : ${escapeHtml(slots)}<br>
 - ${escapeHtml(itemSummary.label)} : ${escapeHtml(itemSummary.value)}<br>
 - Nom : ${escapeHtml(group.nom || "Aucun")}<br>
-- Lore :<br>${renderLoreHtml(group.lore, "Aucun")}<br>`;
+- Lore :<br>${renderLoreHtml(group.lore, "Aucun")}<br>
+- Effet d'enchantement : ${group.enchanted ? "Oui" : "Non"}<br>`;
 
   if (loreVariantesHtml) {
     html += loreVariantesHtml;

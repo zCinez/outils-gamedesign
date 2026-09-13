@@ -47,12 +47,14 @@
     const PROJECT_IMAGE_FIELDS = [
       { inputId: "imageGUICommande", previewId: "previewImageGUICommande" },
       { inputId: "guiImage", previewId: "previewImageTemplate" },
+      { inputId: "craftImage", previewId: "previewCraftTemplate" },
       { inputId: "textureItemImage", previewId: "previewTextureItemTemplate" },
       { inputId: "metierGuiXpImage", previewId: "previewMetierGuiXpImage" }
     ];
     const PROJECT_IMAGE_COMPRESSION_OPTIONS = Object.freeze({
       imageGUICommande: { maxWidth: 960, maxHeight: 960, quality: 0.78, minQuality: 0.58, targetBytes: 240 * 1024, imageSmoothing: true },
       guiImage: { maxWidth: 960, maxHeight: 960, quality: 0.78, minQuality: 0.58, targetBytes: 240 * 1024, imageSmoothing: true },
+      craftImage: { maxWidth: 960, maxHeight: 960, quality: 0.78, minQuality: 0.58, targetBytes: 240 * 1024, imageSmoothing: true },
       textureItemImage: { maxWidth: 256, maxHeight: 256, quality: 0.84, minQuality: 0.64, targetBytes: 96 * 1024, imageSmoothing: false },
       metierGuiXpImage: { maxWidth: 960, maxHeight: 960, quality: 0.78, minQuality: 0.58, targetBytes: 240 * 1024, imageSmoothing: true }
     });
@@ -73,7 +75,33 @@
       "frag_event",
       "frag_metier",
       "gemme",
-      "sell_bag"
+      "sell_bag",
+      "graine_melon_tier_1",
+      "graine_melon_tier_2",
+      "graine_melon_tier_3",
+      "graine_melon_tier_4",
+      "graine_melon_tier_5",
+      "hopper_du_neant",
+      "tige_melon_tier_1",
+      "tige_melon_tier_2",
+      "tige_melon_tier_3",
+      "tige_melon_tier_4",
+      "tige_melon_tier_5",
+      "ticket_grotte",
+      "fragment_evenement",
+      "fragment_metier",
+      "minerai_gemme",
+      "parchemin_scelle",
+      "parchemin_savoir",
+      "parchemin_eveil",
+      "parchemin_entrainement",
+      "parchemin_maitrise",
+      "catalyseur_agricole",
+      "cactus_tier_1",
+      "cactus_tier_2",
+      "cactus_tier_3",
+      "cactus_tier_4",
+      "cactus_tier_5"
     ];
     const MAX_MINECRAFT_ITEM_SUGGESTIONS = 18;
     const MINECRAFT_ITEM_TEXTURE_MAP = window.MINECRAFT_ITEM_TEXTURE_MAP || {};
@@ -2933,6 +2961,7 @@
       return [
         "nomItem",
         "itemMc",
+        "itemCustomEnchant",
         "typeArme",
         "typeOutil",
         "typeObjet",
@@ -3000,6 +3029,10 @@
           itemCustomCraftIngredients: recupererItemCustomCraftIngredients()
         },
         images: {
+          craftImage: {
+            fileName: getSelectedFileName("craftImage", ""),
+            dataUrl: getImagePreviewSource("previewCraftTemplate")
+          },
           textureItemImage: {
             fileName: getSelectedFileName("textureItemImage", ""),
             dataUrl: getImagePreviewSource("previewTextureItemTemplate")
@@ -3013,25 +3046,10 @@
         return preset;
       }
 
-      const currentDataUrl = String(preset.images?.textureItemImage?.dataUrl || "").trim();
-      if (!currentDataUrl) {
-        return preset;
-      }
-
-      const compactedDataUrl = await buildCompactImageDataUrl(currentDataUrl);
-      if (!compactedDataUrl || compactedDataUrl === currentDataUrl) {
-        return preset;
-      }
-
+      const normalizedImages = await normalizeProjectImagesForStorage(preset.images || {});
       return {
         ...preset,
-        images: {
-          ...(preset.images || {}),
-          textureItemImage: {
-            ...(preset.images?.textureItemImage || {}),
-            dataUrl: compactedDataUrl
-          }
-        }
+        images: normalizedImages
       };
     }
 
@@ -3083,6 +3101,7 @@
       });
 
       setProjectImageState("textureItemImage", "previewTextureItemTemplate");
+      setProjectImageState("craftImage", "previewCraftTemplate");
       clearElement("itemCustomCraftIngredientsContainer");
       itemCustomCraftIngredientIndex = 0;
       updateTypeItemFields();
@@ -3113,6 +3132,7 @@
 
       (preset.dynamic?.itemCustomCraftIngredients || []).forEach(item => ajouterItemCustomCraftIngredient(item));
       setProjectImageState("textureItemImage", "previewTextureItemTemplate", preset.images?.textureItemImage || {});
+      setProjectImageState("craftImage", "previewCraftTemplate", preset.images?.craftImage || {});
 
       const presetNameField = document.getElementById("itemCustomPresetName");
       if (presetNameField) {
@@ -3749,6 +3769,7 @@
         || element.id === "itemMc"
         || element.id === "nameItem"
         || element.id === "loreItem"
+        || element.id === "itemCustomEnchant"
         || element.id === "linkTexture"
         || element.id === "textureItemImage"
         || element.id.startsWith("item_custom_craft_")
@@ -4452,6 +4473,9 @@
       });
 
       remplacerGuiCommandeLoreVariantes(targetItemId, getGuiCommandeLoreVariantes(sourceItemId));
+      const sourceEnchant = document.getElementById(`gui_cmd_enchanted_${sourceItemId}`);
+      const targetEnchant = document.getElementById(`gui_cmd_enchanted_${targetItemId}`);
+      if (sourceEnchant && targetEnchant) targetEnchant.checked = sourceEnchant.checked;
       const sourcePresetSelect = document.getElementById(`gui_commande_item_custom_preset_${sourceItemId}`);
       const targetPresetSelect = document.getElementById(`gui_commande_item_custom_preset_${targetItemId}`);
       if (sourcePresetSelect && targetPresetSelect) {
@@ -4556,6 +4580,11 @@
         <label for="gui_cmd_lore_${itemId}">Lore</label>
         <textarea id="gui_cmd_lore_${itemId}" placeholder="Ex : &7Clique pour ouvrir">${escapeHtml(data.lore || "")}</textarea>
 
+        <label class="gui-enchantment-toggle" for="gui_cmd_enchanted_${itemId}">
+          <input type="checkbox" id="gui_cmd_enchanted_${itemId}"${data.enchanted ? " checked" : ""}>
+          Afficher l'effet d'enchantement
+        </label>
+
         <div class="gui-item-lore-variants">
           <div class="gui-item-lore-variants-header">
             <div>
@@ -4604,13 +4633,14 @@
           item: document.getElementById(`gui_cmd_item_${id}`)?.value.trim() || "",
           nom: document.getElementById(`gui_cmd_nom_${id}`)?.value.trim() || "",
           lore: document.getElementById(`gui_cmd_lore_${id}`)?.value.trim() || "",
+          enchanted: Boolean(document.getElementById(`gui_cmd_enchanted_${id}`)?.checked),
           loreVariantes: getGuiCommandeLoreVariantes(id),
           itemCustomPresetId: document.getElementById(`gui_commande_item_custom_preset_${id}`)?.dataset.appliedPresetId || "",
           fonction: document.getElementById(`gui_cmd_fonction_${id}`)?.value.trim() || "",
           action: document.getElementById(`gui_cmd_action_${id}`)?.value.trim() || ""
         };
 
-        if (data.slot || data.item || data.nom || data.lore || data.loreVariantes.length || data.fonction || data.action) {
+        if (data.slot || data.item || data.nom || data.lore || data.enchanted || data.loreVariantes.length || data.fonction || data.action) {
           result.push(data);
         }
       });
@@ -4779,7 +4809,7 @@
 
         slotsHtml += `
           <div
-            class="gui-slot-overlay${item ? " has-item" : ""}"
+            class="gui-slot-overlay${item ? " has-item" : ""}${item?.enchanted ? " has-enchantment" : ""}"
             data-slot="${index}"
             ${slotTooltipHtml ? `data-tooltip-html="${escapeHtml(slotTooltipHtml)}"` : ""}
             style="
@@ -5040,6 +5070,9 @@
       });
 
       remplacerGuiTemplateLoreVariantes(targetItemId, getGuiTemplateLoreVariantes(sourceItemId));
+      const sourceEnchant = document.getElementById(`gui_tpl_enchanted_${sourceItemId}`);
+      const targetEnchant = document.getElementById(`gui_tpl_enchanted_${targetItemId}`);
+      if (sourceEnchant && targetEnchant) targetEnchant.checked = sourceEnchant.checked;
       const sourcePresetSelect = document.getElementById(`gui_template_item_custom_preset_${sourceItemId}`);
       const targetPresetSelect = document.getElementById(`gui_template_item_custom_preset_${targetItemId}`);
       if (sourcePresetSelect && targetPresetSelect) {
@@ -5144,6 +5177,11 @@
         <label for="gui_tpl_lore_${itemId}">Lore</label>
         <textarea id="gui_tpl_lore_${itemId}" placeholder="Ex : &7Clique pour ouvrir">${escapeHtml(data.lore || "")}</textarea>
 
+        <label class="gui-enchantment-toggle" for="gui_tpl_enchanted_${itemId}">
+          <input type="checkbox" id="gui_tpl_enchanted_${itemId}"${data.enchanted ? " checked" : ""}>
+          Afficher l'effet d'enchantement
+        </label>
+
         <div class="gui-item-lore-variants">
           <div class="gui-item-lore-variants-header">
             <div>
@@ -5192,13 +5230,14 @@
           item: document.getElementById(`gui_tpl_item_${id}`)?.value.trim() || "",
           nom: document.getElementById(`gui_tpl_nom_${id}`)?.value.trim() || "",
           lore: document.getElementById(`gui_tpl_lore_${id}`)?.value.trim() || "",
+          enchanted: Boolean(document.getElementById(`gui_tpl_enchanted_${id}`)?.checked),
           loreVariantes: getGuiTemplateLoreVariantes(id),
           itemCustomPresetId: document.getElementById(`gui_template_item_custom_preset_${id}`)?.dataset.appliedPresetId || "",
           fonction: document.getElementById(`gui_tpl_fonction_${id}`)?.value.trim() || "",
           action: document.getElementById(`gui_tpl_action_${id}`)?.value.trim() || ""
         };
 
-        if (data.slot || data.item || data.nom || data.lore || data.loreVariantes.length || data.fonction || data.action) {
+        if (data.slot || data.item || data.nom || data.lore || data.enchanted || data.loreVariantes.length || data.fonction || data.action) {
           result.push(data);
         }
       });
@@ -5286,6 +5325,7 @@
       return `
         <div class="gui-minecraft-tooltip-name">${nameHtml}</div>
         ${loreHtml ? `<div class="gui-minecraft-tooltip-lore">${loreHtml}</div>` : ""}
+        ${item.enchanted ? '<div class="gui-minecraft-tooltip-enchantment">Enchanté</div>' : ""}
       `;
     }
 

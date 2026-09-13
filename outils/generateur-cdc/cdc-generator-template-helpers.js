@@ -139,12 +139,13 @@ function buildGuiSharedGroupedEntries(items, options = {}) {
     const lore = String(item?.[loreField] || "").trim();
     const loreVariantes = getGuiSharedLoreVariantesFromItem(item);
 
-    if (!nom && !lore && !loreVariantes.length) {
+    const enchanted = Boolean(item?.enchanted);
+    if (!nom && !lore && !loreVariantes.length && !enchanted) {
       groupedEntries.push({ type: "single", item, index });
       return;
     }
 
-    const key = `${nom}\u0000${lore}\u0000${getGuiSharedLoreVariantesSignature(item)}`;
+    const key = `${nom}\u0000${lore}\u0000${getGuiSharedLoreVariantesSignature(item)}\u0000${enchanted}`;
     const existingGroup = groupsByContent.get(key);
 
     if (existingGroup) {
@@ -157,6 +158,7 @@ function buildGuiSharedGroupedEntries(items, options = {}) {
       nom,
       lore,
       loreVariantes,
+      enchanted,
       entries: [{ item, index }]
     };
 

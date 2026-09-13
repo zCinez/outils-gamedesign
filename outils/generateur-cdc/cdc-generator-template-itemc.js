@@ -152,6 +152,11 @@ function ajouterItemCustomCraftIngredient(data = {}) {
         <input type="text" id="item_custom_craft_item_${itemId}" list="minecraftItemOptions" placeholder="Choisir ou écrire un item Minecraft" value="${escapeHtml(data.item || "")}">
       </div>
     </div>
+
+    <label class="gui-enchantment-toggle" for="item_custom_craft_enchanted_${itemId}">
+      <input type="checkbox" id="item_custom_craft_enchanted_${itemId}"${data.enchanted ? " checked" : ""}>
+      Afficher l'effet d'enchantement
+    </label>
   `;
 
   container.appendChild(item);
@@ -179,6 +184,7 @@ function recupererItemCustomCraftIngredients() {
       return {
         slot: document.getElementById(`item_custom_craft_slot_${itemId}`)?.value.trim() || "",
         item: document.getElementById(`item_custom_craft_item_${itemId}`)?.value.trim() || "",
+        enchanted: Boolean(document.getElementById(`item_custom_craft_enchanted_${itemId}`)?.checked),
         itemCustomPresetId: document.getElementById(`item_custom_craft_preset_${itemId}`)?.dataset.appliedPresetId || ""
       };
     })
@@ -349,7 +355,8 @@ function getItemCustomCraftIngredientPreviewItem(entry) {
     item,
     nom,
     lore,
-    customTextureUrl
+    customTextureUrl,
+    enchanted: Boolean(entry?.enchanted)
   };
 }
 
@@ -367,7 +374,8 @@ function getItemCustomCraftResultPreviewItem() {
     item,
     nom,
     lore,
-    customTextureUrl
+    customTextureUrl,
+    enchanted: Boolean(document.getElementById("itemCustomEnchant")?.checked)
   };
 }
 
@@ -414,7 +422,7 @@ function buildItemCustomCraftVisualizationMarkup(previewId = "itemCustomCraftVis
 
     return `
       <div
-        class="gui-slot-overlay craft-slot-overlay${item ? " has-item" : ""}${isResultSlot ? " is-result" : ""}${staticClass}"
+        class="gui-slot-overlay craft-slot-overlay${item ? " has-item" : ""}${item?.enchanted ? " has-enchantment" : ""}${isResultSlot ? " is-result" : ""}${staticClass}"
         ${datasetSlot}
         ${slotTooltipHtml ? `data-tooltip-html="${escapeHtml(slotTooltipHtml)}"` : ""}
         style="
@@ -497,6 +505,15 @@ function updateItemCustomCraftVisualization() {
 }
 
 function getItemCustomCraftPreviewHtml() {
+  const craftImageSource = getImagePreviewSource("previewCraftTemplate");
+  if (craftImageSource) {
+    return `
+      <div class="preview-gui-visual-block craft-uploaded-image">
+        ${renderSavedImagePreviewHtml("Image du craft", "previewCraftTemplate", "Image du craft")}
+      </div>
+    `;
+  }
+
   return `
     <div class="preview-gui-visual-block">
       <div class="preview-gui-visual">
@@ -504,6 +521,10 @@ function getItemCustomCraftPreviewHtml() {
       </div>
     </div>
   `;
+}
+
+function hasItemCustomCraftImage() {
+  return Boolean(getImagePreviewSource("previewCraftTemplate"));
 }
 
 function formatItemCustomCraftIngredientsText() {
@@ -516,7 +537,7 @@ function formatItemCustomCraftIngredientsText() {
     .map((entry) => {
       const previewItem = getItemCustomCraftIngredientPreviewItem(entry);
       const itemLabel = previewItem?.item || entry.item || "Aucun";
-      return `- ${getItemCustomCraftSlotDescription(entry.slot)} : ${itemLabel}`;
+      return `- ${getItemCustomCraftSlotDescription(entry.slot)} : ${itemLabel}${entry.enchanted ? " (effet d'enchantement)" : ""}`;
     })
     .join("\n");
 }
@@ -531,7 +552,7 @@ function formatItemCustomCraftIngredientsHtml() {
     .map((entry) => {
       const previewItem = getItemCustomCraftIngredientPreviewItem(entry);
       const itemLabel = previewItem?.item || entry.item || "Aucun";
-      return `<div>- ${escapeHtml(getItemCustomCraftSlotDescription(entry.slot))} : ${escapeHtml(itemLabel)}</div>`;
+      return `<div>- ${escapeHtml(getItemCustomCraftSlotDescription(entry.slot))} : ${escapeHtml(itemLabel)}${entry.enchanted ? " (effet d'enchantement)" : ""}</div>`;
     })
     .join("");
 }
@@ -539,6 +560,7 @@ function formatItemCustomCraftIngredientsHtml() {
 function genererTemplateItemC() {
   const nomItem = valeur("nomItem");
   const itemMc = valeur("itemMc");
+  const itemCustomEnchant = Boolean(document.getElementById("itemCustomEnchant")?.checked);
 
   const typeArme = document.getElementById("typeArme").checked;
   const typeOutil = document.getElementById("typeOutil").checked;
@@ -613,8 +635,12 @@ function genererTemplateItemC() {
   if (obtentionCraft) {
     obtentionTexte += `☑ Craft\n`;
     detailsObtention += `Craft :\n`;
-    detailsObtention += `- Ingrédients :\n${formatItemCustomCraftIngredientsText()}\n`;
-    detailsObtention += `- Résultat : ${getItemCustomCraftResultLabel()}\n`;
+    if (hasItemCustomCraftImage()) {
+      detailsObtention += `- Image du craft : ${getSelectedFileName("craftImage")}\n`;
+    } else {
+      detailsObtention += `- Ingrédients :\n${formatItemCustomCraftIngredientsText()}\n`;
+    }
+    detailsObtention += `- Résultat : ${getItemCustomCraftResultLabel()}${itemCustomEnchant ? " (effet d'enchantement)" : ""}\n`;
     detailsObtention += `- Précisions : ${craftRecipeItemCustom || "Aucune"}\n`;
   }
   if (obtentionRecompense) {
@@ -719,6 +745,7 @@ ${detailsClic ? `\n${detailsClic}` : ""}`;
 function genererPreviewItemCHtml() {
   const nomItem = valeur("nomItem");
   const itemMc = valeur("itemMc");
+  const itemCustomEnchant = Boolean(document.getElementById("itemCustomEnchant")?.checked);
 
   const typeArme = document.getElementById("typeArme").checked;
   const typeOutil = document.getElementById("typeOutil").checked;
@@ -813,8 +840,8 @@ function genererPreviewItemCHtml() {
     html += `
       <br><div><strong>Craft :</strong></div>
       ${getItemCustomCraftPreviewHtml()}
-      <div><strong>Ingrédients :</strong><br>${formatItemCustomCraftIngredientsHtml()}</div><br>
-      <div><strong>Résultat :</strong> ${escapeHtml(getItemCustomCraftResultLabel())}</div><br>
+      ${hasItemCustomCraftImage() ? "" : `<div><strong>Ingrédients :</strong><br>${formatItemCustomCraftIngredientsHtml()}</div><br>`}
+      <div><strong>Résultat :</strong> ${escapeHtml(getItemCustomCraftResultLabel())}${itemCustomEnchant ? " (effet d'enchantement)" : ""}</div><br>
       <div><strong>Précisions :</strong><br>${craftRecipeItemCustom ? nl2brSafe(craftRecipeItemCustom) : "Aucune"}</div>
     `;
   }

@@ -102,12 +102,13 @@ function buildGuiTemplateItemEntries(items) {
     const lore = String(item.lore || "").trim();
     const loreVariantes = normalizeGuiTemplateLoreVariantes(item.loreVariantes || item.loreVariants);
 
-    if (!nom && !lore && !loreVariantes.length) {
+    const enchanted = Boolean(item?.enchanted);
+    if (!nom && !lore && !loreVariantes.length && !enchanted) {
       groupedEntries.push({ type: "single", item, index });
       return;
     }
 
-    const key = `${nom}\u0000${lore}\u0000${getGuiTemplateLoreVariantesSignature(item)}`;
+    const key = `${nom}\u0000${lore}\u0000${getGuiTemplateLoreVariantesSignature(item)}\u0000${enchanted}`;
     const existingGroup = groupsByContent.get(key);
 
     if (existingGroup) {
@@ -120,6 +121,7 @@ function buildGuiTemplateItemEntries(items) {
       nom,
       lore,
       loreVariantes,
+      enchanted,
       entries: [{ item, index }]
     };
 
@@ -145,7 +147,8 @@ function renderGuiTemplateItemText(item, index) {
 - Item : ${item.item || "Aucun"}
 - Nom : ${item.nom || "Aucun"}
 - Lore :
-${renderLoreText(item.lore, "Aucun")}`;
+${renderLoreText(item.lore, "Aucun")}
+- Effet d'enchantement : ${item.enchanted ? "Oui" : "Non"}`;
 
   if (loreVariantesText) {
     text += `\n${loreVariantesText}`;
@@ -170,7 +173,8 @@ function renderGuiTemplateGroupedItemText(group) {
 - ${itemSummary.label} : ${itemSummary.value}
 - Nom : ${group.nom || "Aucun"}
 - Lore :
-${renderLoreText(group.lore, "Aucun")}`;
+${renderLoreText(group.lore, "Aucun")}
+- Effet d'enchantement : ${group.enchanted ? "Oui" : "Non"}`;
 
   if (loreVariantesText) {
     text += `\n${loreVariantesText}`;
@@ -203,7 +207,8 @@ function renderGuiTemplateItemHtml(item, index) {
 - Slot : ${escapeHtml(item.slot || "Aucun")}<br>
 - Item : ${escapeHtml(item.item || "Aucun")}<br>
 - Nom : ${escapeHtml(item.nom || "Aucun")}<br>
-- Lore :<br>${renderLoreHtml(item.lore, "Aucun")}<br>`;
+- Lore :<br>${renderLoreHtml(item.lore, "Aucun")}<br>
+- Effet d'enchantement : ${item.enchanted ? "Oui" : "Non"}<br>`;
 
   if (loreVariantesHtml) {
     html += `${loreVariantesHtml}`;
@@ -227,7 +232,8 @@ function renderGuiTemplateGroupedItemHtml(group) {
 - Slots : ${escapeHtml(slots)}<br>
 - ${escapeHtml(itemSummary.label)} : ${escapeHtml(itemSummary.value)}<br>
 - Nom : ${escapeHtml(group.nom || "Aucun")}<br>
-- Lore :<br>${renderLoreHtml(group.lore, "Aucun")}<br>`;
+- Lore :<br>${renderLoreHtml(group.lore, "Aucun")}<br>
+- Effet d'enchantement : ${group.enchanted ? "Oui" : "Non"}<br>`;
 
   if (loreVariantesHtml) {
     html += `${loreVariantesHtml}`;

@@ -33,6 +33,31 @@ for (const id of customIds) {
   const url = context.resolveMinecraftItemTextureUrl(id);
   assert.ok(url && fs.existsSync(path.join(root, url)), `Custom texture: ${id}`);
 }
+const importedNeodiumIds = [
+  'graine_melon_tier_1', 'graine_melon_tier_2', 'graine_melon_tier_3', 'graine_melon_tier_4', 'graine_melon_tier_5',
+  'hopper_du_neant', 'tige_melon_tier_1', 'tige_melon_tier_2', 'tige_melon_tier_3', 'tige_melon_tier_4', 'tige_melon_tier_5',
+  'ticket_grotte', 'fragment_evenement', 'fragment_metier', 'coeur_sombre', 'gemme', 'minerai_gemme',
+  'parchemin_scelle', 'parchemin_savoir', 'parchemin_eveil', 'parchemin_entrainement', 'parchemin_maitrise',
+  'catalyseur_agricole', 'cactus_tier_1', 'cactus_tier_2', 'cactus_tier_3', 'cactus_tier_4', 'cactus_tier_5'
+];
+for (const id of importedNeodiumIds) {
+  assert.ok(customIds.includes(id), `Imported item is searchable: ${id}`);
+  const url = context.resolveMinecraftItemTextureUrl(id);
+  assert.equal(url, `./minecraft-item-textures/item/neodium/exports/${id}.png`, `Imported texture mapping: ${id}`);
+  assert.ok(fs.existsSync(path.join(root, url)), `Imported texture exists: ${id}`);
+}
+const generatorSource = fs.readFileSync(path.join(root, 'cdc-generator.js'), 'utf8');
+const craftSource = fs.readFileSync(path.join(root, 'cdc-generator-template-itemc.js'), 'utf8');
+const generatorHtml = fs.readFileSync(path.join(root, 'cdc-generator.html'), 'utf8');
+const generatorStyles = fs.readFileSync(path.join(root, 'cdc-generator.css'), 'utf8');
+assert.match(generatorSource, /Afficher l'effet d'enchantement/);
+assert.match(generatorSource, /has-enchantment/);
+assert.match(craftSource, /item_custom_craft_enchanted_/);
+assert.match(craftSource, /itemCustomEnchant/);
+assert.match(craftSource, /hasItemCustomCraftImage/);
+assert.match(generatorSource, /inputId: "craftImage"/);
+assert.match(generatorHtml, /id="craftImage"/);
+assert.match(generatorStyles, /\.gui-slot-overlay\.has-enchantment::after/);
 assert.equal(context.resolveRenderedMinecraftItemIconUrl('unknown_item'), '');
 assert.equal(context.resolveRenderedMinecraftItemIconUrl('hdb:1234'), '');
 assert.match(context.buildItemCustomCraftSlotRenderData({item:'hdb:1234'}, 'Head', 1).slotContent, /data-hdb-id="1234"/);
