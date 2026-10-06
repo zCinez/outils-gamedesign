@@ -46,6 +46,16 @@ for (const id of importedNeodiumIds) {
   assert.equal(url, `./minecraft-item-textures/item/neodium/exports/${id}.png`, `Imported texture mapping: ${id}`);
   assert.ok(fs.existsSync(path.join(root, url)), `Imported texture exists: ${id}`);
 }
+const attachedNeodiumIds = [
+  'essence_epine_tier_1', 'essence_epine_tier_2', 'essence_epine_tier_3', 'essence_epine_tier_4', 'essence_epine_tier_5',
+  'pulpe_cristallisee_tier_1', 'pulpe_cristallisee_tier_2', 'pulpe_cristallisee_tier_3', 'pulpe_cristallisee_tier_4', 'pulpe_cristallisee_tier_5'
+];
+for (const id of attachedNeodiumIds) {
+  assert.ok(customIds.includes(id), `Attached item is searchable: ${id}`);
+  const url = context.resolveMinecraftItemTextureUrl(id);
+  assert.equal(url, `./minecraft-item-textures/item/neodium/attached/${id}.png`, `Attached texture mapping: ${id}`);
+  assert.ok(fs.existsSync(path.join(root, url)), `Attached texture exists: ${id}`);
+}
 const generatorSource = fs.readFileSync(path.join(root, 'cdc-generator.js'), 'utf8');
 const craftSource = fs.readFileSync(path.join(root, 'cdc-generator-template-itemc.js'), 'utf8');
 const generatorHtml = fs.readFileSync(path.join(root, 'cdc-generator.html'), 'utf8');

@@ -1547,6 +1547,16 @@
     "cactus_tier_2":  "item/neodium/exports/cactus_tier_2",
     "cactus_tier_3":  "item/neodium/exports/cactus_tier_3",
     "cactus_tier_4":  "item/neodium/exports/cactus_tier_4",
-    "cactus_tier_5":  "item/neodium/exports/cactus_tier_5"
+    "cactus_tier_5":  "item/neodium/exports/cactus_tier_5",
+    "essence_epine_tier_1":  "item/neodium/attached/essence_epine_tier_1",
+    "essence_epine_tier_2":  "item/neodium/attached/essence_epine_tier_2",
+    "essence_epine_tier_3":  "item/neodium/attached/essence_epine_tier_3",
+    "essence_epine_tier_4":  "item/neodium/attached/essence_epine_tier_4",
+    "essence_epine_tier_5":  "item/neodium/attached/essence_epine_tier_5",
+    "pulpe_cristallisee_tier_1":  "item/neodium/attached/pulpe_cristallisee_tier_1",
+    "pulpe_cristallisee_tier_2":  "item/neodium/attached/pulpe_cristallisee_tier_2",
+    "pulpe_cristallisee_tier_3":  "item/neodium/attached/pulpe_cristallisee_tier_3",
+    "pulpe_cristallisee_tier_4":  "item/neodium/attached/pulpe_cristallisee_tier_4",
+    "pulpe_cristallisee_tier_5":  "item/neodium/attached/pulpe_cristallisee_tier_5"
 };
 
