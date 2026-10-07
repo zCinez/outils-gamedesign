@@ -371,13 +371,22 @@ function getStoredItemCustomPresets() {
 }
 
 function buildItemCustomTypeSummary(fields) {
+  const armorTypes = [
+    fields?.typeArmureCasque ? "Casque" : "",
+    fields?.typeArmurePlastron ? "Plastron" : "",
+    fields?.typeArmureJambiere ? "Jambière" : "",
+    fields?.typeArmureBottes ? "Bottes" : "",
+    fields?.typeArmureBouclier ? "Bouclier" : ""
+  ].filter(Boolean);
+
   const types = [
     fields?.typeArme ? "Arme" : "",
     fields?.typeOutil ? "Outil" : "",
     fields?.typeObjet ? "Objet" : "",
+    fields?.typeBloc ? "Bloc" : "",
     fields?.typeConsommable ? "Consommable" : "",
     fields?.typeCle ? "Cle" : "",
-    fields?.typeArmure ? "Armure" : "",
+    fields?.typeArmure ? `Armure${armorTypes.length ? ` (${armorTypes.join(", ")})` : ""}` : "",
     fields?.typeAutre ? (String(fields?.selectTypeAutre || "").trim() || "Autre") : ""
   ].filter(Boolean);
 

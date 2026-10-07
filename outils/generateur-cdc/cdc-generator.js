@@ -2975,9 +2975,15 @@
         "typeArme",
         "typeOutil",
         "typeObjet",
+        "typeBloc",
         "typeConsommable",
         "typeCle",
         "typeArmure",
+        "typeArmureCasque",
+        "typeArmurePlastron",
+        "typeArmureJambiere",
+        "typeArmureBottes",
+        "typeArmureBouclier",
         "typeAutre",
         "selectTypeAutre",
         "itemRole",
@@ -3889,7 +3895,11 @@
     }
 
     function updateTypeItemFields() {
-      toggleFields([["typeAutre", "typeAutreField"]]);
+      toggleFields([
+        ["typeArmure", "typeArmureField"],
+        ["typeAutre", "typeAutreField"]
+      ]);
+      setDisplay("durabiliteItemField", !document.getElementById("typeBloc")?.checked);
     }
 
     function updateGuiTailleField() {

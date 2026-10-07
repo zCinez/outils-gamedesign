@@ -557,6 +557,19 @@ function formatItemCustomCraftIngredientsHtml() {
     .join("");
 }
 
+function getItemCustomArmorTypes() {
+  if (!document.getElementById("typeArmure")?.checked) return [];
+
+  return [
+    ["typeArmureCasque", "Casque"],
+    ["typeArmurePlastron", "Plastron"],
+    ["typeArmureJambiere", "Jambière"],
+    ["typeArmureBottes", "Bottes"],
+    ["typeArmureBouclier", "Bouclier"]
+  ].filter(([id]) => document.getElementById(id)?.checked)
+    .map(([, label]) => label);
+}
+
 function genererTemplateItemC() {
   const nomItem = valeur("nomItem");
   const itemMc = valeur("itemMc");
@@ -565,8 +578,10 @@ function genererTemplateItemC() {
   const typeArme = document.getElementById("typeArme").checked;
   const typeOutil = document.getElementById("typeOutil").checked;
   const typeObjet = document.getElementById("typeObjet").checked;
+  const typeBloc = document.getElementById("typeBloc").checked;
   const typeConsommable = document.getElementById("typeConsommable").checked;
   const typeArmure = document.getElementById("typeArmure").checked;
+  const typesArmure = getItemCustomArmorTypes();
   const typeCle = document.getElementById("typeCle").checked;
   const typeAutre = document.getElementById("typeAutre").checked;
 
@@ -613,15 +628,17 @@ function genererTemplateItemC() {
   if (typeArme) itemTexte += `☑ Arme\n`;
   if (typeOutil) itemTexte += `☑ Outil\n`;
   if (typeObjet) itemTexte += `☑ Objet\n`;
+  if (typeBloc) itemTexte += `☑ Bloc\n`;
   if (typeConsommable) itemTexte += `☑ Consommable\n`;
   if (typeCle) itemTexte += `☑ Clé\n`;
   if (typeArmure) itemTexte += `☑ Armure\n`;
+  if (typesArmure.length) detailsItem += `Type d'armure : ${typesArmure.join(", ")}\n`;
   if (typeAutre) {
     itemTexte += `☑ Autre\n`;
     detailsItem += `Autre : ${selectTypeAutre}\n`;
   }
 
-  if (!typeArme && !typeOutil && !typeObjet && !typeConsommable && !typeArmure && !typeCle && !typeAutre) {
+  if (!typeArme && !typeOutil && !typeObjet && !typeBloc && !typeConsommable && !typeArmure && !typeCle && !typeAutre) {
     itemTexte = "Aucune";
     detailsItem = "";
   } else {
@@ -731,8 +748,7 @@ ${renderLoreText(loreItem, "Aucun")}
 
 4. Caractéristiques
 
-Durabilité : ${durabiliteItem}
-Description de l'effet :
+${typeBloc ? "" : `Durabilité : ${durabiliteItem}\n`}Description de l'effet :
 ${effectDescription}
 
 5. Utilisation
@@ -750,8 +766,10 @@ function genererPreviewItemCHtml() {
   const typeArme = document.getElementById("typeArme").checked;
   const typeOutil = document.getElementById("typeOutil").checked;
   const typeObjet = document.getElementById("typeObjet").checked;
+  const typeBloc = document.getElementById("typeBloc").checked;
   const typeConsommable = document.getElementById("typeConsommable").checked;
   const typeArmure = document.getElementById("typeArmure").checked;
+  const typesArmure = getItemCustomArmorTypes();
   const typeCle = document.getElementById("typeCle").checked;
   const typeAutre = document.getElementById("typeAutre").checked;
 
@@ -802,17 +820,21 @@ function genererPreviewItemCHtml() {
   if (typeArme) html += `☑ Arme<br>`;
   if (typeOutil) html += `☑ Outil<br>`;
   if (typeObjet) html += `☑ Objet<br>`;
+  if (typeBloc) html += `☑ Bloc<br>`;
   if (typeConsommable) html += `☑ Consommable<br>`;
   if (typeCle) html += `☑ Clé<br>`;
+  if (typeArmure) html += `☑ Armure<br>`;
   if (typeAutre) html += `☑ Autre<br>`;
 
-  if (typeArmure) html += `☑ Armure<br>`;
-
-  if (!typeArme && !typeOutil && !typeObjet && !typeConsommable && !typeArmure && !typeCle && !typeAutre) {
+  if (!typeArme && !typeOutil && !typeObjet && !typeBloc && !typeConsommable && !typeArmure && !typeCle && !typeAutre) {
     html += `Aucune<br>`;
   }
 
   html += `</div>`;
+
+  if (typesArmure.length) {
+    html += `<br><div><strong>Type d'armure :</strong> ${escapeHtml(typesArmure.join(", "))}</div>`;
+  }
 
   if (typeAutre) {
     html += `<br><div><strong>Autre :</strong> ${escapeHtml(selectTypeAutre)}</div>`;
@@ -890,7 +912,7 @@ function genererPreviewItemCHtml() {
 
       <div><strong>Lore :</strong><br>${renderLoreHtml(loreItem, "Aucun")}</div><br>
       <br><div><strong>4. Caractéristiques</strong></div><br>
-      <div><strong>Durabilité :</strong> ${escapeHtml(durabiliteItem)}</div><br>
+      ${typeBloc ? "" : `<div><strong>Durabilité :</strong> ${escapeHtml(durabiliteItem)}</div><br>`}
       <div><strong>Description de l'effet :</strong><br>${nl2brSafe(effectDescription)}</div><br>
 
       <div><strong>5. Utilisation</strong></div><br>
