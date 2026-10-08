@@ -2992,6 +2992,7 @@
         "obtentionBoutique",
         "obtentionShop",
         "obtentionEvent",
+        "obtentionDrop",
         "obtentionAutre",
         "craftRecipeItemCustom",
         "selectObtentionRecompense",
@@ -3005,10 +3006,12 @@
         "selectObtentionEventName",
         "selectObtentionEventMethod",
         "selectObtentionEventCondition",
+        "selectObtentionDrop",
         "selectObtentionAutre",
         "linkTexture",
         "nameItem",
         "loreItem",
+        "itemCustomDurabilityEnabled",
         "durabiliteItem",
         "effectDescription",
         "utilisationClickDroit",
@@ -3146,6 +3149,7 @@
         }
       });
 
+      restoreItemCustomDurabilityOption(preset.fields || {});
       (preset.dynamic?.itemCustomCraftIngredients || []).forEach(item => ajouterItemCustomCraftIngredient(item));
       setProjectImageState("textureItemImage", "previewTextureItemTemplate", preset.images?.textureItemImage || {});
       setProjectImageState("craftImage", "previewCraftTemplate", preset.images?.craftImage || {});
@@ -3894,12 +3898,20 @@
       ]);
     }
 
+    function restoreItemCustomDurabilityOption(fields = {}) {
+      // Older saves only stored the value; preserve durability that was already visible.
+      const enabled = typeof fields.itemCustomDurabilityEnabled === "boolean"
+        ? fields.itemCustomDurabilityEnabled
+        : !fields.typeBloc && String(fields.durabiliteItem ?? "").trim() !== "";
+      setChecked("itemCustomDurabilityEnabled", enabled);
+    }
+
     function updateTypeItemFields() {
       toggleFields([
         ["typeArmure", "typeArmureField"],
-        ["typeAutre", "typeAutreField"]
+        ["typeAutre", "typeAutreField"],
+        ["itemCustomDurabilityEnabled", "durabiliteItemField"]
       ]);
-      setDisplay("durabiliteItemField", !document.getElementById("typeBloc")?.checked);
     }
 
     function updateGuiTailleField() {
@@ -3937,6 +3949,7 @@
         ["obtentionBoutique", "obtentionBoutiqueField"],
         ["obtentionShop", "obtentionShopField"],
         ["obtentionEvent", "obtentionEventField"],
+        ["obtentionDrop", "obtentionDropField"],
         ["obtentionAutre", "obtentionAutreField"]
       ]);
       updateItemCustomCraftVisualization();
@@ -7088,6 +7101,7 @@
           field.checked = Boolean(value);
         }
       });
+      restoreItemCustomDurabilityOption({ ...state.fields, ...state.checks });
 
       if (state.theme === "dark" || state.theme === "light") {
         applyTheme(state.theme);

@@ -590,6 +590,7 @@ function genererTemplateItemC() {
   const obtentionBoutique = document.getElementById("obtentionBoutique").checked;
   const obtentionShop = document.getElementById("obtentionShop").checked;
   const obtentionEvent = document.getElementById("obtentionEvent").checked;
+  const obtentionDrop = document.getElementById("obtentionDrop").checked;
   const obtentionAutre = document.getElementById("obtentionAutre").checked;
 
   const selectTypeAutre = valeur("selectTypeAutre");
@@ -607,10 +608,12 @@ function genererTemplateItemC() {
   const selectObtentionEventName = valeur("selectObtentionEventName");
   const selectObtentionEventMethod = valeur("selectObtentionEventMethod");
   const selectObtentionEventCondition = valeur("selectObtentionEventCondition");
+  const selectObtentionDrop = valeur("selectObtentionDrop");
   const selectObtentionAutre = valeur("selectObtentionAutre");
   const linkTexture = valeur("linkTexture");
   const nameItem = valeur("nameItem");
   const loreItem = valeur("loreItem", "");
+  const itemCustomDurabilityEnabled = Boolean(document.getElementById("itemCustomDurabilityEnabled")?.checked);
   const durabiliteItem = valeur("durabiliteItem");
   const effectDescription = valeur("effectDescription");
 
@@ -686,12 +689,16 @@ function genererTemplateItemC() {
     detailsObtention += `- Méthode d'obtention : ${selectObtentionEventMethod || "Aucune"}\n`;
     detailsObtention += `- Condition : ${selectObtentionEventCondition || "Aucune"}\n`;
   }
+  if (obtentionDrop) {
+    obtentionTexte += `☑ Drop\n`;
+    detailsObtention += `Drop : ${selectObtentionDrop}\n`;
+  }
   if (obtentionAutre) {
     obtentionTexte += `☑ Autre\n`;
     detailsObtention += `Autre : ${selectObtentionAutre}\n`;
   }
 
-  if (!obtentionCraft && !obtentionRecompense && !obtentionBoutique && !obtentionShop && !obtentionEvent && !obtentionAutre) {
+  if (!obtentionCraft && !obtentionRecompense && !obtentionBoutique && !obtentionShop && !obtentionEvent && !obtentionDrop && !obtentionAutre) {
     obtentionTexte = "Aucune";
     detailsObtention = "";
   } else {
@@ -748,7 +755,7 @@ ${renderLoreText(loreItem, "Aucun")}
 
 4. Caractéristiques
 
-${typeBloc ? "" : `Durabilité : ${durabiliteItem}\n`}Description de l'effet :
+${itemCustomDurabilityEnabled ? `Durabilité : ${durabiliteItem}\n` : ""}Description de l'effet :
 ${effectDescription}
 
 5. Utilisation
@@ -781,6 +788,7 @@ function genererPreviewItemCHtml() {
   const obtentionBoutique = document.getElementById("obtentionBoutique").checked;
   const obtentionShop = document.getElementById("obtentionShop").checked;
   const obtentionEvent = document.getElementById("obtentionEvent").checked;
+  const obtentionDrop = document.getElementById("obtentionDrop").checked;
   const obtentionAutre = document.getElementById("obtentionAutre").checked;
 
   const craftRecipeItemCustom = valeur("craftRecipeItemCustom");
@@ -795,10 +803,12 @@ function genererPreviewItemCHtml() {
   const selectObtentionEventName = valeur("selectObtentionEventName");
   const selectObtentionEventMethod = valeur("selectObtentionEventMethod");
   const selectObtentionEventCondition = valeur("selectObtentionEventCondition");
+  const selectObtentionDrop = valeur("selectObtentionDrop");
   const selectObtentionAutre = valeur("selectObtentionAutre");
   const linkTexture = valeur("linkTexture");
   const nameItem = valeur("nameItem");
   const loreItem = valeur("loreItem", "");
+  const itemCustomDurabilityEnabled = Boolean(document.getElementById("itemCustomDurabilityEnabled")?.checked);
   const durabiliteItem = valeur("durabiliteItem");
   const effectDescription = valeur("effectDescription");
 
@@ -850,9 +860,10 @@ function genererPreviewItemCHtml() {
   if (obtentionBoutique) html += `☑ Boutique<br>`;
   if (obtentionShop) html += `☑ Shop<br>`;
   if (obtentionEvent) html += `☑ Event<br>`;
+  if (obtentionDrop) html += `☑ Drop<br>`;
   if (obtentionAutre) html += `☑ Autre<br>`;
 
-  if (!obtentionCraft && !obtentionRecompense && !obtentionBoutique && !obtentionShop && !obtentionEvent && !obtentionAutre) {
+  if (!obtentionCraft && !obtentionRecompense && !obtentionBoutique && !obtentionShop && !obtentionEvent && !obtentionDrop && !obtentionAutre) {
     html += `Aucune<br>`;
   }
 
@@ -897,6 +908,10 @@ function genererPreviewItemCHtml() {
         </div>`;
   }
 
+  if (obtentionDrop) {
+    html += `<br><div><strong>Drop :</strong> ${escapeHtml(selectObtentionDrop)}</div>`;
+  }
+
   if (obtentionAutre) {
     html += `<br><div><strong>Autre :</strong> ${escapeHtml(selectObtentionAutre)}</div>`;
   }
@@ -912,7 +927,7 @@ function genererPreviewItemCHtml() {
 
       <div><strong>Lore :</strong><br>${renderLoreHtml(loreItem, "Aucun")}</div><br>
       <br><div><strong>4. Caractéristiques</strong></div><br>
-      ${typeBloc ? "" : `<div><strong>Durabilité :</strong> ${escapeHtml(durabiliteItem)}</div><br>`}
+      ${itemCustomDurabilityEnabled ? `<div><strong>Durabilité :</strong> ${escapeHtml(durabiliteItem)}</div><br>` : ""}
       <div><strong>Description de l'effet :</strong><br>${nl2brSafe(effectDescription)}</div><br>
 
       <div><strong>5. Utilisation</strong></div><br>

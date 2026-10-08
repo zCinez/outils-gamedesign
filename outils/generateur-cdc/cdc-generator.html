@@ -521,6 +521,7 @@
             <label><input type="checkbox" id="obtentionBoutique" onchange="choiceObtentionFields()"> Boutique</label>
             <label><input type="checkbox" id="obtentionShop" onchange="choiceObtentionFields()"> Shop</label>
 	    <label><input type="checkbox" id="obtentionEvent" onchange="choiceObtentionFields()"> Event</label>
+            <label><input type="checkbox" id="obtentionDrop" onchange="choiceObtentionFields()"> Drop</label>
 	    <label><input type="checkbox" id="obtentionAutre" onchange="choiceObtentionFields()"> Autre</label>
           </div>
 
@@ -598,6 +599,11 @@
             <input type="text" id="selectObtentionEventCondition" placeholder="Ex : participation obligatoire" />
           </div>
 
+          <div id="obtentionDropField" class="dynamic-block" style="display:none;">
+            <label for="selectObtentionDrop">Drop</label>
+            <input type="text" id="selectObtentionDrop" placeholder="Ex : 5 % de chance sur les zombies" />
+          </div>
+
           <div id="obtentionAutreField" class="dynamic-block" style="display:none;">
             <label for="selectObtentionAutre">Autre</label>
             <input type="text" id="selectObtentionAutre" placeholder="Ex : minage" />
@@ -643,9 +649,14 @@
 '&7&m--------------------------------- '"></textarea>
 			</div>
 
-			<div id="durabiliteItemField">
-			  <label for="durabiliteItem">Durabilité</label>
-			  <input type="text" id="durabiliteItem" placeholder="Ex : 5 000" />
+			<div>
+              <div class="checkbox-group">
+                <label><input type="checkbox" id="itemCustomDurabilityEnabled" onchange="updateTypeItemFields()"> Activer la durabilité</label>
+              </div>
+              <div id="durabiliteItemField" style="display:none;">
+                <label for="durabiliteItem">Durabilité</label>
+                <input type="text" id="durabiliteItem" placeholder="Ex : 5 000" />
+              </div>
 			</div>
 
 			<div>
@@ -1174,13 +1185,13 @@
   <script src="./cdc-generator-template-helpers.js?v=20260913a" defer></script>
   <script src="./cdc-generator-template-commande.js?v=20260913a" defer></script>
   <script src="./cdc-generator-template-gui.js?v=20260913a" defer></script>
-  <script src="./cdc-generator-template-itemc.js?v=20261007b" defer></script>
+  <script src="./cdc-generator-template-itemc.js?v=20261008b" defer></script>
   <script src="./cdc-generator-template-event.js" defer></script>
   <script src="./cdc-generator-template-caisse-sound.js" defer></script>
   <script src="./cdc-generator-template-metier.js?v=20260701a" defer></script>
   <script src="./cdc-generator-template-rankup.js?v=20260629b" defer></script>
   <script src="./cdc-generator-template-mobs.js" defer></script>
   <script src="./cdc-generator-template-libre.js" defer></script>
-  <script src="./cdc-generator.js?v=20261007b" defer></script>
+  <script src="./cdc-generator.js?v=20261008b" defer></script>
 </body>
 </html>
