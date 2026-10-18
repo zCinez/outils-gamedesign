@@ -1,0 +1,11 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Migration des anciens imports StatGM</title></head><body>
+<h1>Migration des anciens imports StatGM</h1><button id="run">Tester la migration de 5 500 joueurs</button><pre id="result" role="status">Prêt.</pre>
+<script>
+document.querySelector('#run').addEventListener('click',()=>{
+  const button=document.querySelector('#run'),result=document.querySelector('#result');button.disabled=true;result.textContent='Test en cours…';
+  const worker=new Worker('archive-upgrade-worker.js');
+  worker.onmessage=({data})=>{result.textContent=data.message;button.disabled=false;};
+  worker.onerror=event=>{event.preventDefault();result.textContent=`FAIL — ${event.message}`;button.disabled=false;worker.terminate();};
+  worker.postMessage({});
+});
+</script></body></html>

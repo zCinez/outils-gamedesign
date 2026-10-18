@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="fr">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Vérification des graphiques économiques</title>
+  <link rel="stylesheet" href="../../../assets/neodium-unified.css">
+  <link rel="stylesheet" href="../statgm.css">
+  <link rel="stylesheet" href="../fiche-joueur.css">
+  <script src="../player-stats.js?v=20261009c" defer></script>
+  <script src="../player-economy-charts.js?v=20261002i" defer></script>
+</head>
+<body><main class="statgm-shell player-shell">
+  <h1>Vérification des graphiques économiques</h1><p>Données fictives, sans stockage ni réseau.</p>
+  <button id="run">Tester les cas limites</button><pre id="result" role="status">Prêt.</pre>
+  <label>Cas affiché <select id="scenario"><option value="normal">Répartition équilibrée</option><option value="zero">Montants nuls</option><option value="missing">Données absentes</option><option value="partial">Données partielles</option><option value="conflict">Total incohérent</option><option value="negative">Montant négatif</option><option value="large">Grands montants</option></select></label>
+  <div id="charts" class="player-economy-charts" style="margin-top:24px"></div>
+  <script>
+    const cases = {
+      normal: {vault_gained_total_plugin:70, vault_spent_total_plugin:90, skript_sell_total_cumulative:10, hopper_money_cumulative:15, skript_sellstick_cumulative:5, displayed_total_gained:100},
+      zero: {vault_gained_total_plugin:0, vault_spent_total_plugin:0, skript_sell_total_cumulative:0, hopper_money_cumulative:0, skript_sellstick_cumulative:0, displayed_total_gained:0},
+      missing: {}, partial: {displayed_total_gained:100, vault_gained_total_plugin:70},
+      conflict: {displayed_total_gained:30, vault_gained_total_plugin:10, skript_sell_total_cumulative:20}, negative: {displayed_total_gained:10, vault_gained_total_plugin:-5, vault_spent_total_plugin:10},
+      large: {displayed_total_gained:Number.MAX_VALUE, vault_gained_total_plugin:Number.MAX_VALUE, vault_spent_total_plugin:1e308}
+    };
+    function render(name) {
+      const model = StatGMPlayerStats.economy({economy:cases[name]}), root = document.querySelector('#charts');
+      root.replaceChildren();
+      for (const [title, chart] of [['Répartition des gains', StatGMEconomyCharts.donut(model)], ['Argent gagné et dépensé', StatGMEconomyCharts.bars(model)]]) {
+        const panel = document.createElement('article'); panel.className='player-panel'; const heading=document.createElement('h2'); heading.textContent=title; panel.append(heading,chart); root.append(panel);
+      }
+      return root;
+    }
+    document.querySelector('#scenario').onchange = event => render(event.target.value);
+    document.querySelector('#run').onclick = () => {
+      const assert = (condition, message) => {if(!condition)throw new Error(message);};
+      try {
+        for (const name of Object.keys(cases)) {
+          const root = render(name);
+          for (const element of root.querySelectorAll('svg *')) for (const key of ['x','y','x1','x2','y1','y2','height','width','stroke-dashoffset']) {
+            const value=element.getAttribute(key); if(value!==null)assert(Number.isFinite(Number(value)),`${name} : coordonnée SVG invalide`);
+          }
+          const values=[...root.querySelectorAll('.player-donut-arc')].map(arc=>Number(arc.getAttribute('stroke-dasharray').split(' ')[0]));
+          assert(!values.length || Math.abs(values.reduce((a,b)=>a+b,0)-100)<1e-10, `${name} : cercle incomplet`);
+          if(name==='normal') {
+            assert(root.querySelectorAll('.player-chart-bar').length===2,'Deux barres attendues.');
+            assert(root.querySelector('.player-chart-totals dd').textContent===StatGMPlayerStats.money(cases.normal.vault_gained_total_plugin), 'La barre utilise un mauvais total.');
+            assert(root.querySelector('.player-donut-center strong').textContent===StatGMPlayerStats.number(cases.normal.vault_gained_total_plugin), 'Les catégories sont ajoutées au total du cercle.');
+            assert(root.querySelector('.player-chart-module-label').textContent==='Autres gains', 'Le reste des gains doit être une catégorie distincte.');
+            root.querySelectorAll('.player-chart-module')[2].click(); assert(root.querySelector('.player-chart-selection').textContent.includes('Vente via hopper du néant · 15 $ · 21,43 %'), 'Sélection de module incorrecte.');
+          }
+          if(name==='zero'||name==='missing'||name==='conflict'||name==='negative') assert(!values.length, `${name} : secteurs trompeurs`);
+          if(name==='zero'||name==='missing') assert(root.querySelectorAll('.player-chart-bar').length===0, `${name} : barre inventée`);
+        }
+        render(document.querySelector('#scenario').value);
+        document.querySelector('#result').textContent='PASS — cercle complet, montants exacts, sélection des modules, barres communes depuis zéro, valeurs absentes/nulles/négatives, total incohérent et grands montants sans coordonnées SVG invalides.';
+      } catch(error) {document.querySelector('#result').textContent=`FAIL — ${error.message}`;}
+    };
+    addEventListener('DOMContentLoaded',()=>render('normal'));
+  </script>
+</main></body></html>

@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b0d14">
+  <title>Joueurs — StatGM</title>
+  <link rel="stylesheet" href="../../assets/neodium-unified.css?v=20260911b">
+  <link rel="stylesheet" href="../../assets/neodium-global-header.css?v=20260911b">
+  <link rel="stylesheet" href="../../assets/neodium-interface.css?v=20260911d">
+  <link rel="stylesheet" href="statgm.css?v=20261018a">
+  <script src="../../assets/supabase-config.js"></script>
+  <script src="../../assets/cloud-sync.js?v=20260626b"></script>
+  <script src="../../assets/neodium-global-header.js?v=20260626b" defer></script>
+  <script src="../../assets/neodium-interface.js?v=20260911d" defer></script>
+  <script src="archive-db.js?v=20261006c" defer></script>
+  <script src="cloud-store.js?v=20261006c" defer></script>
+  <script src="player-heads.js?v=20261001c" defer></script>
+  <script src="player-grades.js?v=20261002a" defer></script>
+  <script src="joueurs.js?v=20261006d" defer></script>
+</head>
+<body>
+  <main class="statgm-shell">
+    <header class="statgm-heading">
+      <div>
+        <span class="statgm-eyebrow">STATGM / NEODIUM</span>
+        <h1>Joueurs</h1>
+        <p>Retrouve les joueurs de ton historique et recherche leur pseudo ou leur UUID.</p>
+      </div>
+      <span class="statgm-local"><span aria-hidden="true"></span> Joueurs disponibles en local</span>
+    </header>
+
+    <nav class="statgm-toolbar" aria-label="Outils StatGM">
+      <a href="index.html"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 5-7 7 7 7M5 12h14"/></svg>Retour à StatGM</a>
+      <a class="statgm-players-button" href="joueurs.html" aria-current="page">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2m20 0v-2a4 4 0 0 0-3-3.87M15 3.13a4 4 0 0 1 0 7.75"/><circle cx="9" cy="7" r="4"/></svg>
+        Joueurs <span data-toolbar-count>0</span>
+      </a>
+      <a href="statistiques-globales.html"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3v17h17M8 16v-4m5 4V7m5 9v-7"/></svg>Statistiques globales</a>
+      <a href="evolution-globale.html"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3v17h17M7 15l5-6 4 3 5-7"/></svg>Évolution globale</a>
+    </nav>
+
+    <section class="statgm-cloud-panel" data-cloud-panel aria-label="Sauvegarde StatGM">
+      <div><strong data-cloud-message role="status" aria-live="polite">Copie locale disponible</strong><p data-cloud-detail>Connexion au cloud Neodium…</p></div>
+      <button type="button" data-cloud-retry hidden>Synchroniser</button>
+      <div class="statgm-cloud-choices" data-cloud-conflict hidden><button type="button" data-cloud-keep-local>Garder cet import</button><button type="button" data-cloud-use-remote>Charger la sauvegarde cloud</button></div>
+    </section>
+
+    <section id="players-section" class="statgm-players" aria-labelledby="players-heading" aria-busy="true">
+      <div class="statgm-section-heading">
+        <div><span class="statgm-eyebrow">RÉPERTOIRE</span><h2 id="players-heading">Tous les joueurs <span data-player-count>0</span></h2></div>
+        <p data-result-count>Chargement des joueurs…</p>
+      </div>
+      <div class="statgm-filters">
+        <label class="statgm-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg><input type="search" placeholder="Rechercher un pseudo ou un UUID…" aria-label="Rechercher un joueur par pseudo ou UUID" data-search></label>
+        <label class="statgm-sort">Trier par<select data-sort aria-label="Ordre des joueurs" aria-describedby="sort-note"><option value="name-asc">Pseudo : A → Z</option><option value="name-desc">Pseudo : Z → A</option><option value="grade-asc">Grade : croissant</option><option value="grade-desc">Grade : décroissant</option><option value="completion-desc">Complétion : décroissante</option><option value="completion-asc">Complétion : croissante</option><option value="first-connection-asc">Première connexion : plus anciennes</option><option value="first-connection-desc">Première connexion : plus récentes</option></select></label>
+        <label class="statgm-page-size">Par page<select data-page-size aria-label="Nombre de joueurs par page"><option value="48">48 joueurs</option><option value="96">96 joueurs</option></select></label>
+      </div>
+      <p id="sort-note" class="statgm-sort-note" data-sort-note hidden>À grade égal : pseudo A → Z. Grades boutique après Neodym ; staff à la fin par nom de grade.</p>
+      <p class="statgm-feedback" data-feedback role="status" aria-live="polite" hidden></p>
+      <div class="statgm-grid" data-player-grid></div>
+      <div class="statgm-empty" data-empty>
+        <span class="statgm-empty-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 9h2m4 0h2M8 15h8"/></svg></span>
+        <h3 data-empty-title>Aucun joueur importé</h3>
+        <p data-empty-description>Importe ton export ZIP depuis la page StatGM pour afficher les cartes des joueurs.</p>
+        <a href="index.html" data-empty-import>Importer un ZIP</a>
+      </div>
+      <nav class="statgm-pagination" aria-label="Pagination des joueurs" data-pagination hidden>
+        <button type="button" data-prev>← Précédent</button>
+        <span data-page-info>Page 1 sur 1</span>
+        <button type="button" data-next>Suivant →</button>
+      </nav>
+      <p class="statgm-avatar-credit">Têtes 3D via <a href="https://crafatar-pub.neodium.fr/" target="_blank" rel="noopener noreferrer">Crafatar Neodium</a> · Chargées à l’affichage des cartes.</p>
+    </section>
+    <noscript>Active JavaScript pour afficher les joueurs.</noscript>
+  </main>
+</body>
+</html>

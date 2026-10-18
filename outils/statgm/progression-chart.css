@@ -1,0 +1,84 @@
+.player-history-modes button[aria-pressed="true"] { border-color: var(--neo-border-hot) !important; background: rgba(170,168,255,.16) !important; }
+.player-history-chart-panel .player-panel-heading { margin-bottom: 18px; }
+.player-history-chart-panel .statgm-eyebrow { display: block; font-size: 9px; margin-bottom: 7px; }
+.player-history-chart-count { color: var(--neo-muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.player-history-categories, .player-history-jobs { display: flex; flex-wrap: wrap; gap: 8px; }
+.player-history-categories button, .player-history-jobs button { display: inline-flex; align-items: center; gap: 9px; min-height: 40px; padding: 9px 13px; font-size: 12px; }
+.player-history-categories button[aria-pressed="true"], .player-history-jobs button[aria-pressed="true"] { background: rgba(170,168,255,.16) !important; border-color: var(--neo-border-hot) !important; }
+.player-history-category-count { color: var(--neo-muted); font-size: 10px; padding: 2px 5px; border-radius: 5px; background: rgba(170,168,255,.1); font-variant-numeric: tabular-nums; }
+.player-history-jobs { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--neo-border); }
+.player-history-jobs button { font-size: 11px; min-height: 34px; padding: 7px 11px; }
+.player-history-chart-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; margin-top: 20px; }
+.player-history-chart-toolbar .player-note { margin: 0; flex: 1 1 340px; }
+.player-history-chart-toolbar label { display: grid; gap: 6px; flex: 0 1 320px; min-width: 0; }
+.player-history-search-label { font-size: 10px; color: var(--neo-muted); }
+.player-history-chart-toolbar input { width: 100%; min-width: 0; min-height: 40px; padding: 10px 12px; font-size: 12px; border: 1px solid var(--neo-border); border-radius: 10px; background: var(--neo-surface); color: var(--neo-text); }
+.player-history-chart-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 18px; margin-bottom: 20px; align-items: start; }
+.player-history-chart-grid .player-panel { margin: 0; }
+.player-history-chart-content { min-width: 0; }
+.player-history-chart-body--job { display: grid; grid-template-columns: 210px minmax(0,1fr); align-items: start; gap: 24px; margin-bottom: 24px; }
+.player-history-chart-body--job .player-history-chart-grid { margin-bottom: 0; }
+.player-history-resource-browser { position: sticky; top: 24px; max-height: calc(100svh - 48px); overflow-y: auto; margin: 0; padding: 16px; scrollbar-color: var(--neo-border-hot) transparent; scrollbar-width: thin; }
+.player-history-resource-browser h2 { margin: 0; font-size: 16px; }
+.player-history-resource-browser > .player-note { margin: 6px 0 16px; font-size: 12px; }
+.player-history-resources { display: grid; gap: 6px; }
+.player-history-resources button { display: flex; justify-content: space-between; align-items: center; gap: 8px; min-height: 44px; width: 100%; padding: 10px; text-align: left; font-size: 12px; }
+.player-history-resources button > span:first-child { overflow-wrap: anywhere; }
+.player-history-resources button[aria-pressed="true"], .player-history-stat-kinds button[aria-pressed="true"] { background: rgba(170,168,255,.16) !important; border-color: var(--neo-border-hot) !important; }
+.player-history-job-focus { margin: 2px 0 18px; }
+.player-history-job-focus h2 { margin: 0 0 8px; font-size: 22px; }
+.player-history-job-focus .player-note { margin: 0; max-width: 70ch; font-size: 13px; line-height: 1.6; }
+.player-history-stat-kinds { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+.player-history-stat-kinds button { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 10px 12px; font-size: 12px; }
+.player-history-chart-grid--grouped { grid-template-columns: minmax(0,1fr); gap: 32px; }
+.player-history-resource-section > h3 { margin: 0 0 14px; padding-bottom: 10px; border-bottom: 1px solid var(--neo-border); font-size: 18px; }
+.player-history-chart-card { padding: 20px; }
+.player-history-card-heading { display: flex; justify-content: space-between; align-items: start; gap: 14px; }
+.player-history-card-heading h3, .player-history-card-heading h4 { font-size: 15px; margin: 0; line-height: 1.45; overflow-wrap: anywhere; }
+.player-history-card-heading > span { font-size: 9px; color: var(--neo-muted); white-space: nowrap; padding-top: 4px; }
+.player-history-card-summary { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px; margin-top: 15px; font-variant-numeric: tabular-nums; }
+.player-history-card-summary > strong { font-size: clamp(17px,1.6vw,22px); color: var(--neo-text); overflow-wrap: anywhere; }
+.player-history-card-change { font-size: 10px; color: var(--neo-muted); }
+.player-history-card-caption { color: var(--neo-muted); font-size: 10px; margin: 7px 0 14px; }
+.player-history-chart-placeholder { min-height: 268px; display: grid; place-items: center; color: var(--neo-muted); font-size: 11px; margin: 0; }
+.player-history-figure { margin: 0; }
+.player-history-line-chart { display: block; width: 100%; height: auto; overflow: visible; }
+.player-history-axis-label { fill: var(--neo-muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.player-history-visual[data-history-metric="metric:earned"] { --history-series-color: #61d6a2; }
+.player-history-visual[data-history-metric="metric:spent"] { --history-series-color: #f87171; }
+.player-history-line { fill: none; stroke: var(--history-series-color,var(--neo-teal)); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.player-history-point { fill: var(--neo-surface); stroke: var(--history-series-color,var(--neo-teal)); stroke-width: 2; cursor: pointer; outline: none; }
+.player-history-point-hit { fill: transparent; stroke: none; cursor: pointer; }
+.player-history-point[data-selected="true"], .player-history-point:focus-visible { fill: var(--history-series-color,var(--neo-teal)); stroke: var(--neo-text); stroke-width: 3; }
+.player-history-cursor { stroke: var(--neo-muted-2); stroke-width: 1; stroke-dasharray: 4 5; }
+.player-history-visual { container-type: inline-size; }
+.player-history-point-detail { display: grid; grid-template-columns: 44px minmax(0,1fr) 44px; align-items: center; gap: 12px; padding: 16px; margin-top: 12px; border: 1px solid var(--neo-border-hot); border-radius: 12px; background: rgba(170,168,255,.055); }
+.player-history-point-detail button { display: inline-grid; place-items: center; width: 44px; min-width: 44px; min-height: 44px; padding: 10px; }
+.player-history-point-detail button svg { display: block; }
+.player-history-point-copy { display: grid; gap: 8px; min-width: 0; text-align: center; line-height: 1.5; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.player-history-point-date { color: var(--neo-muted); font-size: .875rem; font-weight: 650; }
+.player-history-point-value { color: var(--neo-text); font-size: clamp(1.125rem,4cqi,1.375rem); font-weight: 750; line-height: 1.4; }
+.player-history-point-comparison { display: flex; justify-content: center; align-items: baseline; flex-wrap: wrap; column-gap: 8px; row-gap: 2px; }
+.player-history-point-delta { color: var(--neo-text); font-size: .9375rem; font-weight: 650; }
+.player-history-point-comparison-label { color: var(--neo-muted); font-size: .8125rem; }
+.player-history-point-archive { color: var(--neo-muted); font-size: .75rem; }
+.player-history-visual--compact .player-history-point-archive { display: none; }
+@container (max-width:360px) {
+  .player-history-point-detail { grid-template-columns: 44px minmax(0,1fr) 44px; padding: 14px; }
+  .player-history-point-copy { grid-column: 1 / -1; grid-row: 1; }
+  .player-history-point-detail button { grid-row: 2; }
+  .player-history-point-detail button:last-child { grid-column: 3; }
+}
+.player-history-chart-values { margin-top: 22px; border-top: 1px solid var(--neo-border); padding-top: 16px; }
+.player-history-chart-values summary { cursor: pointer; color: var(--neo-text); font-size: 12px; font-weight: 650; }
+.player-history-chart-values .player-table-wrap { margin-top: 14px; }
+@media(max-width:860px) { .player-history-chart-grid { grid-template-columns: minmax(0,1fr); } }
+@media(max-width:1100px) { .player-history-chart-body--job .player-history-chart-grid { grid-template-columns: minmax(0,1fr); } }
+@media(max-width:760px) {
+  .player-history-chart-body--job { grid-template-columns: minmax(0,1fr); gap: 20px; }
+  .player-history-resource-browser { position: static; max-height: none; overflow: hidden; }
+  .player-history-resource-browser > .player-note { margin-bottom: 12px; }
+  .player-history-resources { display: flex; overflow-x: auto; padding: 2px 2px 8px; scrollbar-color: var(--neo-border-hot) transparent; scrollbar-width: thin; }
+  .player-history-resources button { flex: 0 0 auto; width: auto; white-space: nowrap; }
+}
+@media(max-width:480px) { .player-history-card-heading { flex-direction: column; gap: 3px; } .player-history-card-heading > span { padding: 0; } .player-history-chart-card { padding: 16px; } .player-history-chart-toolbar label { flex: 1 1 100%; } .player-history-categories { gap: 6px; } .player-history-categories button { padding: 8px 10px; font-size: 11px; } }

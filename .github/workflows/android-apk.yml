@@ -1,0 +1,55 @@
+name: Android APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      web_url:
+        description: Adresse HTTPS de la version Web
+        required: true
+        type: string
+        default: https://zcinez.github.io/outils-gamedesign/index.html
+  pull_request:
+    paths:
+      - mobile/**
+      - .github/workflows/android-apk.yml
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test mobile/tests/*.test.cjs
+      - run: node mobile/scripts/android-config.cjs check-template
+
+  apk:
+    needs: check
+    runs-on: ubuntu-latest
+    env:
+      WEB_APP_URL: ${{ inputs.web_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+      - uses: android-actions/setup-android@v3
+      - run: node mobile/scripts/android-config.cjs check
+      - run: sdkmanager 'platforms;android-36' 'build-tools;35.0.0'
+      - run: gradle --project-dir mobile/android --no-daemon assembleDebug lintDebug
+      - run: gradle --project-dir mobile/android --no-daemon signingReport > mobile/android/app/build/signing-report.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: neodium-outils-android-test
+          path: |
+            mobile/android/app/build/outputs/apk/debug/app-debug.apk
+            mobile/android/app/build/signing-report.txt
+          if-no-files-found: error

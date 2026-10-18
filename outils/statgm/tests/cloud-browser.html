@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="fr">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Test local du cloud StatGM</title><script src="../vendor/fflate-0.8.2.js" defer></script><script src="../player-history.js?v=20261006c" defer></script><script src="../archive-db.js?v=20261006c" defer></script></head>
+<body>
+  <h1>Test local du cloud StatGM</h1>
+  <p>Données fictives · stockage de test en mémoire · aucun envoi au cloud Neodium.</p>
+  <button id="run">Tester 5 500 joueurs</button>
+  <pre id="result" role="status">Prêt.</pre>
+  <a href="../joueurs.html">Afficher les cartes du test</a>
+  <script>
+    document.querySelector('#run').addEventListener('click', async () => {
+      const button = document.querySelector('#run'), result = document.querySelector('#result'), db = StatGMArchiveDB;
+      button.disabled = true;
+      const credentials = { url: location.origin, apikey: 'fixture', token: 'one', userId: '11111111-1111-4111-8111-111111111111' };
+      const assert = (condition, message) => { if (!condition) throw new Error(message); };
+      const stages = [];
+      const run = options => new Promise((resolve, reject) => {
+        const worker = new Worker('../cloud-worker.js?v=20261006c');
+        worker.onmessage = ({ data }) => {
+          if (data.type === 'state') result.textContent = [...stages, data.message, data.detail].join('\n');
+          else if (data.type === 'failed' || data.type === 'conflict') { worker.terminate(); reject(new Error(data.message || 'Conflit inattendu')); }
+          else if (data.type === 'done') { worker.terminate(); resolve(); }
+        };
+        worker.onerror = event => { event.preventDefault(); worker.terminate(); reject(new Error(event.message)); };
+        worker.postMessage({ type: 'sync', credentials, ...options });
+      });
+      try {
+        const datasetId = crypto.randomUUID(), started = performance.now();
+        let players = [], records = []; const all = [];
+        for (let i = 0; i < 5500; i++) {
+          const uuid = `${(i % 256).toString(16).padStart(2,'0')}${i.toString(16).padStart(6,'0')}-1234-4000-8000-0123456789ab`;
+          const player = { datasetId, uuid, name: `Test_${String(i).padStart(4,'0')}`, grade: ['cuivreii','diamantv','gamedesigner'][i%3], hasName: true, fileCount: 1 };
+          all.push(player); players.push(player);
+          records.push({ datasetId, sequence: i, uuid, source: `gdstats_${uuid}.json`, data: {exported_at_iso:'2026-10-02T08:49:45.134549645',player:{first_played_ms:1779543203380+i},profile:{uuid,name:player.name,luckperms_primary_group:player.grade},progression:{completion_percent:i%101},stats:{score:i,description:'Émeraude 🔥 '.repeat(i === 42 ? 40000 : 20)}} });
+          if (players.length === 100) { await db.writeBatch(players, records); players = []; records = []; }
+        }
+        if (players.length) await db.writeBatch(players, records);
+        const head = await (await fetch('/functions/v1/turso-statgm', {method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer one'},body:JSON.stringify({action:'head'})})).json();
+        await db.activate({ datasetId, filename:'5500-joueurs-test.zip', importedAt:new Date().toISOString(), playerCount:5500, fileCount:5500, pending:true, recordsLocal:true, baseRevision:head.revision });
+        await run({check:true});
+        const saved = await db.readActive(); assert(saved.pending === false && saved.cloudRevision, 'La sauvegarde n’est pas confirmée.');
+        stages.push(`PASS — sauvegarde complète de 5 500 joueurs (${Math.round(performance.now()-started)} ms)`);
+        const first = await (await fetch('/__test/metrics')).json();
+        await run({});
+        const cached = await (await fetch('/__test/metrics')).json();
+        assert(JSON.stringify(first.calls) === JSON.stringify(cached.calls), 'Le cache déclenche des appels inutiles.');
+        stages.push('PASS — navigation avec cache : aucun appel réseau supplémentaire');
+        const oldPlan = await db.readMeta(`plan:${saved.datasetId}`);
+        await db.writeMeta(`plan:${saved.datasetId}`, {...oldPlan, indexVersion: undefined});
+        await db.activate({...saved, pending: true});
+        await run({check:true});
+        const upgraded = await db.readMeta(`plan:${saved.datasetId}`), upgradeMetrics = await (await fetch('/__test/metrics')).json();
+        assert(upgraded.indexVersion === 4 && upgraded.snapshotId !== oldPlan.snapshotId, 'Le plan de sauvegarde ancien n’est pas mis à jour.');
+        assert(JSON.stringify(upgraded.chunks.filter(chunk => chunk.kind === 'records')) === JSON.stringify(oldPlan.chunks.filter(chunk => chunk.kind === 'records')), 'Les statistiques sont recompressées inutilement.');
+        assert(upgradeMetrics.bytesUploaded === cached.bytesUploaded, 'Les blocs existants sont transférés à nouveau.');
+        stages.push('PASS — ancien plan : blocs statistiques réutilisés, aucun octet retransféré');
+        await db.writeMeta(db.activeKey, null); await db.writeMeta(`account:${credentials.userId}`, null);
+        const database = await db.open();
+        await new Promise((resolve,reject) => { const tx = database.transaction('chunks','readwrite'); tx.objectStore('chunks').clear(); tx.oncomplete=resolve; tx.onerror=()=>reject(tx.error); });
+        const cold = performance.now(); await run({check:true});
+        const restored = await db.readActive();
+        assert(restored.datasetId !== saved.datasetId && restored.recordsLocal === false && (await db.readPlayers(restored.datasetId)).length === 5500, 'La restauration des cartes a échoué.');
+        assert((await db.readRecordPage(restored.datasetId,null)).rows.length === 0, 'Les statistiques sont téléchargées trop tôt.');
+        const summaries = await db.readPlayers(restored.datasetId);
+        assert(summaries.every(player => player.completion === Number(player.name.slice(-4)) % 101), 'Les complétions ne sont pas restaurées dans l’index léger.');
+        assert(summaries.every(player => player.firstPlayedMs === 1779543203380 + Number(player.name.slice(-4))), 'Les premières connexions ne sont pas restaurées dans l’index léger.');
+        stages.push(`PASS — nouvel ordinateur : 5 500 cartes restaurées en ${Math.round(performance.now()-cold)} ms, sans charger les statistiques`);
+        await db.writeBatch(summaries.map(({completion, firstPlayedMs, ...player}) => player), []);
+        await run({type:'completions'});
+        assert((await db.readPlayers(restored.datasetId)).every(player => player.completion === Number(player.name.slice(-4)) % 101), 'La récupération des anciens index est incorrecte.');
+        assert((await db.readPlayers(restored.datasetId)).every(player => player.firstPlayedMs === 1779543203380 + Number(player.name.slice(-4))), 'Les anciennes dates de première connexion ne sont pas récupérées.');
+        assert((await db.readRecordPage(restored.datasetId,null)).rows.length === 0, 'La récupération des complétions doit conserver le chargement des fiches à la demande.');
+        const recovered = await (await fetch('/__test/metrics')).json();
+        await run({type:'completions'});
+        const repeated = await (await fetch('/__test/metrics')).json();
+        assert(JSON.stringify(recovered.calls) === JSON.stringify(repeated.calls), 'Les complétions sont téléchargées à nouveau.');
+        stages.push('PASS — ancien index : complétions récupérées une fois, cache réutilisé et fiches toujours chargées à la demande');
+        await run({type:'hydrate',uuid:all[42].uuid});
+        const hydrated = await db.readRecordPage(restored.datasetId,null,32,all[42].uuid);
+        assert(hydrated.rows.length === 1 && hydrated.rows[0].data.stats.score === 42, 'Les statistiques à la demande sont incorrectes.');
+        assert(hydrated.rows[0].data.stats.description === 'Émeraude 🔥 '.repeat(40000), 'Le fichier volumineux multi-blocs a changé.');
+        stages.push('PASS — seules les statistiques du groupe de joueurs demandé sont chargées');
+        await run({type:'hydrate-all'});
+        assert((await db.readActive()).recordsLocal === true && (await db.readPlayerRecordKeys(restored.datasetId,all[42].uuid)).length === 1,'L’hydratation avant import perd ou duplique un relevé.');
+        const previousManifest = await db.readMeta(`manifest:${restored.datasetId}`);
+        const nextId = crypto.randomUUID(), files = {};
+        for(const i of [42,43]) files[`gdstats_${all[i].uuid}.json`] = fflate.strToU8(JSON.stringify({exported_at_iso:'2026-10-06T11:00:00',player:{uuid:all[i].uuid,name:all[i].name,first_played_ms:1779543203380+i},profile:{luckperms_primary_group:all[i].grade},progression:{completion_percent:90},stats:{score:1000+i}}));
+        const file = new File([fflate.zipSync(files)],'Export_06-10-2026-11-00-000.zip');
+        const summary = await new Promise((resolve,reject)=>{const worker = new Worker('../import-worker.js?v=20261006c');worker.onmessage=({data})=>{if(data.type==='ready'){worker.terminate();resolve(data.summary);}else if(data.type==='error'){worker.terminate();reject(new Error(data.message));}};worker.onerror=event=>{event.preventDefault();worker.terminate();reject(new Error(event.message));};worker.postMessage({file,datasetId:nextId,previousDatasetId:restored.datasetId});});
+        assert(summary.playerCount===5500 && summary.fileCount===5502 && summary.exports.length===2,'L’import ne conserve pas tout l’historique.');
+        let rejectedConcurrent=false;try{await db.activate({...summary,ownerId:credentials.userId,pending:true,recordsLocal:true,baseRevision:restored.cloudRevision},'wrong-dataset');}catch{rejectedConcurrent=true;}
+        assert(rejectedConcurrent && (await db.readActive()).datasetId===restored.datasetId,'Un import concurrent peut écraser l’historique actif.');
+        await db.activate({...summary,ownerId:credentials.userId,pending:true,recordsLocal:true,baseRevision:restored.cloudRevision},restored.datasetId);
+        const beforeAppend = await (await fetch('/__test/metrics')).json();
+        await run({check:true});
+        const appendPlan = await db.readMeta(`plan:${nextId}`), afterAppend = await (await fetch('/__test/metrics')).json();
+        const previousRecords = previousManifest.chunks.filter(chunk=>chunk.kind==='records');
+        assert(previousRecords.every(chunk=>appendPlan.chunks.some(next=>next.kind==='records'&&next.hash===chunk.hash)),'Les anciens blocs ne sont pas réutilisés.');
+        assert(afterAppend.bytesUploaded-beforeAppend.bytesUploaded<beforeAppend.bytesUploaded/2,'Les anciens relevés sont transférés à nouveau.');
+        stages.push('PASS — ajout de deux relevés : 5 500 joueurs conservés, anciens blocs réutilisés, seuls les nouveaux blocs transférés');
+        await db.writeMeta(db.activeKey,null);await db.writeMeta(`account:${credentials.userId}`,null);
+        await run({check:true});const finalActive = await db.readActive();
+        assert(finalActive.recordsLocal===false && finalActive.exports.length===2,'L’historique cloud n’est pas restauré à la demande.');
+        assert((await db.readPlayer(finalActive.datasetId,all[42].uuid)).completion===90,'L’index léger ne reprend pas le dernier relevé.');
+        await run({type:'hydrate',uuid:all[42].uuid});
+        const history = StatGMHistory.observations(await StatGMHistory.catalog(db,finalActive,all[42].uuid));
+        assert(history.length===2 && history[0].exportedAt.startsWith('2026-10-02') && history[1].exportedAt.startsWith('2026-10-06'),'Dates et relevés de l’historique cloud incorrects.');
+        const earlier = await db.readPlayerRecord(finalActive.datasetId,all[42].uuid,history[0].sequence), later = await db.readPlayerRecord(finalActive.datasetId,all[42].uuid,history[1].sequence);
+        assert(earlier.data.stats.description==='Émeraude 🔥 '.repeat(40000) && later.data.stats.score===1042,'Les statistiques originales ne sont pas conservées.');
+        assert(StatGMHistory.compare(earlier.data,later.data).find(row=>row.key==='progression.completion_percent').delta===48,'La comparaison restaurée est incorrecte.');
+        stages.push('PASS — nouvel ordinateur : deux dates et leurs données originales restaurées, progression correcte');
+        const final = await (await fetch('/__test/metrics')).json();
+        stages.push(`PASS — ${final.bytesUploaded.toLocaleString('fr-FR')} octets compressés envoyés, aucune sauvegarde répétée`);
+        result.textContent = stages.join('\n');
+      } catch (error) { result.textContent = [...stages, `FAIL — ${error.message}`].join('\n'); }
+      finally { button.disabled = false; }
+    });
+  </script>
+</body></html>

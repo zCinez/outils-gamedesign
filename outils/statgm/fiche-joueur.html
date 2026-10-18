@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b0d14">
+  <title>Fiche joueur — StatGM</title>
+  <link rel="stylesheet" href="../../assets/neodium-unified.css?v=20260911b">
+  <link rel="stylesheet" href="../../assets/neodium-global-header.css?v=20260911b">
+  <link rel="stylesheet" href="../../assets/neodium-interface.css?v=20260911d">
+  <link rel="stylesheet" href="statgm.css?v=20261006a">
+  <link rel="stylesheet" href="fiche-joueur.css?v=20261006d">
+  <script src="../../assets/supabase-config.js"></script>
+  <script src="../../assets/cloud-sync.js?v=20260626b"></script>
+  <script src="../../assets/neodium-global-header.js?v=20260626b" defer></script>
+  <script src="../../assets/neodium-interface.js?v=20260911d" defer></script>
+  <script src="archive-db.js?v=20261006c" defer></script>
+  <script src="cloud-store.js?v=20261006c" defer></script>
+  <script src="player-heads.js?v=20261001c" defer></script>
+  <script src="player-grades.js?v=20261002a" defer></script>
+  <script src="player-stats.js?v=20261009c" defer></script>
+  <script src="player-history.js?v=20261006c" defer></script>
+  <script src="player-economy-charts.js?v=20261002i" defer></script>
+  <script src="fiche-joueur.js?v=20261006d" defer></script>
+</head>
+<body>
+  <main class="statgm-shell player-shell">
+    <nav class="player-breadcrumb" aria-label="Fil d’Ariane"><a href="index.html">StatGM</a><span aria-hidden="true">/</span><a href="joueurs.html">Joueurs</a><span aria-hidden="true">/</span><span data-breadcrumb>Fiche joueur</span></nav>
+    <div class="player-topbar"><a class="player-back" href="joueurs.html">← Tous les joueurs</a><span class="statgm-eyebrow">FICHE JOUEUR</span></div>
+    <section class="player-state" data-load-state role="status" aria-live="polite">
+      <span class="player-loader" aria-hidden="true"></span><h1 data-state-title>Chargement de la fiche…</h1><p data-state-detail>Lecture des statistiques de ce joueur.</p><button type="button" data-retry hidden>Réessayer</button>
+    </section>
+    <div data-player-content hidden>
+      <header class="player-hero">
+        <div class="player-identity"><div data-head></div><div class="player-identity-copy"><span class="statgm-eyebrow">STATGM / NEODIUM</span><div class="player-title"><h1 data-name>Joueur</h1><div data-grade></div></div><div class="player-status" data-status></div><div class="player-uuid"><code data-uuid></code><button type="button" data-copy-uuid aria-label="Copier l’UUID">Copier</button></div></div></div>
+        <div class="player-snapshot"><span class="player-snapshot-label">STATISTIQUES À L’EXPORT</span><strong data-export-date></strong><small data-export-file></small><label data-source-choice hidden>Fichier du joueur<select data-record aria-label="Fichier de statistiques du joueur"></select></label></div>
+      </header>
+      <div class="player-kpis" data-kpis></div>
+      <nav class="player-tabs" role="tablist" aria-label="Catégories de statistiques">
+        <button type="button" id="tab-overview" role="tab" aria-selected="true" aria-controls="panel-overview" data-tab="overview">Vue d’ensemble</button>
+        <button type="button" id="tab-economy" role="tab" aria-selected="false" aria-controls="panel-economy" tabindex="-1" data-tab="economy">Économie</button>
+        <button type="button" id="tab-jobs" role="tab" aria-selected="false" aria-controls="panel-jobs" tabindex="-1" data-tab="jobs">Métiers</button>
+        <button type="button" id="tab-quests" role="tab" aria-selected="false" aria-controls="panel-quests" tabindex="-1" data-tab="quests">Quêtes et succès</button>
+        <button type="button" id="tab-plot" role="tab" aria-selected="false" aria-controls="panel-plot" tabindex="-1" data-tab="plot">Plot</button>
+        <a class="player-history-link" data-history-link href="progression-joueur.html">Progression du joueur ↗</a>
+        <button type="button" id="tab-data" role="tab" aria-selected="false" aria-controls="panel-data" tabindex="-1" data-tab="data">Données complètes</button>
+      </nav>
+      <section id="panel-overview" role="tabpanel" aria-labelledby="tab-overview" data-panel="overview"></section>
+      <section id="panel-economy" role="tabpanel" aria-labelledby="tab-economy" data-panel="economy" hidden></section>
+      <section id="panel-jobs" role="tabpanel" aria-labelledby="tab-jobs" data-panel="jobs" hidden></section>
+      <section id="panel-quests" role="tabpanel" aria-labelledby="tab-quests" data-panel="quests" hidden></section>
+      <section id="panel-plot" role="tabpanel" aria-labelledby="tab-plot" data-panel="plot" hidden></section>
+      <section id="panel-data" role="tabpanel" aria-labelledby="tab-data" data-panel="data" hidden></section>
+      <p class="player-footnote">Données du fichier importé · Les montants et compteurs sont conservés dans leur source d’origine. L’état de connexion est celui de l’export.</p>
+    </div>
+    <p class="player-announcement" data-announcement role="status" aria-live="polite"></p>
+    <noscript>Active JavaScript pour consulter la fiche joueur.</noscript>
+  </main>
+</body>
+</html>

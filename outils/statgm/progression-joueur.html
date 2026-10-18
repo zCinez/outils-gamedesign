@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="fr"><head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#0b0d14"><title>Progression du joueur — StatGM</title>
+  <link rel="stylesheet" href="../../assets/neodium-unified.css?v=20260911b"><link rel="stylesheet" href="../../assets/neodium-global-header.css?v=20260911b"><link rel="stylesheet" href="../../assets/neodium-interface.css?v=20260911d">
+  <link rel="stylesheet" href="statgm.css?v=20261006a"><link rel="stylesheet" href="fiche-joueur.css?v=20261006d">
+  <link rel="stylesheet" href="progression-chart.css?v=20261017b">
+  <script src="../../assets/supabase-config.js"></script><script src="../../assets/cloud-sync.js?v=20260626b"></script>
+  <script src="../../assets/neodium-global-header.js?v=20260626b" defer></script><script src="../../assets/neodium-interface.js?v=20260911d" defer></script>
+  <script src="archive-db.js?v=20261006c" defer></script><script src="cloud-store.js?v=20261006c" defer></script><script src="player-stats.js?v=20261009c" defer></script><script src="player-history.js?v=20261007c" defer></script><script src="player-history-chart.js?v=20261017i" defer></script><script src="player-heads.js?v=20261001c" defer></script><script src="player-grades.js?v=20261002a" defer></script><script src="progression-joueur.js?v=20261017e" defer></script>
+</head><body><main class="statgm-shell player-shell">
+  <nav class="player-breadcrumb" aria-label="Fil d’Ariane"><a href="index.html">StatGM</a><span>/</span><a href="joueurs.html">Joueurs</a><span>/</span><a data-profile href="fiche-joueur.html">Fiche joueur</a><span>/</span><span>Progression</span></nav>
+  <div class="player-topbar"><a class="player-back" data-profile href="fiche-joueur.html">← Fiche du joueur</a><span class="statgm-eyebrow">HISTORIQUE DU JOUEUR</span></div>
+  <p data-state class="player-note" role="status" aria-live="polite">Chargement de l’historique…</p><button data-retry type="button" hidden>Réessayer</button>
+  <div data-content hidden>
+    <header class="player-hero"><div class="player-identity"><div data-head></div><div class="player-identity-copy"><span class="statgm-eyebrow">STATGM / PROGRESSION</span><h1 data-name></h1><div data-grade></div><p class="player-note" data-first-connection></p></div></div><div class="player-snapshot"><span class="player-snapshot-label">RELEVÉS CONSERVÉS</span><strong data-snapshot-count></strong><small data-history-range></small></div></header>
+    <nav class="player-history-modes" aria-label="Affichage de la progression"><button type="button" data-mode="chart" aria-pressed="true">Graphique</button></nav>
+    <section data-chart-panel aria-label="Graphiques de progression">
+      <article class="player-panel player-history-chart-panel">
+        <div class="player-panel-heading"><div><span class="statgm-eyebrow">TOUS LES EXPORTS</span><h2>Évolution du joueur</h2></div><span class="player-history-chart-count" data-chart-count role="status" aria-live="polite"></span></div>
+        <nav class="player-history-categories" data-chart-categories aria-label="Catégories des graphiques"></nav>
+        <nav class="player-history-jobs" data-chart-jobs hidden aria-label="Métiers des graphiques"></nav>
+        <div class="player-history-chart-toolbar"><p class="player-note" data-chart-scope></p><label><span class="player-history-search-label">Rechercher dans la catégorie</span><input data-chart-search type="search" placeholder="Argent, Dracorne, expérience…" aria-label="Rechercher une statistique du graphique"></label></div>
+        <p class="player-note">Chaque graphique utilise tous les exports conservés. Les échelles sont ajustées à chaque statistique ; les valeurs absentes interrompent les courbes.</p>
+      </article>
+      <div class="player-history-chart-body" data-job-layout>
+        <aside class="player-panel player-history-resource-browser" data-job-resources-panel hidden>
+          <h2>Ressources</h2><p class="player-note" data-job-resources-count></p>
+          <nav class="player-history-resources" data-job-resources aria-label="Ressources du métier"></nav>
+        </aside>
+        <div class="player-history-chart-content">
+          <div class="player-history-job-focus" data-job-focus hidden><h2 data-job-focus-title></h2><p class="player-note" data-job-focus-caption></p></div>
+          <nav class="player-history-stat-kinds" data-job-stat-kinds hidden aria-label="Types de statistiques de la ressource"></nav>
+          <div class="player-history-chart-grid" data-chart-grid></div>
+        </div>
+      </div>
+    </section>
+    <article class="player-panel"><h2>Exports disponibles</h2><p class="player-note">Les relevés commencent au premier export conservé. Aucune valeur intermédiaire n’est reconstituée.</p><div data-history-list></div></article>
+  </div>
+</main></body></html>

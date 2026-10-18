@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="fr">
+<head><meta charset="utf-8"><title>Complétions des anciens imports</title>
+  <script>
+    const testDatabaseName = `statgm-completion-test-${crypto.randomUUID()}`;
+    const realOpen = indexedDB.open.bind(indexedDB);
+    indexedDB.open = (name, version) => realOpen(name === 'statgm-archives' ? testDatabaseName : name, version);
+  </script>
+  <script src="../archive-db.js?v=20261006c" defer></script>
+  <script src="../player-history.js?v=20261006c" defer></script>
+  <script src="../import-format.js?v=20261006a" defer></script>
+</head>
+<body><h1>Complétions des anciens imports</h1>
+  <p>Base de test distincte, sans envoi au cloud.</p>
+  <button id="run">Tester la récupération</button><pre id="result" role="status">Prêt.</pre>
+  <script>
+    document.querySelector('#run').onclick = async () => {
+      const db = StatGMArchiveDB, result = document.querySelector('#result');
+      const datasetId = crypto.randomUUID(), uuid = i => `${String(i).padStart(8, '0')}-1234-4000-8000-0123456789ab`;
+      const assert = (condition, message) => { if (!condition) throw new Error(message); };
+      try {
+        const players = Array.from({length: 5}, (_, i) => ({datasetId, uuid: uuid(i), name: `Test_${i}`, grade: 'rubis', fileCount: i === 0 ? 2 : 1}));
+        players[4].completion = 75;
+        players[4].firstPlayedMs = 1779543203399;
+        const sources = [{progression:{completion_percent:99}}, {progression:{completion_percent:0}}, {quests:{completion_percent:51.5}}, {}, {progression:{completion_percent:10}}, {progression:{completion_percent:51,score_0_100:84}}];
+        sources[0].player = {first_played_ms:1779543203300}; sources[1].player = {first_played_ms:0}; sources[2].player = {first_played_ms:1779543203302}; sources[4].player = {first_played_ms:1779543203304}; sources[5].player = {first_played_ms:1779543203380};
+        const records = sources.map((data, sequence) => ({datasetId, sequence, uuid: uuid(sequence === 5 ? 0 : sequence), source: `test-${sequence}.json`, data}));
+        await db.writeBatch(players, records);
+        assert(await db.backfillCompletions(datasetId) === 4, 'Nombre de résumés incorrect.');
+        const updated = await db.readPlayers(datasetId);
+        assert(JSON.stringify(updated.map(player => player.completion)) === JSON.stringify([51, 0, 51.5, null, 75]), 'Dernier fichier, zéro, fallback, absent ou valeur existante incorrect.');
+        assert(updated.every(player => player.grade === 'rubis'), 'Les grades ont changé.');
+        assert(await db.backfillCompletions(datasetId) === 0, 'La récupération est répétée.');
+        assert(await db.backfillCardDetails(datasetId) === 4, 'Les dates manquantes ne sont pas récupérées.');
+        const dated = await db.readPlayers(datasetId);
+        assert(JSON.stringify(dated.map(player => player.firstPlayedMs)) === JSON.stringify([1779543203380, null, 1779543203302, null, 1779543203399]), 'Première connexion : dernier fichier, zéro, absent ou date existante incorrect.');
+        assert(JSON.stringify(dated.map(player => player.completion)) === JSON.stringify([51, 0, 51.5, null, 75]), 'Les complétions existantes ont changé.');
+        assert(await db.backfillCardDetails(datasetId) === 0, 'Les dates sont relues inutilement.');
+        for (const record of records) assert(JSON.stringify((await db.readPlayerRecord(datasetId, record.uuid, record.sequence)).data) === JSON.stringify(record.data), 'JSON original modifié.');
+        const chronologicalId=crypto.randomUUID(), chronology=[{exported_at_iso:'2026-10-06T10:00:00',profile:{luckperms_primary_group:'rubis'},player:{first_played_ms:1779543203380},progression:{completion_percent:90}},{exported_at_iso:'2026-10-02T10:00:00',profile:{luckperms_primary_group:'diamantv'},player:{first_played_ms:1779543203300},progression:{completion_percent:20}}];
+        await db.writeBatch([{datasetId:chronologicalId,uuid:uuid(0),name:'Ancien import ajouté après le récent',fileCount:2}],chronology.map((data,sequence)=>({datasetId:chronologicalId,uuid:uuid(0),sequence,source:`test-${sequence}.json`,data})));
+        await db.backfillGrades(chronologicalId);await db.backfillCardDetails(chronologicalId);
+        const current=await db.readPlayer(chronologicalId,uuid(0));assert(current.grade==='rubis'&&current.completion===90&&current.firstPlayedMs===1779543203380,'Un export ancien importé après le récent remplace les informations récupérées.');
+        result.textContent = 'PASS — première connexion, grades et complétion : ordre chronologique, exports anciens ajoutés après les récents, valeurs absentes, zéro, résumés existants, récupération unique et JSON préservés.';
+      } catch (error) { result.textContent = `FAIL — ${error.message}`; }
+      finally { (await db.open()).close(); indexedDB.deleteDatabase(testDatabaseName); }
+    };
+  </script>
+</body></html>

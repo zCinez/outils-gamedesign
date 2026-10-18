@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="fr"><head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0b0d14"><title>Évolution globale — StatGM</title>
+  <link rel="stylesheet" href="../../assets/neodium-unified.css?v=20260911b"><link rel="stylesheet" href="../../assets/neodium-global-header.css?v=20260911b"><link rel="stylesheet" href="../../assets/neodium-interface.css?v=20260911d">
+  <link rel="stylesheet" href="statgm.css?v=20261018a"><link rel="stylesheet" href="fiche-joueur.css?v=20261006d"><link rel="stylesheet" href="progression-chart.css?v=20261017b"><link rel="stylesheet" href="evolution-globale.css?v=20261018b">
+  <script src="../../assets/supabase-config.js"></script><script src="../../assets/cloud-sync.js?v=20260626b"></script><script src="../../assets/neodium-global-header.js?v=20260626b" defer></script><script src="../../assets/neodium-interface.js?v=20260911d" defer></script>
+  <script src="archive-db.js?v=20261006c" defer></script><script src="cloud-store.js?v=20261006c" defer></script><script src="player-stats.js?v=20261009c" defer></script><script src="player-history.js?v=20261007c" defer></script><script src="player-history-chart.js?v=20261018k" defer></script><script src="global-evolution-format.js?v=20261018c" defer></script><script src="evolution-globale.js?v=20261018d" defer></script>
+</head><body><main class="statgm-shell">
+  <header class="statgm-heading"><div><h1>Évolution globale</h1><p>Les totaux du serveur au fil de tous tes exports.</p></div></header>
+  <nav class="statgm-toolbar" aria-label="Outils StatGM">
+    <a href="index.html"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 5-7 7 7 7M5 12h14"/></svg>Retour à StatGM</a>
+    <a class="statgm-players-button" href="joueurs.html"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2m20 0v-2a4 4 0 0 0-3-3.87M15 3.13a4 4 0 0 1 0 7.75"/><circle cx="9" cy="7" r="4"/></svg>Joueurs <span data-toolbar-count>0</span></a>
+    <a href="statistiques-globales.html"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3v17h17M8 16v-4m5 4V7m5 9v-7"/></svg>Statistiques globales</a>
+    <a href="evolution-globale.html" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3v17h17M7 15l5-6 4 3 5-7"/></svg>Évolution globale</a>
+  </nav>
+  <details class="evolution-cloud"><summary>Sauvegarde et synchronisation</summary><section class="statgm-cloud-panel" data-cloud-panel aria-label="Sauvegarde StatGM"><div><strong data-cloud-message role="status" aria-live="polite">Copie locale disponible</strong><p data-cloud-detail>Connexion au cloud Neodium…</p></div><button type="button" data-cloud-retry hidden>Synchroniser</button><div class="statgm-cloud-choices" data-cloud-conflict hidden><button type="button" data-cloud-keep-local>Garder cet import</button><button type="button" data-cloud-use-remote>Charger la sauvegarde cloud</button></div></section></details>
+  <section class="player-panel evolution-state" data-evolution-state role="status" aria-live="polite"><h2 data-state-title>Chargement de l’évolution…</h2><p class="player-note" data-state-detail>Lecture de tous les exports de joueurs.</p><progress data-load-progress max="100" value="0" aria-label="Lecture de l’historique"></progress><button data-retry type="button" hidden>Réessayer</button><a data-import-link href="index.html" hidden>Importer un ZIP</a></section>
+  <div data-evolution-content hidden>
+    <p class="player-note evolution-population" data-population></p>
+    <nav class="evolution-metrics" data-metrics aria-label="Totaux à suivre"></nav>
+    <section class="player-panel evolution-panel" aria-labelledby="evolution-title">
+      <div class="evolution-heading"><h2 id="evolution-title" data-metric-title></h2><div><span>Au dernier export</span><strong data-latest-value>—</strong></div></div>
+      <p class="player-note" data-coverage></p>
+      <p class="player-note evolution-context" data-metric-context>Un point par export · Somme des valeurs renseignées · Axe vertical ajusté aux montants</p>
+      <p class="player-note evolution-warning" data-warning hidden></p>
+      <div data-evolution-chart></div>
+      <p class="player-note" data-chart-note></p>
+      <details class="evolution-values"><summary>Valeurs exactes et joueurs renseignés par export</summary><div class="evolution-table-wrap" data-values></div></details>
+      <details class="evolution-method"><summary>Calcul et source</summary><p class="player-note">Chaque point additionne les valeurs des joueurs présents dans un même export ZIP. Si un joueur apparaît plusieurs fois dans cet export, seul son relevé le plus récent est retenu, puis le dernier importé en cas de date identique. Les exports successifs restent séparés : ils ne sont jamais additionnés entre eux.</p><p class="player-note">Les zéros sont inclus ; les valeurs absentes restent inconnues et ne sont pas reprises d’un export précédent. Le total porte sur les valeurs renseignées, avec leur couverture affichée pour chaque point. La population peut varier entre exports : une hausse ou une baisse du total peut aussi provenir des joueurs présents.</p><p class="player-note">La date d’un point est celle du dernier relevé daté de cet export, ou sa date déclarée si aucun relevé n’est daté. Les intervalles temporels sont respectés lorsque toutes les dates sont connues. Aucune valeur intermédiaire n’est inventée.</p><p class="player-note">La variation en % compare le total sélectionné au total de l’export précédent : (total actuel − total précédent) ÷ total précédent × 100. Elle n’est pas calculable si la base est nulle ou négative ; deux totaux nuls donnent 0 %.</p><p class="player-note" data-source></p></details>
+    </section>
+  </div><noscript>Active JavaScript pour consulter l’évolution globale.</noscript>
+</main></body></html>

@@ -1,0 +1,9 @@
+.gradle/
+.idea/
+**/build/
+local.properties
+gradle/wrapper/gradle-wrapper.jar
+gradle/wrapper/gradle-wrapper.jar.download
+*.jks
+*.keystore
+keystore.properties

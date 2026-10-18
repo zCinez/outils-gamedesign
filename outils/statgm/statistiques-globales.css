@@ -1,0 +1,81 @@
+.statgm-heading { margin-bottom: 20px; }
+.statgm-toolbar { margin-bottom: 12px; }
+.statgm-toolbar .statgm-players-button:not([aria-current]) { background: rgba(255,255,255,.055) !important; border-color: var(--neo-border) !important; }
+.global-cloud { margin-bottom: 20px; color: var(--neo-muted); font-size: 12px; }
+.global-cloud > summary { display: list-item; min-height: 32px; cursor: pointer; }
+.global-cloud .statgm-cloud-panel { margin: 0 0 16px; }
+.global-selection { padding: 0; margin-bottom: 10px; }
+.global-selection > summary { padding: 16px 20px; min-height: 64px; cursor: pointer; }
+.global-selection > summary strong { font-size: 16px; overflow-wrap: anywhere; }
+.global-selection > summary span { margin-left: 16px; color: var(--neo-muted); font-size: 12px; white-space: nowrap; }
+.global-filter-body { padding: 0 20px 20px; }
+.global-filter-body .player-history-categories { padding-top: 16px; border-top: 1px solid var(--neo-border); }
+.global-resource-filter { margin-top: 16px; }
+.global-resource-filter h3 { margin: 0 0 8px; font-size: 14px; }
+.global-resource-filter h3 .player-note { margin-left: 8px; font-size: 11px; }
+.global-resource-filter .player-history-resources { display: flex; flex-wrap: wrap; gap: 8px; }
+.global-resource-filter .player-history-resources button { width: auto; }
+.global-layout { margin-bottom: 24px; }
+.global-results { min-width: 0; }
+.global-population { margin: 0 4px 20px; font-size: 12px; }
+.global-metrics { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+.global-metrics button, .global-top-sizes button, .global-distribution-scales button { min-height: 44px; padding: 10px 12px; font-size: 12px; }
+.global-metrics button[aria-pressed="true"], .global-top-sizes button[aria-pressed="true"], .global-distribution-scales button[aria-pressed="true"] { background: rgba(170,168,255,.16) !important; border-color: var(--neo-border-hot) !important; }
+.global-result-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 20px 32px; }
+.global-result-heading h2 { margin: 0; font-size: 24px; }
+.global-scope-note { margin: 16px 0 28px; }
+.global-chart-columns { display: grid; grid-template-columns: minmax(0,1.4fr) minmax(0,1fr); gap: 32px; align-items: start; }
+.global-ranking-visual, .global-population-visual { min-width: 0; }
+.global-population-visual { position: sticky; top: 24px; padding-left: 28px; border-left: 1px solid var(--neo-border); }
+.global-top-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.global-top-heading h3, .global-population-visual > h3 { margin: 0; font-size: 18px; line-height: 1.5; }
+.global-top-sizes, .global-distribution-scales { display: flex; flex-wrap: wrap; gap: 6px; }
+.global-top-sizes button { padding: 8px 10px; }
+.global-ranking .player-note { font-size: 12px; line-height: 1.7; }
+.global-summary { display: flex; flex-wrap: wrap; gap: 16px 32px; margin: 0; }
+.global-summary dt { color: var(--neo-muted); font-size: 12px; }
+.global-summary dd { margin: 6px 0 0; color: var(--neo-text); font-size: 23px; line-height: 1.4; font-weight: 750; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.global-hist-legend { display: flex; flex-wrap: wrap; gap: 12px 24px; margin: 20px 0 12px; color: var(--neo-muted); font-size: 12px; }
+.global-hist-legend span::before { content: ""; display: inline-block; width: 20px; margin-right: 7px; vertical-align: middle; border-top: 2px solid var(--neo-text); }
+.global-hist-legend .global-legend-median::before { border-top-style: dashed; border-top-color: var(--neo-teal); }
+.global-bar-scale { display: flex; justify-content: space-between; gap: 16px; margin: 18px 0 2px 32px; color: var(--neo-muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.global-bar-list { list-style: none; padding: 0; margin: 0; }
+.global-bar-row { display: grid; grid-template-columns: 22px minmax(0,1fr); gap: 10px; padding: 12px 0; }
+.global-bar-place { color: var(--neo-muted); font-size: 12px; padding-top: 2px; font-variant-numeric: tabular-nums; }
+.global-bar-copy { min-width: 0; }
+.global-bar-label { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; margin-bottom: 8px; }
+.global-bar-label a { color: var(--neo-text); text-decoration: none; font-size: 14px; font-weight: 650; overflow-wrap: anywhere; min-width: 0; }
+.global-bar-label a:hover { color: var(--neo-teal); text-decoration: underline; text-underline-offset: 3px; }
+.global-bar-label strong { text-align: right; font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; flex-shrink: 0; max-width: 55%; }
+.global-bar-track { display: block; position: relative; height: 12px; background: rgba(170,168,255,.07); }
+.global-bar-fill { display: block; position: absolute; top: 0; height: 100%; background: var(--neo-teal); }
+.global-bar-fill--negative { background: rgba(170,168,255,.14); border: 1px solid var(--neo-teal); }
+.global-bar-zero { position: absolute; top: -2px; bottom: -2px; border-left: 1px solid var(--neo-muted); }
+.global-histogram { margin: 0; }
+.global-histogram > svg { width: 100%; height: auto; display: block; fill: none; stroke: none; }
+.global-hist-label { fill: var(--neo-muted); font: 12px Manrope,sans-serif; stroke: none; }
+.global-hist-guide { stroke: var(--neo-border); stroke-width: 1; }
+.global-hist-baseline { stroke: var(--neo-muted); stroke-width: 1; }
+.global-hist-bin { fill: rgba(170,168,255,.62); stroke: var(--neo-teal); stroke-width: 1; }
+.global-hist-marker { stroke-width: 2; }
+.global-hist-marker--mean { stroke: var(--neo-text); }
+.global-hist-marker--median { stroke: var(--neo-teal); stroke-dasharray: 5 4; }
+.global-bin-details { margin: 12px 0 16px; }
+.global-bin-details summary, .global-exact > summary, .global-method summary { cursor: pointer; font-size: 12px; font-weight: 650; min-height: 32px; }
+.global-exact { margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--neo-border); }
+.global-table { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+.global-table caption { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.global-table th { color: var(--neo-muted); font-size: 12px; font-weight: 650; }
+.global-table td, .global-table th { padding: 14px 10px; border-bottom: 1px solid var(--neo-border); text-align: left; }
+.global-table td:first-child, .global-table th:first-child { padding-left: 0; }
+.global-table td:last-child, .global-table th:last-child { text-align: right; padding-right: 0; }
+.global-table td:last-child { font-weight: 700; }
+.global-table a { color: var(--neo-text); text-decoration: none; font-weight: 650; overflow-wrap: anywhere; }
+.global-table small { display: block; color: var(--neo-muted); font-size: 11px; margin-top: 4px; }
+.global-method { margin-top: 16px; }
+.global-method p { max-width: 75ch; overflow-wrap: anywhere; }
+.global-warning { padding: 12px 16px; border: 1px solid var(--neo-border-hot); border-radius: 10px; }
+.global-state h2 { margin-top: 0; }
+.global-state button, .global-state a { display: inline-flex; min-height: 44px; align-items: center; margin-top: 12px; padding: 10px 16px; }
+@media(max-width:960px) { .global-chart-columns { grid-template-columns: minmax(0,1fr); gap: 36px; } .global-population-visual { position: static; border-left: 0; border-top: 1px solid var(--neo-border); padding: 24px 0 0; } }
+@media(max-width:760px) { .global-selection > summary { padding: 14px 16px; } .global-selection > summary span { display: block; margin: 4px 0 0 18px; } .global-filter-body { padding: 0 16px 16px; } .global-resource-filter .player-history-resources { flex-wrap: nowrap; overflow-x: auto; padding: 4px 2px 8px; } .global-resource-filter .player-history-resources button { flex: 0 0 auto; white-space: nowrap; } .global-summary { display: grid; width: 100%; gap: 12px; } .global-summary > div { display: grid; grid-template-columns: auto minmax(0,1fr); align-items: baseline; gap: 12px; } .global-summary dd { margin: 0; text-align: right; font-size: 21px; } .global-table { table-layout: fixed; } .global-table td, .global-table th { padding: 12px 6px; overflow-wrap: anywhere; } .global-exact .global-table th:first-child { width: 44px; } .global-exact .global-table th:last-child { width: 39%; } }

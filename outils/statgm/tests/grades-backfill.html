@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Vérification des grades des anciens imports</title>
+  <script src="../archive-db.js?v=20261001e" defer></script>
+  <script src="../player-grades.js?v=20261001d" defer></script>
+</head>
+<body>
+  <h1>Vérification des grades des anciens imports</h1>
+  <button type="button" id="run">Tester la récupération des grades</button>
+  <pre id="result" role="status">Prêt.</pre>
+  <script>
+    document.querySelector("#run").addEventListener("click", async () => {
+      const button = document.querySelector("#run"), result = document.querySelector("#result");
+      button.disabled = true;
+      result.textContent = "Test en cours…";
+      const datasetId = `grade-test-${crypto.randomUUID()}`;
+      let worker;
+      try {
+        const players = Array.from({ length: 4 }, (_, i) => ({ datasetId, uuid: `${String(i + 1).padStart(8, "0")}-1234-4000-8000-0123456789ab`, name: `Grade test ${i + 1}`, fileCount: 1 }));
+        players[3].grade = "rubis";
+        const data = [{ profile: { luckperms_primary_group: "cuivreii" }, stats: { untouched: 42 } }, { player: { grade: "Émeraude 5" } }, {}, { profile: { luckperms_primary_group: "diamant_i" } }];
+        const records = players.map((player, sequence) => ({ datasetId, uuid: player.uuid, sequence, source: `test-${sequence}.json`, data: data[sequence] }));
+        await StatGMArchiveDB.writeBatch(players, records);
+        worker = new Worker("../grade-backfill-worker.js?v=20261001e");
+        const recover = () => new Promise((resolve, reject) => {
+          worker.onmessage = ({ data }) => data.type === "complete" ? resolve(data.updated) : reject(new Error(data.message));
+          worker.onerror = () => reject(new Error("Le worker a échoué."));
+          worker.postMessage({ datasetId });
+        });
+        if (await recover() !== 3) throw new Error("Nombre de grades récupérés incorrect.");
+        const updated = await StatGMArchiveDB.readPlayers(datasetId);
+        const expected = ["cuivreii", "Émeraude 5", "", "rubis"];
+        for (let i = 0; i < expected.length; i++) if (updated[i].grade !== expected[i]) throw new Error(`Grade incorrect pour le joueur ${i + 1}.`);
+        if (StatGMGrades.describe(updated[1].grade).src !== "grades/emeraudev.png") throw new Error("Image de grade incorrecte.");
+        if (await recover() !== 0) throw new Error("La récupération n’est pas idempotente.");
+        const database = await StatGMArchiveDB.open();
+        const saved = await new Promise((resolve, reject) => {
+          const request = database.transaction("records").objectStore("records").index("dataset").getAll(datasetId);
+          request.onsuccess = () => resolve(request.result);
+          request.onerror = () => reject(request.error);
+        });
+        if (JSON.stringify(saved.map(record => record.data)) !== JSON.stringify(data)) throw new Error("Les statistiques originales ont changé.");
+        result.textContent = "PASS — anciens grades récupérés, grade existant préservé, grade absent signalé, image correcte, récupération idempotente et statistiques originales intactes.";
+      } catch (error) { result.textContent = `FAIL — ${error.message}`; }
+      finally { worker?.terminate(); await StatGMArchiveDB.discard(datasetId); button.disabled = false; }
+    });
+  </script>
+</body>
+</html>

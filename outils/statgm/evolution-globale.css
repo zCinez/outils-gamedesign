@@ -1,0 +1,40 @@
+.statgm-heading { margin-bottom: 20px; }
+.statgm-toolbar { margin-bottom: 12px; }
+.statgm-toolbar .statgm-players-button:not([aria-current]) { background: rgba(255,255,255,.055) !important; border-color: var(--neo-border) !important; }
+.evolution-cloud { margin-bottom: 20px; color: var(--neo-muted); font-size: 12px; }
+.evolution-cloud > summary { display: list-item; cursor: pointer; min-height: 32px; }
+.evolution-cloud .statgm-cloud-panel { margin: 0 0 16px; }
+.evolution-population { margin: 0 4px 16px; font-size: 12px; }
+.evolution-metrics { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+.evolution-metrics button { min-height: 44px; padding: 10px 16px; font-size: 13px; }
+.evolution-metrics button[aria-pressed="true"] { background: rgba(170,168,255,.16) !important; border-color: var(--neo-border-hot) !important; }
+.evolution-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px 32px; }
+.evolution-heading h2 { margin: 0; font-size: 24px; }
+.evolution-heading > div { min-width: 0; }
+.evolution-heading span { display: block; color: var(--neo-muted); font-size: 12px; }
+.evolution-heading strong { display: block; margin-top: 4px; font-size: 23px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.evolution-panel .player-note { font-size: 12px; line-height: 1.7; }
+.evolution-context { margin-bottom: 24px; }
+.evolution-warning { padding: 12px 16px; border: 1px solid var(--neo-border-hot); border-radius: 10px; }
+.evolution-panel .player-history-axis-label { font-size: 12px; stroke: none; }
+.evolution-panel .player-history-point-archive { font-size: 12px; }
+.evolution-panel .player-history-point-value { font-size: 22px; }
+.evolution-values { margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--neo-border); }
+.evolution-values > summary, .evolution-method > summary { min-height: 32px; cursor: pointer; font-size: 12px; font-weight: 650; }
+.evolution-method { margin-top: 12px; }
+.evolution-method p { max-width: 75ch; overflow-wrap: anywhere; }
+.evolution-table-wrap { overflow-x: auto; }
+.evolution-table { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+.evolution-table td, .evolution-table th { text-align: left; padding: 14px 10px; border-bottom: 1px solid var(--neo-border); }
+.evolution-table th { color: var(--neo-muted); font-size: 12px; }
+.evolution-table td:not(:first-child), .evolution-table th:not(:first-child) { text-align: right; }
+.evolution-table small { display: block; color: var(--neo-muted); margin-top: 4px; }
+.evolution-state h2 { margin-top: 0; }
+.evolution-state button, .evolution-state a { display: inline-flex; align-items: center; min-height: 44px; padding: 10px 16px; margin-top: 12px; }
+@media(max-width:760px) {
+  .evolution-heading { display: grid; gap: 18px; }
+  .evolution-heading h2 { font-size: 22px; }
+  .evolution-heading strong, .evolution-panel .player-history-point-value { font-size: 20px; }
+  .evolution-metrics button { padding: 10px 12px; font-size: 12px; }
+  .evolution-table { min-width: 620px; }
+}

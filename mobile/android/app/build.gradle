@@ -1,0 +1,57 @@
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
+
+plugins {
+    id 'com.android.application'
+}
+
+def appConfig = new JsonSlurper().parse(rootProject.file('app-config.json'))
+def webUrl = providers.environmentVariable('WEB_APP_URL').getOrNull()?.trim() ?: appConfig.webUrl.trim()
+if (!webUrl) {
+    throw new GradleException('Adresse Web manquante. Configure mobile/android/app-config.json ou WEB_APP_URL.')
+}
+def siteUri = new URI(webUrl).normalize()
+def siteHost = siteUri.host?.toLowerCase(Locale.ROOT)
+if (!'https'.equalsIgnoreCase(siteUri.scheme) || !siteHost || siteUri.userInfo || siteUri.query || siteUri.fragment || !(siteUri.port in [-1, 443])) {
+    throw new GradleException('Utilise une URL HTTPS publique, sans identifiants, port, parametres ni fragment.')
+}
+def sitePath = siteUri.rawPath ?: '/'
+def scopePath = sitePath.endsWith('.html')
+    ? sitePath.substring(0, sitePath.lastIndexOf('/') + 1)
+    : (sitePath.endsWith('/') ? sitePath : sitePath + '/')
+def launchPath = sitePath.endsWith('.html') ? sitePath : scopePath
+def launchUrl = "https://${siteHost}${launchPath}"
+def assetStatements = JsonOutput.toJson([[
+    relation: ['delegate_permission/common.handle_all_urls'],
+    target: [namespace: 'web', site: "https://${siteHost}"]
+]])
+
+android {
+    namespace appConfig.appId
+    compileSdk 36
+
+    defaultConfig {
+        applicationId appConfig.appId
+        minSdk 24
+        targetSdk 36
+        versionCode appConfig.versionCode
+        versionName appConfig.versionName
+        manifestPlaceholders = [
+            webAppUrl: launchUrl,
+            webAppHost: siteHost,
+            webAppPath: new URI("https://${siteHost}${scopePath}").path
+        ]
+        // Android string resources need quotes escaped even when the value is JSON.
+        resValue 'string', 'app_name', JsonOutput.toJson(appConfig.appName)
+        resValue 'string', 'asset_statements', JsonOutput.toJson(assetStatements)
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.7.3'
+}

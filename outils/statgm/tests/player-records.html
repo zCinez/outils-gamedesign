@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8"><title>Lectures indexées des fiches joueur</title>
+  <script>
+    // This page owns a distinct test database; no real imports are changed.
+    const testDatabaseName = `statgm-player-records-test-${crypto.randomUUID()}`;
+    const realOpen = indexedDB.open.bind(indexedDB);
+    indexedDB.open = (name, version) => realOpen(name === 'statgm-archives' ? testDatabaseName : name, version);
+  </script>
+  <script src="../archive-db.js?v=20261002b" defer></script>
+</head>
+<body>
+  <h1>Lectures indexées des fiches joueur</h1>
+  <p>5 500 joueurs fictifs dans une base de test distincte. Aucun envoi au cloud.</p>
+  <button type="button" id="run">Tester les lectures par UUID</button>
+  <pre id="result" role="status">Prêt.</pre>
+  <script>
+    document.querySelector('#run').addEventListener('click', async () => {
+      const result = document.querySelector('#result'), button = document.querySelector('#run'), db = StatGMArchiveDB;
+      const assert = (value, message) => { if (!value) throw new Error(message); };
+      const datasetId = crypto.randomUUID(), uuid = i => `${i.toString(16).padStart(8,'0')}-1234-4000-8000-0123456789ab`;
+      button.disabled = true; result.textContent = 'Préparation…';
+      try {
+        for (let start = 0; start < 5500; start += 100) {
+          const players = [], records = [];
+          for (let i = start; i < Math.min(start + 100, 5500); i++) {
+            players.push({ datasetId, uuid: uuid(i), name: `Test_${i}`, grade: 'fermier' });
+            records.push({ datasetId, uuid: uuid(i), sequence: i, source: `test_${i}.json`, data: { player: { uuid: uuid(i), name: `Test_${i}` }, profile: { vault_balance: i }, future_field: { kept: true } } });
+          }
+          await db.writeBatch(players, records);
+        }
+        await db.writeBatch([], [{ datasetId, uuid: uuid(5499), sequence: 5500, source: 'second-file.json', data: { score: 42 } }]);
+        const started = performance.now();
+        const summary = await db.readPlayer(datasetId, uuid(5499));
+        const keys = await db.readPlayerRecordKeys(datasetId, uuid(5499));
+        const first = await db.readPlayerRecord(datasetId, uuid(5499), keys[0][1]);
+        const second = await db.readPlayerRecord(datasetId, uuid(5499), keys[1][1]);
+        const elapsed = Math.round(performance.now() - started);
+        assert(summary.name === 'Test_5499', 'Mauvais résumé.');
+        assert(keys.length === 2 && keys[0][1] === 5499 && keys[1][1] === 5500, 'Clés de fichiers incorrectes.');
+        assert(first.data.profile.vault_balance === 5499 && second.data.score === 42, 'Fichiers non distincts.');
+        assert(await db.readPlayerRecord(datasetId, uuid(1), 5499) === null, 'Un fichier d’un autre UUID est accepté.');
+        assert(await db.readPlayer('unknown-dataset', uuid(5499)) === null, 'Un autre jeu de données est accepté.');
+        assert((await db.readPlayerRecordKeys(datasetId, uuid(42))).length === 1, 'Les fichiers d’autres joueurs sont lus.');
+        assert(first.data.future_field.kept === true, 'Le JSON original a été modifié.');
+        result.textContent = `PASS — 5 500 joueurs ; lectures par UUID, clés sans JSON, fichiers multiples, UUID et jeu de données isolés, champs inconnus préservés (${elapsed} ms pour la lecture ciblée).`;
+      } catch (error) { result.textContent = `FAIL — ${error.message}`; }
+      finally { (await db.open()).close(); indexedDB.deleteDatabase(testDatabaseName); }
+    });
+  </script>
+</body>
+</html>
