@@ -266,7 +266,7 @@
 
     .status-strip {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 10px;
       margin-top: -58px;
       position: relative;
@@ -338,142 +338,10 @@
       color: var(--muted-2);
     }
 
-    .segments {
-      display: inline-flex;
-      min-height: 42px;
-      overflow: hidden;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      background: rgba(255, 255, 255, 0.045);
-    }
-
-    .segment {
-      border: 0;
-      border-right: 1px solid var(--border);
-      padding: 0 12px;
-      color: var(--muted);
-      background: transparent;
-      font-weight: 800;
-    }
-
-    .segment:last-child {
-      border-right: 0;
-    }
-
-    .segment.is-active {
-      color: #061114;
-      background: var(--teal);
-    }
-
     .tools-grid {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 12px;
-    }
-
-    .tool-card {
-      min-height: 250px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      background: var(--surface);
-      padding: 18px;
-      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.18);
-      transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
-    }
-
-    a.tool-card:hover,
-    a.tool-card:focus-visible {
-      border-color: rgba(85, 224, 202, 0.38);
-      background: var(--surface-2);
-      transform: translateY(-2px);
-      outline: none;
-    }
-
-    .tool-card.is-hidden {
-      display: none;
-    }
-
-    .tool-head {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 14px;
-      margin-bottom: 22px;
-    }
-
-    .tool-mark {
-      width: 46px;
-      height: 46px;
-      display: grid;
-      place-items: center;
-      flex: 0 0 auto;
-      border-radius: var(--radius);
-      background: var(--surface-3);
-      color: var(--teal);
-      font-size: 0.86rem;
-      font-weight: 900;
-      border: 1px solid rgba(233, 239, 246, 0.12);
-    }
-
-    .tag {
-      display: inline-flex;
-      align-items: center;
-      min-height: 28px;
-      padding: 0 9px;
-      border: 1px solid var(--border);
-      border-radius: 999px;
-      color: var(--muted);
-      background: rgba(255, 255, 255, 0.045);
-      font-size: 0.76rem;
-      font-weight: 900;
-      white-space: nowrap;
-    }
-
-    .tag-ready {
-      color: var(--green);
-      border-color: rgba(74, 222, 128, 0.28);
-      background: rgba(74, 222, 128, 0.08);
-    }
-
-    .tag-planned {
-      color: var(--gold);
-      border-color: rgba(241, 188, 82, 0.3);
-      background: rgba(241, 188, 82, 0.08);
-    }
-
-    .tool-card h3 {
-      font-size: 1.08rem;
-      line-height: 1.22;
-      margin-bottom: 9px;
-    }
-
-    .tool-card p {
-      color: var(--muted);
-      font-size: 0.93rem;
-    }
-
-    .tool-footer {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      margin-top: 20px;
-      color: var(--teal);
-      font-weight: 900;
-      font-size: 0.9rem;
-    }
-
-    .tool-card[data-status="planned"] .tool-footer {
-      color: var(--gold);
-    }
-
-    .tool-meta {
-      color: var(--muted-2);
-      font-size: 0.83rem;
-      font-weight: 800;
     }
 
     .quick-section {
@@ -631,7 +499,6 @@
         width: clamp(112px, 13vw, 156px);
       }
 
-      .status-strip,
       .tools-grid,
       .quick-section {
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -720,23 +587,8 @@
       }
 
       .controls,
-      .search,
-      .segments {
+      .search {
         width: 100%;
-      }
-
-      .segments {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-      }
-
-      .segment {
-        min-width: 0;
-        padding: 0 8px;
-      }
-
-      .tool-card {
-        min-height: 220px;
       }
 
       .roadmap-item {
@@ -751,12 +603,13 @@
   <link rel="stylesheet" href="assets/neodium-unified.css?v=20260911b" />
   <link rel="stylesheet" href="assets/neodium-global-header.css?v=20260911b" />
   <link rel="stylesheet" href="assets/neodium-interface.css?v=20260911d" />
+  <link rel="stylesheet" href="assets/neodium-home.css?v=20261018d" />
   <script src="assets/supabase-config.js"></script>
   <script src="assets/cloud-sync.js?v=20260626b"></script>
   <script src="assets/neodium-global-header.js?v=20260626b" defer></script>
 </head>
 
-<body>
+<body class="neodium-home">
   <div class="shell">
     <header class="topbar legacy-topbar">
       <div class="topbar-inner">
@@ -806,10 +659,6 @@
           <span>déjà prêts</span>
         </div>
         <div class="metric">
-          <strong id="plannedCount">0</strong>
-          <span>à construire</span>
-        </div>
-        <div class="metric">
           <strong id="currentDate">--</strong>
           <span>dernière ouverture</span>
         </div>
@@ -826,192 +675,109 @@
       </section>
 
       <div class="tool-access-shell" id="toolAccessShell">
-      <section class="toolbar" aria-label="Recherche et filtres">
+      <section class="toolbar" aria-label="Recherche d’outils">
         <div class="section-title">
           <h2>Outils Neodium</h2>
-          <p>Les pages prêtes sont ouvrables tout de suite. Les autres servent de feuille de route.</p>
+          <p>Choisis un outil pour commencer.</p>
         </div>
 
         <div class="controls">
-          <input class="search" id="searchInput" type="search" placeholder="Rechercher un outil..." />
-          <div class="segments" aria-label="Filtrer les outils">
-            <button class="segment is-active" type="button" data-filter="all">Tous</button>
-            <button class="segment" type="button" data-filter="ready">Prêts</button>
-            <button class="segment" type="button" data-filter="planned">À venir</button>
-          </div>
+          <input class="search" id="searchInput" type="search" aria-label="Rechercher un outil" placeholder="Rechercher un outil..." />
         </div>
       </section>
 
       <section class="tools-grid" id="toolsGrid" aria-label="Liste des outils">
-        <a class="tool-card" href="outils/todo-gamedesign.html" data-status="ready" data-name="todo game design tâches priorités cdc wiki équilibrage neodium">
-          <div>
-            <div class="tool-head">
-              <span class="tool-mark">TD</span>
-              <span class="tag tag-ready">Prêt</span>
+        <a class="tool-card" href="outils/generateur-cdc/index.html" data-status="ready" data-name="générateur cdc cahier des charges systèmes patchs fonctionnalités" data-tool="cdc" aria-labelledby="tool-cdc-title" aria-describedby="tool-cdc-description tool-cdc-status">
+          <div class="tool-visual">
+            <div class="tool-art" aria-hidden="true">
+              <img class="tool-art-left" src="outils/generateur-cdc/minecraft-item-textures/item/map.png" alt="" width="40" height="40" loading="lazy" decoding="async" />
+              <img class="tool-art-main" src="outils/generateur-cdc/minecraft-item-textures/item/written_book.png" alt="" width="80" height="80" loading="lazy" decoding="async" />
+              <img class="tool-art-right" src="outils/generateur-cdc/minecraft-item-textures/item/feather.png" alt="" width="40" height="40" loading="lazy" decoding="async" />
             </div>
-            <h3>Todo Game Design</h3>
-            <p>Ajoute, filtre et priorise les tâches liées aux métiers, quêtes, équilibrages, bugs, wiki et versions.</p>
+            <span class="tag tag-planned" id="tool-cdc-status">En création</span>
+          </div>
+          <div class="tool-body">
+            <h3 id="tool-cdc-title">Générateur de CDC</h3>
+            <p id="tool-cdc-description">Préparer une fiche complète par template, gérer les projets, exporter en PDF et organiser les presets GUI.</p>
           </div>
           <div class="tool-footer">
-            <span>Ouvrir</span>
-            <span class="tool-meta">Cloud sync</span>
-          </div>
-        </a>
-
-        <a class="tool-card" href="outils/suggestions.html" data-status="ready" data-name="suggestions joueurs discord communauté idées statut priorité staff neodium">
-          <div>
-            <div class="tool-head">
-              <span class="tool-mark">SG</span>
-              <span class="tag tag-ready">Prêt</span>
-            </div>
-            <h3>Suggestions joueurs</h3>
-            <p>Centralise les idées Discord, garde la note staff, puis classe chaque suggestion par statut et priorité.</p>
-          </div>
-          <div class="tool-footer">
-            <span>Ouvrir</span>
-            <span class="tool-meta">export JSON</span>
-          </div>
-        </a>
-
-        <a class="tool-card" href="outils/generateur-cdc/index.html" data-status="ready" data-name="générateur cdc cahier des charges systèmes patchs fonctionnalités">
-          <div>
-            <div class="tool-head">
-              <span class="tool-mark">CDC</span>
-              <span class="tag tag-planned">En création</span>
-            </div>
-            <h3>Générateur de CDC</h3>
-            <p>Préparer une fiche complète par template, gérer les projets, exporter en PDF et organiser les presets GUI.</p>
-          </div>
-          <div class="tool-footer">
-            <span>Ouvrir</span>
             <span class="tool-meta">CDC</span>
+            <span class="tool-open">Ouvrir <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6" /></svg></span>
           </div>
         </a>
 
-        <a class="tool-card" href="outils/statgm/index.html" data-status="ready" data-name="statgm statistiques game design joueurs métiers shop beta global relevés équilibrage">
-          <div>
-            <div class="tool-head">
-              <span class="tool-mark">GM</span>
-              <span class="tag tag-ready">Prêt</span>
+        <a class="tool-card" href="outils/statgm/index.html" data-status="ready" data-name="statgm statistiques game design joueurs métiers shop beta global relevés équilibrage" data-tool="statgm" aria-labelledby="tool-statgm-title" aria-describedby="tool-statgm-description tool-statgm-status">
+          <div class="tool-visual">
+            <div class="tool-art" aria-hidden="true">
+              <img class="tool-art-left" src="outils/generateur-cdc/minecraft-item-textures/item/redstone.png" alt="" width="40" height="40" loading="lazy" decoding="async" />
+              <img class="tool-art-main" src="outils/generateur-cdc/minecraft-item-textures/item/spyglass.png" alt="" width="80" height="80" loading="lazy" decoding="async" />
+              <img class="tool-art-right" src="outils/generateur-cdc/minecraft-item-textures/item/diamond.png" alt="" width="40" height="40" loading="lazy" decoding="async" />
             </div>
-            <h3>StatGM</h3>
-            <p>Suivre les joueurs, relever les stats, gérer les références et analyser les données utiles au game design.</p>
+            <span class="tag tag-ready" id="tool-statgm-status">Prêt</span>
+          </div>
+          <div class="tool-body">
+            <h3 id="tool-statgm-title">StatGM</h3>
+            <p id="tool-statgm-description">Suivre les joueurs, relever les stats, gérer les références et analyser les données utiles au game design.</p>
           </div>
           <div class="tool-footer">
-            <span>Ouvrir</span>
             <span class="tool-meta">stats</span>
+            <span class="tool-open">Ouvrir <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6" /></svg></span>
           </div>
         </a>
 
-        <a class="tool-card" href="outils/calculateur-xp.html" data-status="ready" data-name="calculateur xp niveaux progression métiers courbe équilibrage simulation comparaison">
-          <div>
-            <div class="tool-head">
-              <span class="tool-mark">XP</span>
-              <span class="tag tag-ready">Prêt</span>
+        <a class="tool-card" href="outils/minecraft-color-preview.html" data-status="ready" data-name="minecraft couleurs color code hex lore chat tooltip panneau texte formatage neodium" data-tool="colors" aria-labelledby="tool-colors-title" aria-describedby="tool-colors-description tool-colors-status">
+          <div class="tool-visual">
+            <div class="tool-art" aria-hidden="true">
+              <img class="tool-art-left" src="outils/generateur-cdc/minecraft-item-textures/item/cyan_dye.png" alt="" width="40" height="40" loading="lazy" decoding="async" />
+              <img class="tool-art-main" src="outils/generateur-cdc/minecraft-item-textures/item/magenta_dye.png" alt="" width="80" height="80" loading="lazy" decoding="async" />
+              <img class="tool-art-right" src="outils/generateur-cdc/minecraft-item-textures/item/lime_dye.png" alt="" width="40" height="40" loading="lazy" decoding="async" />
             </div>
-            <h3>Calculateur XP</h3>
-            <p>Tester des courbes de progression, comparer les paliers et détecter les zones trop longues ou trop rapides.</p>
+            <span class="tag tag-ready" id="tool-colors-status">Prêt</span>
+          </div>
+          <div class="tool-body">
+            <h3 id="tool-colors-title">Couleurs Minecraft</h3>
+            <p id="tool-colors-description">Previsualiser les codes couleur, les styles, le format HEX et copier rapidement le rendu a coller dans les configs.</p>
           </div>
           <div class="tool-footer">
-            <span>Ouvrir</span>
-            <span class="tool-meta">équilibrage</span>
-          </div>
-        </a>
-
-        <article class="tool-card" data-status="planned" data-name="équilibrage métiers économie prix gains ressources mineur bucheron fermier">
-          <div>
-            <div class="tool-head">
-              <span class="tool-mark">EQ</span>
-              <span class="tag tag-planned">À venir</span>
-            </div>
-            <h3>Équilibrage métiers</h3>
-            <p>Comparer gains, prix, rareté des ressources et temps de farm pour garder une économie lisible.</p>
-          </div>
-          <div class="tool-footer">
-            <span>À créer</span>
-            <span class="tool-meta">tableau</span>
-          </div>
-        </article>
-
-        <article class="tool-card" data-status="planned" data-name="générateur lore items descriptions couleurs récompenses minecraft neodium">
-          <div>
-            <div class="tool-head">
-              <span class="tool-mark">LR</span>
-              <span class="tag tag-planned">À venir</span>
-            </div>
-            <h3>Générateur de lore</h3>
-            <p>Composer des descriptions d'items, clés, récompenses et objets spéciaux avec un format stable.</p>
-          </div>
-          <div class="tool-footer">
-            <span>À créer</span>
-            <span class="tool-meta">items</span>
-          </div>
-        </article>
-
-        <article class="tool-card" data-status="planned" data-name="preview gui interface coffre menus slots items minecraft">
-          <div>
-            <div class="tool-head">
-              <span class="tool-mark">GUI</span>
-              <span class="tag tag-planned">À venir</span>
-            </div>
-            <h3>Prévisualisateur GUI</h3>
-            <p>Voir la structure d'un menu, les slots importants, les items et les libellés avant intégration.</p>
-          </div>
-          <div class="tool-footer">
-            <span>À créer</span>
-            <span class="tool-meta">interface</span>
-          </div>
-        </article>
-
-        <a class="tool-card" href="outils/minecraft-color-preview.html" data-status="ready" data-name="minecraft couleurs color code hex lore chat tooltip panneau texte formatage neodium">
-          <div>
-            <div class="tool-head">
-              <span class="tool-mark">MC</span>
-              <span class="tag tag-ready">Prêt</span>
-            </div>
-            <h3>Couleurs Minecraft</h3>
-            <p>Previsualiser les codes couleur, les styles, le format HEX et copier rapidement le rendu a coller dans les configs.</p>
-          </div>
-          <div class="tool-footer">
-            <span>Ouvrir</span>
             <span class="tool-meta">texte</span>
+            <span class="tool-open">Ouvrir <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6" /></svg></span>
           </div>
         </a>
       </section>
 
-      <p class="empty" id="emptyState">Aucun outil ne correspond à cette recherche.</p>
+      <p class="empty" id="emptyState" role="status">Aucun outil ne correspond à cette recherche.</p>
 
       <section class="quick-section" aria-label="Organisation">
         <div class="panel">
           <h2>Priorité actuelle</h2>
-          <p>
-            Le portail est prêt pour travailler tout de suite sur le suivi des tâches et le tri des suggestions.
-            Les prochaines pages peuvent être ajoutées dans le dossier <strong>outils/</strong>.
-          </p>
+          <ul class="priority-list">
+            <li>Reset de la saison</li>
+            <li>Préparation de la V3 de Neodium</li>
+          </ul>
         </div>
 
         <div class="panel">
-          <h2>Feuille de route courte</h2>
+          <h2>Feuille de route</h2>
           <div class="roadmap">
             <div class="roadmap-item">
-              <span class="dot"></span>
-              <strong>Stabiliser les listes</strong>
-              <span>Todo + suggestions</span>
+              <span class="dot dot-gold" aria-hidden="true"></span>
+              <strong>Générateur de CDC</strong>
+              <span>En création</span>
             </div>
             <div class="roadmap-item">
-              <span class="dot dot-gold"></span>
-              <strong>Générateur CDC intégré</strong>
+              <span class="dot dot-blue" aria-hidden="true"></span>
+              <strong>StatGM</strong>
               <span>Disponible</span>
             </div>
             <div class="roadmap-item">
-              <span class="dot dot-blue"></span>
-              <strong>StatGM intégré</strong>
+              <span class="dot dot-blue" aria-hidden="true"></span>
+              <strong>Couleurs Minecraft</strong>
               <span>Disponible</span>
             </div>
             <div class="roadmap-item">
-              <span class="dot dot-blue"></span>
-              <strong>Brancher les calculateurs</strong>
-              <span>XP, métiers, GUI</span>
+              <span class="dot dot-gold" aria-hidden="true"></span>
+              <strong>Todo, suggestions et XP</strong>
+              <span>À refaire</span>
             </div>
           </div>
         </div>
@@ -1027,25 +793,19 @@
   <script>
     const searchInput = document.getElementById("searchInput");
     const cards = Array.from(document.querySelectorAll(".tool-card"));
-    const segments = Array.from(document.querySelectorAll(".segment"));
     const emptyState = document.getElementById("emptyState");
     const toolCount = document.getElementById("toolCount");
     const readyCount = document.getElementById("readyCount");
-    const plannedCount = document.getElementById("plannedCount");
     const currentDate = document.getElementById("currentDate");
     const toolAccessShell = document.getElementById("toolAccessShell");
     const cloudGatePanel = document.getElementById("cloudGatePanel");
     const cloudGateState = document.getElementById("cloudGateState");
 
-    let activeFilter = "all";
-
     function updateStats() {
       const readyCards = cards.filter((card) => card.dataset.status === "ready");
-      const plannedCards = cards.filter((card) => card.dataset.status === "planned");
 
       toolCount.textContent = cards.length;
       readyCount.textContent = readyCards.length;
-      plannedCount.textContent = plannedCards.length;
       currentDate.textContent = new Date().toLocaleDateString("fr-FR", {
         day: "2-digit",
         month: "short"
@@ -1057,12 +817,11 @@
       let visibleCount = 0;
 
       cards.forEach((card) => {
-        const matchesStatus = activeFilter === "all" || card.dataset.status === activeFilter;
         const title = card.querySelector("h3")?.textContent || "";
         const description = card.querySelector("p")?.textContent || "";
         const searchableText = `${card.dataset.name} ${title} ${description}`.toLowerCase();
         const matchesSearch = searchableText.includes(query);
-        const isVisible = matchesStatus && matchesSearch;
+        const isVisible = matchesSearch;
 
         card.classList.toggle("is-hidden", !isVisible);
         if (isVisible) visibleCount += 1;
@@ -1070,14 +829,6 @@
 
       emptyState.classList.toggle("is-visible", visibleCount === 0);
     }
-
-    segments.forEach((segment) => {
-      segment.addEventListener("click", () => {
-        activeFilter = segment.dataset.filter;
-        segments.forEach((item) => item.classList.toggle("is-active", item === segment));
-        applyFilters();
-      });
-    });
 
     function collectProtectedLinks() {
       return Array.from(document.querySelectorAll("[data-cloud-protected='true']"));
