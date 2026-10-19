@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="fr"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Connecter Neodium CDC à Codex</title>
+<style>
+  :root{color-scheme:dark;font-family:system-ui,sans-serif;background:#11151b;color:#f2f5f8}body{margin:0;padding:48px 20px}main{max-width:600px;margin:auto}p{line-height:1.6;color:#bac5d1}.tag{color:#f9ba67;font-size:13px;letter-spacing:.12em}h1{font-size:32px;line-height:1.15}section{padding:24px;margin:24px 0;background:#1a222c;border:1px solid #344253;border-radius:12px}label{display:block;margin-bottom:10px;font-weight:600}input,textarea{box-sizing:border-box;width:100%;padding:12px;background:#0e141c;color:white;border:1px solid #65758a;border-radius:6px;font:inherit}textarea{min-height:100px;resize:vertical}button{padding:12px 18px;margin-top:14px;border:0;border-radius:6px;background:#ffbd69;color:#17120a;font:inherit;font-weight:650;cursor:pointer}button:disabled{opacity:.5;cursor:wait}button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid #79bfff;outline-offset:3px}#status{padding:16px;border-left:3px solid #ffbd69;white-space:pre-wrap}small{display:block;margin-top:16px;line-height:1.5;color:#bac5d1}
+</style>
+<main><p class="tag">NEODIUM / CODEX</p><h1>Connecter le générateur CDC</h1>
+<p>Utilisez un compte Neodium autorisé. Codex pourra gérer vos projets, CDC, modèles et presets. La connexion reste enregistrée sur ce PC, protégée par votre compte Windows.</p>
+<section><label for="email">1. Votre email Neodium</label><input id="email" type="email" autocomplete="email" required><button id="send" type="button">Recevoir le lien de connexion</button></section>
+<section><label for="link">2. Le lien reçu par email</label><p>Dans l’email, faites un clic droit sur le bouton de connexion puis « Copier le lien ». Collez-le ici sans l’avoir ouvert. Si votre email contient un code, vous pouvez aussi le saisir.</p><textarea id="link" autocomplete="off" spellcheck="false" aria-label="Lien ou code de connexion"></textarea><button id="verify" type="button">Connecter Codex</button><small>Ce formulaire s’exécute uniquement sur votre PC. Le lien est vérifié auprès de Neodium et n’apparaît pas dans la conversation.</small></section>
+<p id="status" role="status" aria-live="polite">En attente de connexion. Cette page expire après 15 minutes.</p></main>
+<script>
+  const email=document.getElementById('email'),link=document.getElementById('link'),status=document.getElementById('status');
+  async function call(route,button){
+    if(!email.reportValidity())return;
+    button.disabled=true;status.textContent='Connexion en cours…';
+    try{const response=await fetch('./'+route,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email.value.trim(),link:link.value.trim()})});const result=await response.json();status.textContent=result.message||result.error;if(result.connected){link.value='';document.querySelectorAll('input,textarea,button').forEach(el=>el.disabled=true);return;}}
+    catch{status.textContent='Page expirée ou connexion interrompue. Relancez la connexion depuis Codex.';}
+    button.disabled=false;
+  }
+  document.getElementById('send').onclick=event=>call('email',event.currentTarget);
+  document.getElementById('verify').onclick=event=>call('verify',event.currentTarget);
+</script></html>

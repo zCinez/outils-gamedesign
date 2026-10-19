@@ -1,5 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { ungzip } from "npm:pako@2.1.0";
+import { prepareAgentWrite, finishAgentWrite } from "./agent-records.js";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -652,13 +653,14 @@ async function requireAllowedUser(request: Request): Promise<AllowedUserResult> 
   const { data: allowedEmail, error: allowError } = await supabase
     .from("neodium_allowed_emails")
     .select("email")
+    .eq("email", userData.user.email)
     .maybeSingle();
 
   if (allowError) {
     throw new Error(allowError.message || "Impossible de verifier les emails autorises.");
   }
 
-  if (!allowedEmail?.email) {
+  if (!allowedEmail?.email || allowedEmail.email !== userData.user.email) {
     return {
       ok: false,
       response: jsonResponse(403, {
@@ -712,6 +714,16 @@ Deno.serve(async (request: Request) => {
       });
     }
 
+    if (action === "agent_write") {
+      const snapshot = await getSnapshot(authResult.userId);
+      const prepared = prepareAgentWrite(authResult.userId, body, snapshot, {
+        projects: normalizeProject,
+        history: normalizeHistoryEntry
+      });
+      const result = await executeTursoPipeline([prepared.request]);
+      return jsonResponse(200, finishAgentWrite(result, prepared.record));
+    }
+
     if (action === "replace_snapshot") {
       const result = await replaceSnapshot(authResult.userId, isRecord(body) ? body.snapshot : null);
       return jsonResponse(200, result);
@@ -739,7 +751,9 @@ Deno.serve(async (request: Request) => {
   } catch (error) {
     console.error("[turso-cdc]", error);
     const message = error instanceof Error ? error.message : "Erreur interne.";
-    const status = message.toLowerCase().includes("volumineux") ? 413 : 500;
+    const status = error && typeof error === "object" && "status" in error
+      ? Number(error.status) || 500
+      : message.toLowerCase().includes("volumineux") ? 413 : 500;
     return jsonResponse(status, {
       ok: false,
       error: message

@@ -2,6 +2,10 @@
 
 Outils internes de game design pour Neodium.
 
+## Accès Codex au générateur CDC
+
+Le [connecteur Neodium CDC](integrations/cdc-mcp/README.md) permet à Codex de gérer les projets, CDC, modèles et presets avec un compte Neodium autorisé, tout en conservant la protection du site.
+
 ## Apercu local
 
 Pour visualiser le portail sans l'envoyer sur GitHub :

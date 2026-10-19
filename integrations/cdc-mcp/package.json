@@ -1,0 +1,10 @@
+{
+  "name": "neodium-cdc-mcp",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Accès authentifié au générateur CDC Neodium pour Codex",
+  "engines": { "node": ">=24" },
+  "scripts": { "start": "node server.mjs", "connect": "node connect.mjs", "test": "node --test tests/*.test.mjs" },
+  "dependencies": { "@modelcontextprotocol/sdk": "1.32.1", "jsdom": "30.1.3", "zod": "4.6.7" }
+}
