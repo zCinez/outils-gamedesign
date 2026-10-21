@@ -277,6 +277,10 @@ input[type="color"]:focus {
   word-break: break-word;
 }
 
+.output-card--minimessage {
+  grid-column: 1 / -1;
+}
+
 .palette-group + .palette-group {
   margin-top: 22px;
 }
@@ -454,6 +458,7 @@ input[type="color"] {
 
 .mc-line {
   display: block;
+  white-space: pre-wrap;
 }
 
 .mc-bold {
@@ -470,6 +475,10 @@ input[type="color"] {
 
 .mc-strike {
   text-decoration: line-through;
+}
+
+.mc-underline.mc-strike {
+  text-decoration: underline line-through;
 }
 
 .toast {

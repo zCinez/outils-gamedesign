@@ -8,9 +8,9 @@
   <meta name="description" content="Apercu live des codes couleur Minecraft avec rendu chat et copie rapide." />
   <link rel="stylesheet" href="../assets/neodium-global-header.css?v=20260911b" />
   <link rel="stylesheet" href="../assets/neodium-interface.css?v=20260911d" />
-  <link rel="stylesheet" href="./minecraft-color-preview.css?v=20260623a" />
+  <link rel="stylesheet" href="./minecraft-color-preview.css?v=20261021a" />
   <script src="../assets/neodium-global-header.js?v=20260626b" defer></script>
-  <script src="./minecraft-color-preview.js?v=20260623a" defer></script>
+  <script src="./minecraft-color-preview.js?v=20261021a" defer></script>
 </head>
 <body class="minecraft-color-tool-page">
   <main class="page">
@@ -25,6 +25,7 @@
         <div class="hero-actions">
           <button type="button" class="btn btn-primary" id="copyRawHeroButton">Copier le texte</button>
           <button type="button" class="btn btn-secondary" id="copySectionHeroButton">Copier en &#167;</button>
+          <button type="button" class="btn btn-secondary" id="copyMiniMessageHeroButton">Copier en MiniMessage</button>
         </div>
       </div>
 
@@ -55,11 +56,12 @@
             <div class="section-actions">
               <button type="button" class="btn btn-secondary" id="copyRawButton">Copier</button>
               <button type="button" class="btn btn-secondary" id="copySectionButton">Copier en &#167;</button>
+              <button type="button" class="btn btn-secondary" id="copyMiniMessageButton">Copier en MiniMessage</button>
               <button type="button" class="btn btn-danger" id="clearButton">Vider</button>
             </div>
           </div>
 
-          <label class="field-label" for="minecraftInput">Texte avec codes Minecraft</label>
+          <label class="field-label" for="minecraftInput">Texte avec codes &amp;, &#167; ou balises MiniMessage</label>
           <textarea
             id="minecraftInput"
             spellcheck="false"
@@ -74,6 +76,10 @@
             <div class="output-card">
               <span class="output-label">Format &#167;</span>
               <div class="output-value" id="sectionOutput"></div>
+            </div>
+            <div class="output-card output-card--minimessage">
+              <span class="output-label">Format MiniMessage &lt;balises&gt;</span>
+              <div class="output-value" id="miniMessageOutput"></div>
             </div>
           </div>
         </section>
